@@ -11,11 +11,12 @@ import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import { isTursoEnabled, getTursoConfig } from '../../config.js';
 import { VERSION } from '../../version.js';
-import type { Task } from '../../db/schema.js';
+import type { Task, Comment } from '../../db/schema.js';
+import type { BorderStyleType } from '../theme/types.js';
 
 const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
-type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail';
+type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment';
 
 interface KanbanBoardProps {
   onSwitchToGtd?: () => void;
@@ -38,6 +39,9 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
     done: [],
   });
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskComments, setTaskComments] = useState<Comment[]>([]);
+  const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
 
   const i18n = t();
 
@@ -86,6 +90,36 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
     loadTasks();
   }, [loadTasks]);
 
+  const loadTaskComments = useCallback(async (taskId: string) => {
+    const db = getDb();
+    const comments = await db
+      .select()
+      .from(schema.comments)
+      .where(eq(schema.comments.taskId, taskId));
+    setTaskComments(comments);
+  }, []);
+
+  const addCommentToTask = useCallback(async (task: Task, content: string) => {
+    const db = getDb();
+    await db.insert(schema.comments).values({
+      id: uuidv4(),
+      taskId: task.id,
+      content: content.trim(),
+      createdAt: new Date(),
+    });
+    setMessage(i18n.tui.commentAdded || 'Comment added');
+    await loadTaskComments(task.id);
+  }, [i18n.tui.commentAdded, loadTaskComments]);
+
+  const deleteComment = useCallback(async (comment: Comment) => {
+    const db = getDb();
+    await db.delete(schema.comments).where(eq(schema.comments.id, comment.id));
+    setMessage(i18n.tui.commentDeleted || 'Comment deleted');
+    if (selectedTask) {
+      await loadTaskComments(selectedTask.id);
+    }
+  }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask]);
+
   const currentColumn = COLUMNS[currentColumnIndex];
   const currentTasks = tasks[currentColumn];
   const selectedTaskIndex = selectedTaskIndices[currentColumn];
@@ -109,6 +143,15 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
   }, [i18n.tui.added, loadTasks]);
 
   const handleInputSubmit = async (value: string) => {
+    if (mode === 'add-comment' && selectedTask) {
+      if (value.trim()) {
+        await addCommentToTask(selectedTask, value);
+      }
+      setMode('task-detail');
+      setInputValue('');
+      return;
+    }
+
     if (value.trim()) {
       await addTask(value);
     }
@@ -186,10 +229,53 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
     }
 
     // Handle add mode
-    if (mode === 'add') {
+    if (mode === 'add' || mode === 'add-comment') {
       if (key.escape) {
         setInputValue('');
+        if (mode === 'add-comment') {
+          setMode('task-detail');
+        } else {
+          setMode('normal');
+        }
+      }
+      return;
+    }
+
+    // Handle task-detail mode
+    if (mode === 'task-detail') {
+      if (key.escape || key.backspace || input === 'b') {
         setMode('normal');
+        setSelectedTask(null);
+        setTaskComments([]);
+        setSelectedCommentIndex(0);
+        return;
+      }
+
+      // Navigate comments
+      if (key.upArrow || input === 'k') {
+        setSelectedCommentIndex((prev) => (prev > 0 ? prev - 1 : Math.max(0, taskComments.length - 1)));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setSelectedCommentIndex((prev) => (prev < taskComments.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Delete comment
+      if (input === 'd' && taskComments.length > 0) {
+        const comment = taskComments[selectedCommentIndex];
+        deleteComment(comment).then(() => {
+          if (selectedCommentIndex >= taskComments.length - 1) {
+            setSelectedCommentIndex(Math.max(0, selectedCommentIndex - 1));
+          }
+        });
+        return;
+      }
+
+      // Add comment
+      if (input === 'i') {
+        setMode('add-comment');
+        return;
       }
       return;
     }
@@ -259,8 +345,17 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
       return;
     }
 
-    // Move task right (Enter)
-    if (key.return && currentTasks.length > 0 && currentColumn !== 'done') {
+    // Open task detail (Enter)
+    if (key.return && currentTasks.length > 0) {
+      const task = currentTasks[selectedTaskIndex];
+      setSelectedTask(task);
+      loadTaskComments(task.id);
+      setMode('task-detail');
+      return;
+    }
+
+    // Move task right (m)
+    if (input === 'm' && currentTasks.length > 0 && currentColumn !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       moveTaskRight(task).then(() => {
         // Adjust selection if needed
@@ -363,30 +458,121 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>
 
-      {/* Column headers (numbers) */}
-      <Box marginBottom={1}>
-        {COLUMNS.map((column, index) => (
-          <Box key={column} flexGrow={1} flexBasis={0} marginRight={index < 2 ? 1 : 0}>
-            <Text color={currentColumnIndex === index ? theme.colors.textHighlight : theme.colors.textMuted}>
-              {index + 1}:
+      {/* Task detail view */}
+      {(mode === 'task-detail' || mode === 'add-comment') && selectedTask ? (
+        <Box flexDirection="column">
+          {/* Task detail header */}
+          <Box marginBottom={1}>
+            <Text color={theme.colors.accent} bold>
+              {theme.name === 'modern' ? '📋 ' : '>> '}{i18n.tui.taskDetailTitle || 'Task Details'}
+            </Text>
+            <Text color={theme.colors.textMuted}> (Esc/b: {i18n.tui.back || 'back'}, {i18n.tui.commentHint || 'i: add comment'})</Text>
+          </Box>
+
+          {/* Task info */}
+          <Box
+            flexDirection="column"
+            borderStyle={theme.borders.list as BorderStyleType}
+            borderColor={theme.colors.border}
+            paddingX={1}
+            paddingY={1}
+            marginBottom={1}
+          >
+            <Text color={theme.colors.text} bold>{selectedTask.title}</Text>
+            {selectedTask.description && (
+              <Text color={theme.colors.textMuted}>{selectedTask.description}</Text>
+            )}
+            <Text color={theme.colors.textMuted}>
+              {i18n.status[selectedTask.status]}
+              {selectedTask.waitingFor && ` - ${selectedTask.waitingFor}`}
+              {selectedTask.dueDate && ` (${selectedTask.dueDate.toLocaleDateString()})`}
             </Text>
           </Box>
-        ))}
-      </Box>
 
-      {/* Kanban columns */}
-      <Box flexDirection="row">
-        {COLUMNS.map((column, index) => (
-          <KanbanColumn
-            key={column}
-            title={getColumnLabel(column)}
-            tasks={tasks[column]}
-            isActive={index === currentColumnIndex}
-            selectedTaskIndex={selectedTaskIndices[column]}
-            columnIndex={index}
-          />
-        ))}
-      </Box>
+          {/* Comments section */}
+          <Box marginBottom={1}>
+            <Text color={theme.colors.secondary} bold>
+              {i18n.tui.comments || 'Comments'} ({taskComments.length})
+            </Text>
+          </Box>
+          <Box
+            flexDirection="column"
+            borderStyle={theme.borders.list as BorderStyleType}
+            borderColor={theme.colors.border}
+            paddingX={1}
+            paddingY={1}
+            minHeight={5}
+          >
+            {taskComments.length === 0 ? (
+              <Text color={theme.colors.textMuted} italic>
+                {i18n.tui.noComments || 'No comments yet'}
+              </Text>
+            ) : (
+              taskComments.map((comment, index) => {
+                const isSelected = index === selectedCommentIndex && mode === 'task-detail';
+                return (
+                  <Box key={comment.id} flexDirection="row" marginBottom={1}>
+                    <Text color={isSelected ? theme.colors.textSelected : theme.colors.textMuted}>
+                      {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                    </Text>
+                    <Box flexDirection="column">
+                      <Text color={theme.colors.textMuted}>
+                        [{comment.createdAt.toLocaleString()}]
+                      </Text>
+                      <Text color={isSelected ? theme.colors.textSelected : theme.colors.text} bold={isSelected}>
+                        {comment.content}
+                      </Text>
+                    </Box>
+                  </Box>
+                );
+              })
+            )}
+          </Box>
+
+          {/* Add comment input */}
+          {mode === 'add-comment' && (
+            <Box marginTop={1}>
+              <Text color={theme.colors.secondary} bold>
+                {i18n.tui.addComment || 'New comment: '}
+              </Text>
+              <TextInput
+                value={inputValue}
+                onChange={setInputValue}
+                onSubmit={handleInputSubmit}
+                placeholder=""
+              />
+              <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
+            </Box>
+          )}
+        </Box>
+      ) : (
+        <>
+          {/* Column headers (numbers) */}
+          <Box marginBottom={1}>
+            {COLUMNS.map((column, index) => (
+              <Box key={column} flexGrow={1} flexBasis={0} marginRight={index < 2 ? 1 : 0}>
+                <Text color={currentColumnIndex === index ? theme.colors.textHighlight : theme.colors.textMuted}>
+                  {index + 1}:
+                </Text>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Kanban columns */}
+          <Box flexDirection="row">
+            {COLUMNS.map((column, index) => (
+              <KanbanColumn
+                key={column}
+                title={getColumnLabel(column)}
+                tasks={tasks[column]}
+                isActive={index === currentColumnIndex}
+                selectedTaskIndex={selectedTaskIndices[column]}
+                columnIndex={index}
+              />
+            ))}
+          </Box>
+        </>
+      )}
 
       {/* Add task input */}
       {mode === 'add' && (
@@ -413,18 +599,31 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
 
       {/* Footer */}
       <Box marginTop={1}>
-        {theme.style.showFunctionKeys ? (
+        {(mode === 'task-detail' || mode === 'add-comment') ? (
+          theme.style.showFunctionKeys ? (
+            <FunctionKeyBar keys={[
+              { key: 'i', label: i18n.tui.keyBar.comment },
+              { key: 'd', label: i18n.tui.keyBar.delete },
+              { key: 'b', label: i18n.tui.keyBar.back },
+            ]} />
+          ) : (
+            <Text color={theme.colors.textMuted}>
+              i=comment d=delete j/k=select Esc/b=back
+            </Text>
+          )
+        ) : theme.style.showFunctionKeys ? (
           <FunctionKeyBar keys={[
             { key: 'a', label: i18n.tui.keyBar.add },
             { key: 'd', label: i18n.tui.keyBar.done },
-            { key: 'Enter', label: '→' },
+            { key: 'm', label: '→' },
             { key: 'BS', label: '←' },
+            { key: 'Enter', label: 'detail' },
             { key: '?', label: i18n.tui.keyBar.help },
             { key: 'q', label: i18n.tui.keyBar.quit },
           ]} />
         ) : (
           <Text color={theme.colors.textMuted}>
-            a=add d=done Enter=→ BS=← h/l=col j/k=task ?=help q=quit
+            a=add d=done m=→ BS=← Enter=detail h/l=col j/k=task ?=help q=quit
           </Text>
         )}
       </Box>

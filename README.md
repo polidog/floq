@@ -7,8 +7,10 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 ## Features
 
 - **TUI Interface**: Interactive terminal UI built with Ink (React for CLI)
-- **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe
+- **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe, Done
+- **Kanban Mode**: 3-column kanban board view (TODO, Doing, Done)
 - **Projects**: Organize tasks into projects
+- **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
 - **Themes**: Multiple themes including MS-DOS nostalgic styles
 - **i18n**: English and Japanese support
@@ -38,11 +40,11 @@ npm link
 floq
 ```
 
-### Keyboard Shortcuts
+### Keyboard Shortcuts (GTD Mode)
 
 | Key | Action |
 |-----|--------|
-| `1-5` | Switch tabs |
+| `1-6` | Switch tabs (Inbox/Next/Waiting/Someday/Projects/Done) |
 | `h/l` or `←/→` | Previous/Next tab |
 | `j/k` or `↑/↓` | Navigate tasks |
 | `a` | Add task |
@@ -50,13 +52,48 @@ floq
 | `n` | Move to Next Actions |
 | `s` | Move to Someday/Maybe |
 | `i` | Move to Inbox |
+| `w` | Move to Waiting For (prompts for person) |
 | `p` | Convert to project |
 | `P` | Link to project |
-| `Enter` | Open project (on Projects tab) |
-| `Esc/b` | Back from project |
+| `Enter` | Open task detail / Open project |
+| `Esc/b` | Back |
 | `r` | Refresh |
 | `?` | Help |
 | `q` | Quit |
+
+#### Task Detail View
+
+| Key | Action |
+|-----|--------|
+| `i` | Add comment |
+| `d` | Delete selected comment |
+| `j/k` | Navigate comments |
+| `Esc/b` | Back to list |
+
+### Keyboard Shortcuts (Kanban Mode)
+
+| Key | Action |
+|-----|--------|
+| `1-3` | Switch columns (TODO/Doing/Done) |
+| `h/l` or `←/→` | Previous/Next column |
+| `j/k` or `↑/↓` | Navigate tasks |
+| `a` | Add task |
+| `d` | Mark as done |
+| `m` | Move task right (→) |
+| `Backspace` | Move task left (←) |
+| `Enter` | Open task detail |
+| `r` | Refresh |
+| `?` | Help |
+| `q` | Quit |
+
+#### Task Detail View (Kanban)
+
+| Key | Action |
+|-----|--------|
+| `i` | Add comment |
+| `d` | Delete selected comment |
+| `j/k` | Navigate comments |
+| `Esc/b` | Back to board |
 
 ### CLI Commands
 
@@ -86,6 +123,10 @@ floq project add "Project name"
 floq project list
 floq project show <id>
 floq project complete <id>
+
+# Comments
+floq comment <id> "Comment text"  # Add comment
+floq comment <id>                 # List comments
 ```
 
 ## Configuration
@@ -105,9 +146,20 @@ floq config theme
 floq config theme modern           # Default
 floq config theme synthwave        # Neon 80s aesthetic
 
+# Set view mode (interactive selector)
+floq config mode
+
+# Or specify directly
+floq config mode gtd               # GTD workflow (default)
+floq config mode kanban            # Kanban board
+
 # Set database path
 floq config db /path/to/custom.db
 floq config db                     # Reset to default
+
+# Reset database (delete all data)
+floq db reset                      # With confirmation
+floq db reset --force              # Skip confirmation
 ```
 
 ## Cloud Sync (Turso)
@@ -139,7 +191,7 @@ floq config turso --disable
 - **Embedded Replicas**: Local SQLite database syncs with Turso cloud
 - **Offline Support**: Works offline, syncs when connected
 - **Auto Sync**: Background sync every 60 seconds when online
-- **Separate Database**: Turso mode uses `gtd-turso.db` to avoid conflicts
+- **Separate Database**: Turso mode uses `floq-turso.db` to avoid conflicts
 
 ### Status Indicator
 
@@ -173,8 +225,8 @@ floq config turso --disable
 
 ## Data Storage
 
-- Config: `~/.config/gtd-cli/config.json`
-- Database: `~/.local/share/gtd-cli/gtd.db`
+- Config: `~/.config/floq/config.json`
+- Database: `~/.local/share/floq/floq.db` (or `floq-turso.db` with Turso enabled)
 
 ## License
 

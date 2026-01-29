@@ -7,8 +7,10 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 ## 特徴
 
 - **TUIインターフェース**: Ink（CLI用React）で構築されたインタラクティブなターミナルUI
-- **GTDワークフロー**: Inbox、Next Actions、Waiting For、Someday/Maybe
+- **GTDワークフロー**: Inbox、Next Actions、Waiting For、Someday/Maybe、Done
+- **カンバンモード**: 3カラムのカンバンボード表示（TODO、Doing、Done）
 - **プロジェクト**: タスクをプロジェクトに整理
+- **コメント**: タスクにメモやコメントを追加
 - **クラウド同期**: [Turso](https://turso.tech/)のembedded replicasによるオプションの同期機能
 - **テーマ**: MS-DOSノスタルジックスタイルを含む複数テーマ
 - **多言語対応**: 英語・日本語サポート
@@ -38,11 +40,11 @@ npm link
 floq
 ```
 
-### キーボードショートカット
+### キーボードショートカット（GTDモード）
 
 | キー | アクション |
 |------|-----------|
-| `1-5` | タブ切り替え |
+| `1-6` | タブ切り替え（Inbox/Next/Waiting/Someday/Projects/Done） |
 | `h/l` または `←/→` | 前/次のタブ |
 | `j/k` または `↑/↓` | タスク選択 |
 | `a` | タスク追加 |
@@ -50,13 +52,48 @@ floq
 | `n` | Next Actionsに移動 |
 | `s` | Someday/Maybeに移動 |
 | `i` | Inboxに移動 |
+| `w` | Waiting Forに移動（担当者入力） |
 | `p` | プロジェクトに変換 |
 | `P` | プロジェクトに紐付け |
-| `Enter` | プロジェクトを開く（Projectsタブ） |
-| `Esc/b` | プロジェクトから戻る |
+| `Enter` | タスク詳細を開く / プロジェクトを開く |
+| `Esc/b` | 戻る |
 | `r` | 更新 |
 | `?` | ヘルプ |
 | `q` | 終了 |
+
+#### タスク詳細画面
+
+| キー | アクション |
+|------|-----------|
+| `i` | コメント追加 |
+| `d` | 選択中のコメントを削除 |
+| `j/k` | コメント選択 |
+| `Esc/b` | 一覧に戻る |
+
+### キーボードショートカット（カンバンモード）
+
+| キー | アクション |
+|------|-----------|
+| `1-3` | カラム切り替え（TODO/Doing/Done） |
+| `h/l` または `←/→` | 前/次のカラム |
+| `j/k` または `↑/↓` | タスク選択 |
+| `a` | タスク追加 |
+| `d` | 完了にする |
+| `m` | タスクを右に移動（→） |
+| `Backspace` | タスクを左に移動（←） |
+| `Enter` | タスク詳細を開く |
+| `r` | 更新 |
+| `?` | ヘルプ |
+| `q` | 終了 |
+
+#### タスク詳細画面（カンバン）
+
+| キー | アクション |
+|------|-----------|
+| `i` | コメント追加 |
+| `d` | 選択中のコメントを削除 |
+| `j/k` | コメント選択 |
+| `Esc/b` | ボードに戻る |
 
 ### CLIコマンド
 
@@ -86,6 +123,10 @@ floq project add "プロジェクト名"
 floq project list
 floq project show <id>
 floq project complete <id>
+
+# コメント
+floq comment <id> "コメント内容"  # コメント追加
+floq comment <id>                  # コメント一覧
 ```
 
 ## 設定
@@ -105,9 +146,20 @@ floq config theme
 floq config theme modern           # デフォルト
 floq config theme synthwave        # ネオン80sスタイル
 
+# 表示モード設定（インタラクティブセレクター）
+floq config mode
+
+# または直接指定
+floq config mode gtd               # GTDワークフロー（デフォルト）
+floq config mode kanban            # カンバンボード
+
 # データベースパス設定
 floq config db /path/to/custom.db
 floq config db                     # デフォルトに戻す
+
+# データベースリセット（全データ削除）
+floq db reset                      # 確認あり
+floq db reset --force              # 確認なし
 ```
 
 ## クラウド同期（Turso）
@@ -139,7 +191,7 @@ floq config turso --disable
 - **Embedded Replicas**: ローカルSQLiteデータベースがTursoクラウドと同期
 - **オフラインサポート**: オフラインでも動作し、接続時に同期
 - **自動同期**: オンライン時は60秒ごとにバックグラウンド同期
-- **データベース分離**: Tursoモードは`gtd-turso.db`を使用し、ローカルDBと競合しない
+- **データベース分離**: Tursoモードは`floq-turso.db`を使用し、ローカルDBと競合しない
 
 ### ステータス表示
 
@@ -173,8 +225,8 @@ floq config turso --disable
 
 ## データ保存場所
 
-- 設定: `~/.config/gtd-cli/config.json`
-- データベース: `~/.local/share/gtd-cli/gtd.db`
+- 設定: `~/.config/floq/config.json`
+- データベース: `~/.local/share/floq/floq.db`（Turso有効時は`floq-turso.db`）
 
 ## ライセンス
 
