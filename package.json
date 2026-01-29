@@ -1,6 +1,6 @@
 {
   "name": "floq",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Floq - Getting Things Done Task Manager with MS-DOS style themes",
   "type": "module",
   "main": "dist/index.js",
