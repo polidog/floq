@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-01-29
+
+### Improved
+- Search now supports arrow key navigation and jumping to task on Enter
+
 ## [0.2.2] - 2025-01-29
 
 ### Added
