@@ -93,6 +93,7 @@ export const en = {
     tabWaiting: 'Waiting',
     tabSomeday: 'Someday',
     tabProjects: 'Projects',
+    tabDone: 'Done',
     // Project actions
     madeProject: 'Made project: "{title}"',
     linkedToProject: 'Linked "{title}" to {project}',
@@ -118,7 +119,7 @@ export const en = {
     help: {
       title: 'Keyboard Shortcuts',
       navigation: 'Navigation',
-      tabSwitch: 'Switch tab (5=Projects)',
+      tabSwitch: 'Switch tab (5=Projects, 6=Done)',
       prevNextTab: 'Previous/Next tab',
       taskSelect: 'Select task',
       actions: 'Actions',
@@ -253,6 +254,7 @@ export type TuiTranslations = {
   tabWaiting: string;
   tabSomeday: string;
   tabProjects: string;
+  tabDone: string;
   madeProject: string;
   linkedToProject: string;
   selectProject: string;

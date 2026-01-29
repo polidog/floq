@@ -95,6 +95,7 @@ export const ja: Translations = {
     tabWaiting: '待ち',
     tabSomeday: 'いつか',
     tabProjects: 'プロジェクト',
+    tabDone: '完了',
     // Project actions
     madeProject: 'プロジェクト化しました: 「{title}」',
     linkedToProject: '「{title}」を{project}に紐づけました',
@@ -120,7 +121,7 @@ export const ja: Translations = {
     help: {
       title: 'キーボードショートカット',
       navigation: 'ナビゲーション',
-      tabSwitch: 'タブ切替 (5=プロジェクト)',
+      tabSwitch: 'タブ切替 (5=プロジェクト, 6=完了)',
       prevNextTab: '前後のタブ',
       taskSelect: 'タスク選択',
       actions: 'アクション',

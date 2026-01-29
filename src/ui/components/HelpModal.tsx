@@ -43,7 +43,7 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
         </Text>
         <Box paddingLeft={2} flexDirection="column">
           <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>1-5</Text>      {help.tabSwitch}
+            <Text color={theme.colors.textHighlight}>1-6</Text>      {help.tabSwitch}
           </Text>
           <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>h/l ←/→</Text>  {help.prevNextTab}

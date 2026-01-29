@@ -16,8 +16,8 @@ import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
 
-type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects';
-const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects'];
+type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
+const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
 type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting';
@@ -46,6 +46,7 @@ function AppContent(): React.ReactElement {
     waiting: [],
     someday: [],
     projects: [],
+    done: [],
   });
   const [message, setMessage] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Task | null>(null);
@@ -67,10 +68,11 @@ function AppContent(): React.ReactElement {
       waiting: [],
       someday: [],
       projects: [],
+      done: [],
     };
 
     // Load all tasks (including project children) by status
-    const statusList = ['inbox', 'next', 'waiting', 'someday'] as const;
+    const statusList = ['inbox', 'next', 'waiting', 'someday', 'done'] as const;
     for (const status of statusList) {
       newTasks[status] = await db
         .select()
@@ -254,6 +256,8 @@ function AppContent(): React.ReactElement {
         return i18n.tui.tabSomeday;
       case 'projects':
         return i18n.tui.tabProjects || 'Projects';
+      case 'done':
+        return i18n.tui.tabDone || 'Done';
     }
   };
 
@@ -491,6 +495,11 @@ function AppContent(): React.ReactElement {
       setSelectedTaskIndex(0);
       return;
     }
+    if (input === '6') {
+      setCurrentListIndex(5);
+      setSelectedTaskIndex(0);
+      return;
+    }
 
     // Navigate between lists
     if (key.leftArrow || input === 'h') {
@@ -536,7 +545,7 @@ function AppContent(): React.ReactElement {
     }
 
     // Mark as project (p key)
-    if (input === 'p' && currentTasks.length > 0 && currentTab !== 'projects') {
+    if (input === 'p' && currentTasks.length > 0 && currentTab !== 'projects' && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       makeTaskProject(task).then(() => {
         if (selectedTaskIndex >= currentTasks.length - 1) {
@@ -547,7 +556,7 @@ function AppContent(): React.ReactElement {
     }
 
     // Link to project (P key - shift+p)
-    if (input === 'P' && currentTasks.length > 0 && currentTab !== 'projects' && tasks.projects.length > 0) {
+    if (input === 'P' && currentTasks.length > 0 && currentTab !== 'projects' && currentTab !== 'done' && tasks.projects.length > 0) {
       const task = currentTasks[selectedTaskIndex];
       setTaskToLink(task);
       setProjectSelectIndex(0);
@@ -555,8 +564,8 @@ function AppContent(): React.ReactElement {
       return;
     }
 
-    // Mark as done
-    if (input === 'd' && currentTasks.length > 0) {
+    // Mark as done (not available on done tab)
+    if (input === 'd' && currentTasks.length > 0 && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       markTaskDone(task).then(() => {
         if (selectedTaskIndex >= currentTasks.length - 1) {
@@ -567,7 +576,7 @@ function AppContent(): React.ReactElement {
     }
 
     // Move to next actions
-    if (input === 'n' && currentTasks.length > 0 && currentTab !== 'next' && currentTab !== 'projects') {
+    if (input === 'n' && currentTasks.length > 0 && currentTab !== 'next' && currentTab !== 'projects' && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       moveTaskToStatus(task, 'next').then(() => {
         if (selectedTaskIndex >= currentTasks.length - 1) {
@@ -578,7 +587,7 @@ function AppContent(): React.ReactElement {
     }
 
     // Move to someday
-    if (input === 's' && currentTasks.length > 0 && currentTab !== 'someday' && currentTab !== 'projects') {
+    if (input === 's' && currentTasks.length > 0 && currentTab !== 'someday' && currentTab !== 'projects' && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       moveTaskToStatus(task, 'someday').then(() => {
         if (selectedTaskIndex >= currentTasks.length - 1) {
@@ -589,7 +598,7 @@ function AppContent(): React.ReactElement {
     }
 
     // Move to waiting
-    if (input === 'w' && currentTasks.length > 0 && currentTab !== 'waiting' && currentTab !== 'projects') {
+    if (input === 'w' && currentTasks.length > 0 && currentTab !== 'waiting' && currentTab !== 'projects' && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       setTaskToWaiting(task);
       setMode('move-to-waiting');
@@ -597,7 +606,7 @@ function AppContent(): React.ReactElement {
     }
 
     // Move to inbox
-    if (input === 'i' && currentTasks.length > 0 && currentTab !== 'inbox' && currentTab !== 'projects') {
+    if (input === 'i' && currentTasks.length > 0 && currentTab !== 'inbox' && currentTab !== 'projects' && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
       moveTaskToStatus(task, 'inbox').then(() => {
         if (selectedTaskIndex >= currentTasks.length - 1) {
