@@ -85,7 +85,7 @@ export const en = {
     movedToWaiting: 'Moved "{title}" to Waiting (for {person})',
     waitingFor: 'Waiting for: ',
     refreshed: 'Refreshed',
-    footer: 'a=add d=done n=next s=someday w=waiting i=inbox p=project P=link',
+    footer: 'a=add d=done D=delete n=next s=someday w=waiting i=inbox p=project P=link',
     noTasks: 'No tasks',
     // Tab labels
     tabInbox: 'Inbox',
@@ -185,6 +185,9 @@ export const en = {
     taskDetailTitle: 'Task Details',
     taskDetailFooter: 'j/k=select i=comment d=delete P=link b/Esc=back',
     taskDetailStatus: 'Status',
+    deleteConfirm: 'Delete "{title}"? (y/n)',
+    deleted: 'Deleted: "{title}"',
+    deleteCancelled: 'Delete cancelled',
     comments: 'Comments',
     projectTasks: 'Tasks',
     // Search
@@ -412,6 +415,9 @@ export type TuiTranslations = {
   taskDetailTitle: string;
   taskDetailFooter: string;
   taskDetailStatus: string;
+  deleteConfirm: string;
+  deleted: string;
+  deleteCancelled: string;
   comments: string;
   projectTasks: string;
 };

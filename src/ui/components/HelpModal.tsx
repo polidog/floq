@@ -4,13 +4,15 @@ import { t } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import type { BorderStyleType } from '../theme/types.js';
 import { parseChangelog } from '../../changelog.js';
+import { loadConfig, isTursoEnabled, getTursoConfig, getDbPath } from '../../config.js';
+import { CONFIG_FILE, DATA_DIR } from '../../paths.js';
 
 interface HelpModalProps {
   onClose: () => void;
   isKanban?: boolean;
 }
 
-type TabType = 'keybindings' | 'whatsNew';
+type TabType = 'keybindings' | 'info' | 'whatsNew';
 
 const VISIBLE_LINES = 12;
 
@@ -40,10 +42,15 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
 
   const maxScroll = Math.max(0, changelogItems.length - VISIBLE_LINES);
 
+  const tabs: TabType[] = ['keybindings', 'info', 'whatsNew'];
+
   useInput((input, key) => {
     // Tab key detection (key.tab or raw tab character)
     if (key.tab || input === '\t') {
-      setActiveTab(prev => prev === 'keybindings' ? 'whatsNew' : 'keybindings');
+      setActiveTab(prev => {
+        const currentIndex = tabs.indexOf(prev);
+        return tabs[(currentIndex + 1) % tabs.length];
+      });
       setScrollOffset(0);
       return;
     }
@@ -54,18 +61,29 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
       return;
     }
     if (input === '2') {
+      setActiveTab('info');
+      setScrollOffset(0);
+      return;
+    }
+    if (input === '3') {
       setActiveTab('whatsNew');
       setScrollOffset(0);
       return;
     }
     // Arrow keys and h/l for tab switching
     if (input === 'h' || key.leftArrow) {
-      setActiveTab('keybindings');
+      setActiveTab(prev => {
+        const currentIndex = tabs.indexOf(prev);
+        return tabs[(currentIndex - 1 + tabs.length) % tabs.length];
+      });
       setScrollOffset(0);
       return;
     }
     if (input === 'l' || key.rightArrow) {
-      setActiveTab('whatsNew');
+      setActiveTab(prev => {
+        const currentIndex = tabs.indexOf(prev);
+        return tabs[(currentIndex + 1) % tabs.length];
+      });
       setScrollOffset(0);
       return;
     }
@@ -109,6 +127,14 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
           </Text>
           <Text color={theme.colors.textMuted}> │ </Text>
           <Text
+            bold={activeTab === 'info'}
+            color={activeTab === 'info' ? theme.colors.secondary : theme.colors.textMuted}
+            inverse={activeTab === 'info'}
+          >
+            {' '}{formatTitle(help.infoTab)}{' '}
+          </Text>
+          <Text color={theme.colors.textMuted}> │ </Text>
+          <Text
             bold={activeTab === 'whatsNew'}
             color={activeTab === 'whatsNew' ? theme.colors.secondary : theme.colors.textMuted}
             inverse={activeTab === 'whatsNew'}
@@ -125,6 +151,8 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
         ) : (
           <GTDKeybindingsContent />
         )
+      ) : activeTab === 'info' ? (
+        <InfoContent />
       ) : (
         <WhatsNewContent
           items={changelogItems}
@@ -302,6 +330,83 @@ function KanbanKeybindingsContent(): React.ReactElement {
           </Text>
           <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>q</Text>        {help.quit}
+          </Text>
+        </Box>
+      </Box>
+    </>
+  );
+}
+
+function InfoContent(): React.ReactElement {
+  const i18n = t();
+  const info = i18n.tui.info;
+  const theme = useTheme();
+
+  const formatTitle = (title: string) =>
+    theme.style.headerUppercase ? title.toUpperCase() : title;
+
+  const config = loadConfig();
+  const tursoEnabled = isTursoEnabled();
+  const tursoConfig = tursoEnabled ? getTursoConfig() : undefined;
+  const dbPath = getDbPath();
+
+  // Get Turso host for display
+  const tursoUrl = tursoConfig ? (() => {
+    try {
+      return new URL(tursoConfig.url).host;
+    } catch {
+      return tursoConfig.url;
+    }
+  })() : '';
+
+  return (
+    <>
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.colors.accent}>
+          {formatTitle(info.settings)}
+        </Text>
+        <Box paddingLeft={2} flexDirection="column">
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.theme}:</Text> {config.theme}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.language}:</Text> {config.locale}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.viewMode}:</Text> {config.viewMode}
+          </Text>
+        </Box>
+      </Box>
+
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.colors.accent}>
+          {formatTitle(info.database)}
+        </Text>
+        <Box paddingLeft={2} flexDirection="column">
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.dbType}:</Text> {tursoEnabled ? info.turso : info.local}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.dbPath}:</Text> {dbPath}
+          </Text>
+          {tursoEnabled && tursoUrl && (
+            <Text color={theme.colors.text}>
+              <Text color={theme.colors.textHighlight}>{info.tursoUrl}:</Text> {tursoUrl}
+            </Text>
+          )}
+        </Box>
+      </Box>
+
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.colors.accent}>
+          {formatTitle(info.paths)}
+        </Text>
+        <Box paddingLeft={2} flexDirection="column">
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.configFile}:</Text> {CONFIG_FILE}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>{info.dataDir}:</Text> {DATA_DIR}
           </Text>
         </Box>
       </Box>

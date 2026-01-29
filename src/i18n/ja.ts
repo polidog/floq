@@ -87,7 +87,7 @@ export const ja: Translations = {
     movedToWaiting: '「{title}」を連絡待ち({person})に移動しました',
     waitingFor: '待機相手: ',
     refreshed: '更新しました',
-    footer: 'a=追加 d=完了 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ',
+    footer: 'a=追加 d=完了 D=削除 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ',
     noTasks: 'タスクなし',
     // Tab labels
     tabInbox: 'Inbox',
@@ -187,6 +187,9 @@ export const ja: Translations = {
     taskDetailTitle: 'タスク詳細',
     taskDetailFooter: 'j/k=選択 i=コメント d=削除 P=紐づけ b/Esc=戻る',
     taskDetailStatus: 'ステータス',
+    deleteConfirm: '「{title}」を削除しますか？ (y/n)',
+    deleted: '削除しました: 「{title}」',
+    deleteCancelled: '削除をキャンセルしました',
     comments: 'コメント',
     projectTasks: 'タスク一覧',
     // Search

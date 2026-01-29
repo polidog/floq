@@ -11,7 +11,7 @@ import { SearchResults } from './SearchResults.js';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getTursoConfig } from '../../config.js';
+import { isTursoEnabled } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import type { BorderStyleType } from '../theme/types.js';
@@ -562,17 +562,6 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
 
   // Turso connection info
   const tursoEnabled = isTursoEnabled();
-  const tursoHost = tursoEnabled ? (() => {
-    const config = getTursoConfig();
-    if (config) {
-      try {
-        return new URL(config.url).host;
-      } catch {
-        return config.url;
-      }
-    }
-    return '';
-  })() : '';
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -586,16 +575,11 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
           <Text color={theme.colors.textMuted}>
             {theme.name === 'modern' ? ` v${VERSION}` : ` VER ${VERSION}`}
           </Text>
-          {tursoEnabled && (
-            <Text color={theme.colors.accent}>
-              {theme.name === 'modern' ? ' ☁️ ' : ' [SYNC] '}{tursoHost}
-            </Text>
-          )}
-          {!tursoEnabled && (
-            <Text color={theme.colors.textMuted}>
-              {theme.name === 'modern' ? ' 💾 local' : ' [LOCAL]'}
-            </Text>
-          )}
+          <Text color={tursoEnabled ? theme.colors.accent : theme.colors.textMuted}>
+            {theme.name === 'modern'
+              ? (tursoEnabled ? ' ☁️ turso' : ' 💾 local')
+              : (tursoEnabled ? ' [DB]turso' : ' [DB]local')}
+          </Text>
         </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>

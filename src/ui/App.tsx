@@ -12,7 +12,7 @@ import { SplashScreen } from './SplashScreen.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme } from './theme/index.js';
-import { getThemeName, getViewMode, isTursoEnabled, getTursoConfig } from '../config.js';
+import { getThemeName, getViewMode, isTursoEnabled } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
@@ -22,7 +22,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search';
+type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete';
 
 export function App(): React.ReactElement {
   const themeName = getThemeName();
@@ -59,6 +59,7 @@ function AppContent(): React.ReactElement {
   const [taskComments, setTaskComments] = useState<Comment[]>([]);
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
   const [taskToWaiting, setTaskToWaiting] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>({});
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -308,6 +309,16 @@ function AppContent(): React.ReactElement {
     await loadTasks();
   }, [i18n.tui.madeProject, loadTasks]);
 
+  const deleteTask = useCallback(async (task: Task) => {
+    const db = getDb();
+    // Delete comments first
+    await db.delete(schema.comments).where(eq(schema.comments.taskId, task.id));
+    // Delete the task
+    await db.delete(schema.tasks).where(eq(schema.tasks.id, task.id));
+    setMessage(fmt(i18n.tui.deleted || 'Deleted: "{title}"', { title: task.title }));
+    await loadTasks();
+  }, [i18n.tui.deleted, loadTasks]);
+
   const getTabLabel = (tab: TabType): string => {
     switch (tab) {
       case 'inbox':
@@ -360,6 +371,28 @@ function AppContent(): React.ReactElement {
         return;
       }
       // Let TextInput handle other keys
+      return;
+    }
+
+    // Handle confirm-delete mode
+    if (mode === 'confirm-delete' && taskToDelete) {
+      if (input === 'y' || input === 'Y') {
+        deleteTask(taskToDelete).then(() => {
+          if (selectedTaskIndex >= currentTasks.length - 1) {
+            setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+          }
+        });
+        setTaskToDelete(null);
+        setMode('normal');
+        return;
+      }
+      if (input === 'n' || input === 'N' || key.escape) {
+        setMessage(i18n.tui.deleteCancelled || 'Delete cancelled');
+        setTaskToDelete(null);
+        setMode('normal');
+        return;
+      }
+      // Ignore other keys in confirm mode
       return;
     }
 
@@ -702,6 +735,14 @@ function AppContent(): React.ReactElement {
       return;
     }
 
+    // Delete task (D key - with confirmation)
+    if (input === 'D' && currentTasks.length > 0 && currentTab !== 'projects') {
+      const task = currentTasks[selectedTaskIndex];
+      setTaskToDelete(task);
+      setMode('confirm-delete');
+      return;
+    }
+
     // Move to next actions
     if (input === 'n' && currentTasks.length > 0 && currentTab !== 'next' && currentTab !== 'projects' && currentTab !== 'done') {
       const task = currentTasks[selectedTaskIndex];
@@ -775,17 +816,6 @@ function AppContent(): React.ReactElement {
 
   // Turso 接続情報を取得
   const tursoEnabled = isTursoEnabled();
-  const tursoHost = tursoEnabled ? (() => {
-    const config = getTursoConfig();
-    if (config) {
-      try {
-        return new URL(config.url).host;
-      } catch {
-        return config.url;
-      }
-    }
-    return '';
-  })() : '';
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -798,16 +828,11 @@ function AppContent(): React.ReactElement {
           <Text color={theme.colors.textMuted}>
             {theme.name === 'modern' ? ` v${VERSION}` : ` VER ${VERSION}`}
           </Text>
-          {tursoEnabled && (
-            <Text color={theme.colors.accent}>
-              {theme.name === 'modern' ? ' ☁️ ' : ' [SYNC] '}{tursoHost}
-            </Text>
-          )}
-          {!tursoEnabled && (
-            <Text color={theme.colors.textMuted}>
-              {theme.name === 'modern' ? ' 💾 local' : ' [LOCAL]'}
-            </Text>
-          )}
+          <Text color={tursoEnabled ? theme.colors.accent : theme.colors.textMuted}>
+            {theme.name === 'modern'
+              ? (tursoEnabled ? ' ☁️ turso' : ' 💾 local')
+              : (tursoEnabled ? ' [DB]turso' : ' [DB]local')}
+          </Text>
         </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>
@@ -1044,6 +1069,15 @@ function AppContent(): React.ReactElement {
           onChange={handleSearchChange}
           onSubmit={handleInputSubmit}
         />
+      )}
+
+      {/* Delete confirmation */}
+      {mode === 'confirm-delete' && taskToDelete && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.accent} bold>
+            {fmt(i18n.tui.deleteConfirm || 'Delete "{title}"? (y/n)', { title: taskToDelete.title })}
+          </Text>
+        </Box>
       )}
 
       {/* Message */}
