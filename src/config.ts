@@ -3,19 +3,27 @@ import { dirname, join, isAbsolute } from 'path';
 import { CONFIG_FILE, DATA_DIR } from './paths.js';
 import type { ThemeName } from './ui/theme/types.js';
 
-// Migrate legacy DB file names
+// Migrate legacy DB file names (including related metadata files)
 function migrateDbFiles(): void {
   const legacyDb = join(DATA_DIR, 'gtd.db');
   const newDb = join(DATA_DIR, 'floq.db');
   const legacyTursoDb = join(DATA_DIR, 'gtd-turso.db');
   const newTursoDb = join(DATA_DIR, 'floq-turso.db');
 
+  // Turso/libsql related file suffixes
+  const tursoSuffixes = ['', '-info', '-shm', '-wal'];
+
   try {
     if (existsSync(legacyDb) && !existsSync(newDb)) {
       renameSync(legacyDb, newDb);
     }
-    if (existsSync(legacyTursoDb) && !existsSync(newTursoDb)) {
-      renameSync(legacyTursoDb, newTursoDb);
+    // Migrate Turso DB and all related metadata files
+    for (const suffix of tursoSuffixes) {
+      const legacyFile = legacyTursoDb + suffix;
+      const newFile = newTursoDb + suffix;
+      if (existsSync(legacyFile) && !existsSync(newFile)) {
+        renameSync(legacyFile, newFile);
+      }
     }
   } catch {
     // Ignore migration errors
