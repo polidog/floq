@@ -21,6 +21,17 @@ import { KanbanBoard } from './components/KanbanBoard.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
+import {
+  HistoryProvider,
+  useHistory,
+  CreateTaskCommand,
+  DeleteTaskCommand,
+  MoveTaskCommand,
+  LinkTaskCommand,
+  ConvertToProjectCommand,
+  CreateCommentCommand,
+  DeleteCommentCommand,
+} from './history/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
@@ -85,11 +96,13 @@ export function App(): React.ReactElement {
 
   return (
     <ThemeProvider themeName={themeName}>
-      {viewMode === 'kanban' ? (
-        <KanbanBoard onOpenSettings={setSettingsMode} />
-      ) : (
-        <AppContent onOpenSettings={setSettingsMode} />
-      )}
+      <HistoryProvider>
+        {viewMode === 'kanban' ? (
+          <KanbanBoard onOpenSettings={setSettingsMode} />
+        ) : (
+          <AppContent onOpenSettings={setSettingsMode} />
+        )}
+      </HistoryProvider>
     </ThemeProvider>
   );
 }
@@ -101,6 +114,7 @@ interface AppContentProps {
 function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const theme = useTheme();
   const { exit } = useApp();
+  const history = useHistory();
   const [mode, setMode] = useState<Mode>('splash');
   const [inputValue, setInputValue] = useState('');
   const [currentListIndex, setCurrentListIndex] = useState(0);
@@ -255,42 +269,54 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const addTask = useCallback(async (title: string, parentId?: string) => {
     if (!title.trim()) return;
 
-    const db = getDb();
     const now = new Date();
-    await db.insert(schema.tasks)
-      .values({
-        id: uuidv4(),
+    const taskId = uuidv4();
+    const command = new CreateTaskCommand({
+      task: {
+        id: taskId,
         title: title.trim(),
         status: parentId ? 'next' : 'inbox',
         parentId: parentId || null,
         createdAt: now,
         updatedAt: now,
-      });
+      },
+      description: fmt(i18n.tui.added, { title: title.trim() }),
+    });
 
+    await history.execute(command);
     setMessage(fmt(i18n.tui.added, { title: title.trim() }));
     await loadTasks();
-  }, [i18n.tui.added, loadTasks]);
+  }, [i18n.tui.added, loadTasks, history]);
 
   const addCommentToTask = useCallback(async (task: Task, content: string) => {
-    const db = getDb();
-    await db.insert(schema.comments).values({
-      id: uuidv4(),
-      taskId: task.id,
-      content: content.trim(),
-      createdAt: new Date(),
+    const commentId = uuidv4();
+    const command = new CreateCommentCommand({
+      comment: {
+        id: commentId,
+        taskId: task.id,
+        content: content.trim(),
+        createdAt: new Date(),
+      },
+      description: i18n.tui.commentAdded || 'Comment added',
     });
+
+    await history.execute(command);
     setMessage(i18n.tui.commentAdded || 'Comment added');
     await loadTaskComments(task.id);
-  }, [i18n.tui.commentAdded, loadTaskComments]);
+  }, [i18n.tui.commentAdded, loadTaskComments, history]);
 
   const deleteComment = useCallback(async (comment: Comment) => {
-    const db = getDb();
-    await db.delete(schema.comments).where(eq(schema.comments.id, comment.id));
+    const command = new DeleteCommentCommand({
+      comment,
+      description: i18n.tui.commentDeleted || 'Comment deleted',
+    });
+
+    await history.execute(command);
     setMessage(i18n.tui.commentDeleted || 'Comment deleted');
     if (selectedTask) {
       await loadTaskComments(selectedTask.id);
     }
-  }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask]);
+  }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask, history]);
 
   const handleInputSubmit = async (value: string) => {
     if (mode === 'move-to-waiting' && taskToWaiting) {
@@ -340,59 +366,85 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   };
 
   const linkTaskToProject = useCallback(async (task: Task, project: Task) => {
-    const db = getDb();
-    await db.update(schema.tasks)
-      .set({ parentId: project.id, updatedAt: new Date() })
-      .where(eq(schema.tasks.id, task.id));
+    const command = new LinkTaskCommand({
+      taskId: task.id,
+      fromParentId: task.parentId,
+      toParentId: project.id,
+      description: fmt(i18n.tui.linkedToProject || 'Linked "{title}" to {project}', { title: task.title, project: project.title }),
+    });
+
+    await history.execute(command);
     setMessage(fmt(i18n.tui.linkedToProject || 'Linked "{title}" to {project}', { title: task.title, project: project.title }));
     await loadTasks();
-  }, [i18n.tui.linkedToProject, loadTasks]);
+  }, [i18n.tui.linkedToProject, loadTasks, history]);
 
   const markTaskDone = useCallback(async (task: Task) => {
-    const db = getDb();
-    await db.update(schema.tasks)
-      .set({ status: 'done', updatedAt: new Date() })
-      .where(eq(schema.tasks.id, task.id));
+    const command = new MoveTaskCommand({
+      taskId: task.id,
+      fromStatus: task.status,
+      toStatus: 'done',
+      fromWaitingFor: task.waitingFor,
+      toWaitingFor: null,
+      description: fmt(i18n.tui.completed, { title: task.title }),
+    });
+
+    await history.execute(command);
     setMessage(fmt(i18n.tui.completed, { title: task.title }));
     await loadTasks();
-  }, [i18n.tui.completed, loadTasks]);
+  }, [i18n.tui.completed, loadTasks, history]);
 
   const moveTaskToStatus = useCallback(async (task: Task, status: 'inbox' | 'next' | 'someday') => {
-    const db = getDb();
-    await db.update(schema.tasks)
-      .set({ status, waitingFor: null, updatedAt: new Date() })
-      .where(eq(schema.tasks.id, task.id));
+    const command = new MoveTaskCommand({
+      taskId: task.id,
+      fromStatus: task.status,
+      toStatus: status,
+      fromWaitingFor: task.waitingFor,
+      toWaitingFor: null,
+      description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[status] }),
+    });
+
+    await history.execute(command);
     setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[status] }));
     await loadTasks();
-  }, [i18n.tui.movedTo, i18n.status, loadTasks]);
+  }, [i18n.tui.movedTo, i18n.status, loadTasks, history]);
 
   const moveTaskToWaiting = useCallback(async (task: Task, waitingFor: string) => {
-    const db = getDb();
-    await db.update(schema.tasks)
-      .set({ status: 'waiting', waitingFor: waitingFor.trim(), updatedAt: new Date() })
-      .where(eq(schema.tasks.id, task.id));
+    const command = new MoveTaskCommand({
+      taskId: task.id,
+      fromStatus: task.status,
+      toStatus: 'waiting',
+      fromWaitingFor: task.waitingFor,
+      toWaitingFor: waitingFor.trim(),
+      description: fmt(i18n.tui.movedToWaiting, { title: task.title, person: waitingFor.trim() }),
+    });
+
+    await history.execute(command);
     setMessage(fmt(i18n.tui.movedToWaiting, { title: task.title, person: waitingFor.trim() }));
     await loadTasks();
-  }, [i18n.tui.movedToWaiting, loadTasks]);
+  }, [i18n.tui.movedToWaiting, loadTasks, history]);
 
   const makeTaskProject = useCallback(async (task: Task) => {
-    const db = getDb();
-    await db.update(schema.tasks)
-      .set({ isProject: true, status: 'next', updatedAt: new Date() })
-      .where(eq(schema.tasks.id, task.id));
+    const command = new ConvertToProjectCommand({
+      taskId: task.id,
+      originalStatus: task.status,
+      description: fmt(i18n.tui.madeProject || 'Made project: {title}', { title: task.title }),
+    });
+
+    await history.execute(command);
     setMessage(fmt(i18n.tui.madeProject || 'Made project: {title}', { title: task.title }));
     await loadTasks();
-  }, [i18n.tui.madeProject, loadTasks]);
+  }, [i18n.tui.madeProject, loadTasks, history]);
 
   const deleteTask = useCallback(async (task: Task) => {
-    const db = getDb();
-    // Delete comments first
-    await db.delete(schema.comments).where(eq(schema.comments.taskId, task.id));
-    // Delete the task
-    await db.delete(schema.tasks).where(eq(schema.tasks.id, task.id));
+    const command = new DeleteTaskCommand({
+      task,
+      description: fmt(i18n.tui.deleted || 'Deleted: "{title}"', { title: task.title }),
+    });
+
+    await history.execute(command);
     setMessage(fmt(i18n.tui.deleted || 'Deleted: "{title}"', { title: task.title }));
     await loadTasks();
-  }, [i18n.tui.deleted, loadTasks]);
+  }, [i18n.tui.deleted, loadTasks, history]);
 
   const getTabLabel = (tab: TabType): string => {
     switch (tab) {
@@ -873,9 +925,39 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     }
 
     // Refresh
-    if (input === 'r') {
+    if (input === 'r' && !(key.ctrl)) {
       loadTasks();
       setMessage(i18n.tui.refreshed);
+      return;
+    }
+
+    // Undo (u key) - only in normal mode
+    if (input === 'u' && mode === 'normal') {
+      history.undo().then((didUndo) => {
+        if (didUndo) {
+          setMessage(fmt(i18n.tui.undone, { action: history.undoDescription || '' }));
+          loadTasks();
+        } else {
+          setMessage(i18n.tui.nothingToUndo);
+        }
+      }).catch(() => {
+        setMessage(i18n.tui.undoFailed);
+      });
+      return;
+    }
+
+    // Redo (Ctrl+r) - only in normal mode
+    if (key.ctrl && input === 'r' && mode === 'normal') {
+      history.redo().then((didRedo) => {
+        if (didRedo) {
+          setMessage(fmt(i18n.tui.redone, { action: history.redoDescription || '' }));
+          loadTasks();
+        } else {
+          setMessage(i18n.tui.nothingToRedo);
+        }
+      }).catch(() => {
+        setMessage(i18n.tui.redoFailed);
+      });
       return;
     }
   }, { isActive: mode !== 'help' });

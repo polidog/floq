@@ -228,6 +228,12 @@ function GTDKeybindingsContent(): React.ReactElement {
           <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>r</Text>        {help.refresh}
           </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>u</Text>        {help.undo}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>Ctrl+r</Text>   {help.redo}
+          </Text>
         </Box>
       </Box>
 
@@ -331,6 +337,12 @@ function KanbanKeybindingsContent(): React.ReactElement {
           </Text>
           <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>BS</Text>       {help.moveLeft}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>u</Text>        Undo
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>Ctrl+r</Text>   Redo
           </Text>
         </Box>
       </Box>

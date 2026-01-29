@@ -61,6 +61,8 @@ floq
 | `Esc/b` | Back |
 | `/` | Search tasks |
 | `r` | Refresh |
+| `u` | Undo |
+| `Ctrl+r` | Redo |
 | `?` | Help |
 | `q` | Quit |
 
@@ -107,6 +109,8 @@ floq
 | `Enter` | Open task detail |
 | `/` | Search tasks |
 | `r` | Refresh |
+| `u` | Undo |
+| `Ctrl+r` | Redo |
 | `?` | Help |
 | `q` | Quit |
 

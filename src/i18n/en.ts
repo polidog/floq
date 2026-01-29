@@ -149,6 +149,8 @@ export const en = {
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
+      undo: 'Undo',
+      redo: 'Redo',
       closeHint: 'Esc/q: close',
     },
     // What's New / Changelog
@@ -196,6 +198,13 @@ export const en = {
     deleteConfirm: 'Delete "{title}"? (y/n)',
     deleted: 'Deleted: "{title}"',
     deleteCancelled: 'Delete cancelled',
+    // Undo/Redo
+    undone: 'Undone: {action}',
+    redone: 'Redone: {action}',
+    nothingToUndo: 'Nothing to undo',
+    nothingToRedo: 'Nothing to redo',
+    undoFailed: 'Undo failed',
+    redoFailed: 'Redo failed',
     comments: 'Comments',
     projectTasks: 'Tasks',
     // Search
@@ -309,6 +318,8 @@ export type HelpTranslations = {
   other: string;
   showHelp: string;
   quit: string;
+  undo: string;
+  redo: string;
   closeHint: string;
 };
 
@@ -434,6 +445,12 @@ export type TuiTranslations = {
   deleteConfirm: string;
   deleted: string;
   deleteCancelled: string;
+  undone: string;
+  redone: string;
+  nothingToUndo: string;
+  nothingToRedo: string;
+  undoFailed: string;
+  redoFailed: string;
   comments: string;
   projectTasks: string;
 };

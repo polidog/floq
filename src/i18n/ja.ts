@@ -151,6 +151,8 @@ export const ja: Translations = {
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
+      undo: '元に戻す',
+      redo: 'やり直し',
       closeHint: 'Esc/q: 閉じる',
     },
     // What's New / Changelog
@@ -198,6 +200,13 @@ export const ja: Translations = {
     deleteConfirm: '「{title}」を削除しますか？ (y/n)',
     deleted: '削除しました: 「{title}」',
     deleteCancelled: '削除をキャンセルしました',
+    // Undo/Redo
+    undone: '元に戻しました: {action}',
+    redone: 'やり直しました: {action}',
+    nothingToUndo: '元に戻す操作がありません',
+    nothingToRedo: 'やり直す操作がありません',
+    undoFailed: '元に戻す操作に失敗しました',
+    redoFailed: 'やり直しに失敗しました',
     comments: 'コメント',
     projectTasks: 'タスク一覧',
     // Search
