@@ -9,12 +9,14 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **TUI Interface**: Interactive terminal UI built with Ink (React for CLI)
 - **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe, Done
 - **Kanban Mode**: 3-column kanban board view (TODO, Doing, Done)
-- **Projects**: Organize tasks into projects
+- **Projects**: Organize tasks into projects with progress tracking
+- **Task Search**: Quick search across all tasks with `/`
 - **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
 - **Themes**: Multiple themes including MS-DOS nostalgic styles
 - **i18n**: English and Japanese support
 - **Vim-style Navigation**: Use hjkl or arrow keys
+- **Setup Wizard**: First-run wizard for easy configuration
 
 ## Installation
 
@@ -57,6 +59,7 @@ floq
 | `P` | Link to project |
 | `Enter` | Open task detail / Open project |
 | `Esc/b` | Back |
+| `/` | Search tasks |
 | `r` | Refresh |
 | `?` | Help |
 | `q` | Quit |
@@ -82,6 +85,7 @@ floq
 | `m` | Move task right (→) |
 | `Backspace` | Move task left (←) |
 | `Enter` | Open task detail |
+| `/` | Search tasks |
 | `r` | Refresh |
 | `?` | Help |
 | `q` | Quit |
@@ -94,6 +98,19 @@ floq
 | `d` | Delete selected comment |
 | `j/k` | Navigate comments |
 | `Esc/b` | Back to board |
+
+### Setup Wizard
+
+On first run, Floq will launch an interactive setup wizard to configure:
+- Language (English/Japanese)
+- Theme selection
+- View mode (GTD/Kanban)
+
+You can also run the wizard manually:
+
+```bash
+floq setup
+```
 
 ### CLI Commands
 
