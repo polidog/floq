@@ -16,7 +16,7 @@ import type { BorderStyleType } from '../theme/types.js';
 
 const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
-type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment';
+type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project';
 
 interface KanbanBoardProps {
   onSwitchToGtd?: () => void;
@@ -42,6 +42,8 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskComments, setTaskComments] = useState<Comment[]>([]);
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
+  const [projects, setProjects] = useState<Task[]>([]);
+  const [projectSelectIndex, setProjectSelectIndex] = useState(0);
 
   const i18n = t();
 
@@ -79,11 +81,21 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
         eq(schema.tasks.isProject, false)
       ));
 
+    // Load projects for linking
+    const projectTasks = await db
+      .select()
+      .from(schema.tasks)
+      .where(and(
+        eq(schema.tasks.isProject, true),
+        eq(schema.tasks.status, 'next')
+      ));
+
     setTasks({
       todo: todoTasks,
       doing: doingTasks,
       done: doneTasks,
     });
+    setProjects(projectTasks);
   }, []);
 
   useEffect(() => {
@@ -119,6 +131,15 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
       await loadTaskComments(selectedTask.id);
     }
   }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask]);
+
+  const linkTaskToProject = useCallback(async (task: Task, project: Task) => {
+    const db = getDb();
+    await db.update(schema.tasks)
+      .set({ parentId: project.id, updatedAt: new Date() })
+      .where(eq(schema.tasks.id, task.id));
+    setMessage(fmt(i18n.tui.linkedToProject || 'Linked "{title}" to {project}', { title: task.title, project: project.title }));
+    await loadTasks();
+  }, [i18n.tui.linkedToProject, loadTasks]);
 
   const currentColumn = COLUMNS[currentColumnIndex];
   const currentTasks = tasks[currentColumn];
@@ -275,6 +296,42 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
       // Add comment
       if (input === 'i') {
         setMode('add-comment');
+        return;
+      }
+
+      // Link to project (P key)
+      if (input === 'P' && projects.length > 0) {
+        setProjectSelectIndex(0);
+        setMode('select-project');
+        return;
+      }
+      return;
+    }
+
+    // Handle select-project mode
+    if (mode === 'select-project') {
+      if (key.escape) {
+        setProjectSelectIndex(0);
+        setMode('task-detail');
+        return;
+      }
+
+      // Navigate projects
+      if (key.upArrow || input === 'k') {
+        setProjectSelectIndex((prev) => (prev > 0 ? prev - 1 : projects.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setProjectSelectIndex((prev) => (prev < projects.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Select project with Enter
+      if (key.return && selectedTask && projects.length > 0) {
+        const project = projects[projectSelectIndex];
+        linkTaskToProject(selectedTask, project);
+        setProjectSelectIndex(0);
+        setMode('task-detail');
         return;
       }
       return;
@@ -459,7 +516,7 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
       </Box>
 
       {/* Task detail view */}
-      {(mode === 'task-detail' || mode === 'add-comment') && selectedTask ? (
+      {(mode === 'task-detail' || mode === 'add-comment' || mode === 'select-project') && selectedTask ? (
         <Box flexDirection="column">
           {/* Task detail header */}
           <Box marginBottom={1}>
@@ -544,6 +601,27 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
               <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
             </Box>
           )}
+
+          {/* Project selector */}
+          {mode === 'select-project' && (
+            <Box flexDirection="column" marginTop={1}>
+              <Text color={theme.colors.secondary} bold>
+                {i18n.tui.selectProject || 'Select project for'}: {selectedTask.title}
+              </Text>
+              <Box flexDirection="column" marginTop={1} borderStyle={theme.borders.list as BorderStyleType} borderColor={theme.colors.borderActive} paddingX={1}>
+                {projects.map((project, index) => (
+                  <Text
+                    key={project.id}
+                    color={index === projectSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                    bold={index === projectSelectIndex}
+                  >
+                    {index === projectSelectIndex ? theme.style.selectedPrefix : theme.style.unselectedPrefix}{project.title}
+                  </Text>
+                ))}
+              </Box>
+              <Text color={theme.colors.textMuted}>{i18n.tui.selectProjectHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+            </Box>
+          )}
         </Box>
       ) : (
         <>
@@ -599,16 +677,21 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
 
       {/* Footer */}
       <Box marginTop={1}>
-        {(mode === 'task-detail' || mode === 'add-comment') ? (
+        {mode === 'select-project' ? (
+          <Text color={theme.colors.textMuted}>
+            {i18n.tui.selectProjectHelp || 'j/k: select, Enter: confirm, Esc: cancel'}
+          </Text>
+        ) : (mode === 'task-detail' || mode === 'add-comment') ? (
           theme.style.showFunctionKeys ? (
             <FunctionKeyBar keys={[
               { key: 'i', label: i18n.tui.keyBar.comment },
               { key: 'd', label: i18n.tui.keyBar.delete },
+              { key: 'P', label: i18n.tui.keyBar.project },
               { key: 'b', label: i18n.tui.keyBar.back },
             ]} />
           ) : (
             <Text color={theme.colors.textMuted}>
-              i=comment d=delete j/k=select Esc/b=back
+              i=comment d=delete P=link j/k=select Esc/b=back
             </Text>
           )
         ) : theme.style.showFunctionKeys ? (

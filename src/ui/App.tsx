@@ -268,9 +268,8 @@ function AppContent(): React.ReactElement {
       return;
     }
 
-    // Handle help mode - any key closes
+    // Handle help mode - let HelpModal handle input
     if (mode === 'help') {
-      setMode('normal');
       return;
     }
 
@@ -328,15 +327,24 @@ function AppContent(): React.ReactElement {
         setMode('add-comment');
         return;
       }
+
+      // Link to project (P key)
+      if (input === 'P' && tasks.projects.length > 0) {
+        setTaskToLink(selectedTask);
+        setProjectSelectIndex(0);
+        setMode('select-project');
+        return;
+      }
       return;
     }
 
     // Handle select-project mode
     if (mode === 'select-project') {
       if (key.escape) {
+        const wasFromTaskDetail = selectedTask !== null;
         setTaskToLink(null);
         setProjectSelectIndex(0);
-        setMode('normal');
+        setMode(wasFromTaskDetail ? 'task-detail' : 'normal');
         return;
       }
 
@@ -353,10 +361,11 @@ function AppContent(): React.ReactElement {
       // Select project with Enter
       if (key.return && taskToLink && tasks.projects.length > 0) {
         const project = tasks.projects[projectSelectIndex];
+        const wasFromTaskDetail = selectedTask !== null;
         linkTaskToProject(taskToLink, project);
         setTaskToLink(null);
         setProjectSelectIndex(0);
-        setMode('normal');
+        setMode(wasFromTaskDetail ? 'task-detail' : 'normal');
         return;
       }
       return;
@@ -903,6 +912,7 @@ function AppContent(): React.ReactElement {
             <FunctionKeyBar keys={[
               { key: 'i', label: i18n.tui.keyBar.comment },
               { key: 'd', label: i18n.tui.keyBar.delete },
+              { key: 'P', label: i18n.tui.keyBar.project },
               { key: 'b', label: i18n.tui.keyBar.back },
             ]} />
           ) : (
