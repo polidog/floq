@@ -100,6 +100,8 @@ export const en = {
       project: 'Project',
       help: 'Help',
       quit: 'Quit',
+      comment: 'Comment',
+      back: 'Back',
     },
     // Help modal
     help: {
@@ -172,6 +174,8 @@ export type KeyBarTranslations = {
   project: string;
   help: string;
   quit: string;
+  comment: string;
+  back: string;
 };
 
 export type TuiTranslations = {

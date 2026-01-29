@@ -102,6 +102,8 @@ export const ja: Translations = {
       project: 'プロジェクト',
       help: 'ヘルプ',
       quit: '終了',
+      comment: 'コメント',
+      back: '戻る',
     },
     // Help modal
     help: {

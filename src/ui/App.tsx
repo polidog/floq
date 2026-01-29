@@ -799,7 +799,14 @@ function AppContent(): React.ReactElement {
       {/* Footer / Function key bar */}
       <Box marginTop={1}>
         {(mode === 'task-detail' || mode === 'add-comment') ? (
-          <Text color={theme.colors.textMuted}>{i18n.tui.taskDetailFooter || 'i=comment b/Esc=back'}</Text>
+          theme.style.showFunctionKeys ? (
+            <FunctionKeyBar keys={[
+              { key: 'i', label: i18n.tui.keyBar.comment },
+              { key: 'b', label: i18n.tui.keyBar.back },
+            ]} />
+          ) : (
+            <Text color={theme.colors.textMuted}>{i18n.tui.taskDetailFooter}</Text>
+          )
         ) : theme.style.showFunctionKeys ? (
           <FunctionKeyBar />
         ) : (
