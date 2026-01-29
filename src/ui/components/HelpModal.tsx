@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { t } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
@@ -12,24 +12,76 @@ interface HelpModalProps {
 
 type TabType = 'keybindings' | 'whatsNew';
 
+const VISIBLE_LINES = 12;
+
 export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.ReactElement {
   const [activeTab, setActiveTab] = useState<TabType>('keybindings');
+  const [scrollOffset, setScrollOffset] = useState(0);
   const i18n = t();
   const theme = useTheme();
   const help = i18n.tui.help;
 
+  // Get changelog items for scroll calculation
+  const changelogItems = useMemo(() => {
+    const changelog = parseChangelog();
+    const items: { type: 'version' | 'section' | 'item'; content: string; date?: string }[] = [];
+
+    for (const entry of changelog.entries.slice(0, 5)) {
+      items.push({ type: 'version', content: entry.version, date: entry.date });
+      for (const section of entry.sections) {
+        items.push({ type: 'section', content: section.type });
+        for (const item of section.items) {
+          items.push({ type: 'item', content: item });
+        }
+      }
+    }
+    return items;
+  }, []);
+
+  const maxScroll = Math.max(0, changelogItems.length - VISIBLE_LINES);
+
   useInput((input, key) => {
-    if (key.tab) {
+    // Tab key detection (key.tab or raw tab character)
+    if (key.tab || input === '\t') {
       setActiveTab(prev => prev === 'keybindings' ? 'whatsNew' : 'keybindings');
-    } else if (input === 'h' || key.leftArrow) {
-      if (activeTab !== 'keybindings') {
-        setActiveTab('keybindings');
+      setScrollOffset(0);
+      return;
+    }
+    // Number keys for direct tab access
+    if (input === '1') {
+      setActiveTab('keybindings');
+      setScrollOffset(0);
+      return;
+    }
+    if (input === '2') {
+      setActiveTab('whatsNew');
+      setScrollOffset(0);
+      return;
+    }
+    // Arrow keys and h/l for tab switching
+    if (input === 'h' || key.leftArrow) {
+      setActiveTab('keybindings');
+      setScrollOffset(0);
+      return;
+    }
+    if (input === 'l' || key.rightArrow) {
+      setActiveTab('whatsNew');
+      setScrollOffset(0);
+      return;
+    }
+    // Scroll in What's New tab
+    if (activeTab === 'whatsNew') {
+      if (input === 'j' || key.downArrow) {
+        setScrollOffset(prev => Math.min(prev + 1, maxScroll));
+        return;
       }
-    } else if (input === 'l' || key.rightArrow) {
-      if (activeTab !== 'whatsNew') {
-        setActiveTab('whatsNew');
+      if (input === 'k' || key.upArrow) {
+        setScrollOffset(prev => Math.max(prev - 1, 0));
+        return;
       }
-    } else if (key.escape || key.return || input === 'q' || input === ' ') {
+    }
+    // Close modal
+    if (key.escape || key.return || input === 'q' || input === ' ') {
       onClose();
     }
   });
@@ -74,13 +126,20 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
           <GTDKeybindingsContent />
         )
       ) : (
-        <WhatsNewContent />
+        <WhatsNewContent
+          items={changelogItems}
+          scrollOffset={scrollOffset}
+          visibleLines={VISIBLE_LINES}
+          maxScroll={maxScroll}
+        />
       )}
 
       {/* Footer */}
       <Box justifyContent="center" marginTop={1}>
         <Text color={theme.colors.textMuted}>
-          {help.tabHint} | {help.closeHint}
+          {activeTab === 'whatsNew' && maxScroll > 0
+            ? `j/k: scroll | ${help.tabHint} | ${help.closeHint}`
+            : `${help.tabHint} | ${help.closeHint}`}
         </Text>
       </Box>
     </Box>
@@ -244,11 +303,17 @@ function KanbanKeybindingsContent(): React.ReactElement {
   );
 }
 
-function WhatsNewContent(): React.ReactElement {
+interface WhatsNewContentProps {
+  items: { type: 'version' | 'section' | 'item'; content: string; date?: string }[];
+  scrollOffset: number;
+  visibleLines: number;
+  maxScroll: number;
+}
+
+function WhatsNewContent({ items, scrollOffset, visibleLines, maxScroll }: WhatsNewContentProps): React.ReactElement {
   const i18n = t();
   const whatsNew = i18n.tui.whatsNew;
   const theme = useTheme();
-  const changelog = parseChangelog();
 
   const formatTitle = (title: string) =>
     theme.style.headerUppercase ? title.toUpperCase() : title;
@@ -265,7 +330,7 @@ function WhatsNewContent(): React.ReactElement {
     return labels[type] || type;
   };
 
-  if (changelog.entries.length === 0) {
+  if (items.length === 0) {
     return (
       <Box justifyContent="center" paddingY={2}>
         <Text color={theme.colors.textMuted}>{whatsNew.noChanges}</Text>
@@ -273,32 +338,39 @@ function WhatsNewContent(): React.ReactElement {
     );
   }
 
+  const visibleItems = items.slice(scrollOffset, scrollOffset + visibleLines);
+  const showScrollUp = scrollOffset > 0;
+  const showScrollDown = scrollOffset < maxScroll;
+
   return (
     <Box flexDirection="column">
-      {changelog.entries.slice(0, 3).map((entry, index) => (
-        <Box key={entry.version} flexDirection="column" marginBottom={index < 2 ? 1 : 0}>
-          <Text bold color={theme.colors.accent}>
-            v{entry.version} {entry.date && <Text color={theme.colors.textMuted}>({entry.date})</Text>}
+      {showScrollUp && (
+        <Text color={theme.colors.textMuted}>  ▲ scroll up</Text>
+      )}
+      {visibleItems.map((item, index) => {
+        if (item.type === 'version') {
+          return (
+            <Text key={`${item.content}-${index}`} bold color={theme.colors.accent}>
+              v{item.content} {item.date && <Text color={theme.colors.textMuted}>({item.date})</Text>}
+            </Text>
+          );
+        }
+        if (item.type === 'section') {
+          return (
+            <Text key={`${item.content}-${index}`} color={theme.colors.secondary}>
+              {'  '}{formatTitle(getSectionLabel(item.content))}:
+            </Text>
+          );
+        }
+        return (
+          <Text key={`${item.content}-${index}`} color={theme.colors.text}>
+            {'    '}• {item.content}
           </Text>
-          {entry.sections.map((section) => (
-            <Box key={section.type} flexDirection="column" paddingLeft={2}>
-              <Text color={theme.colors.secondary}>
-                {formatTitle(getSectionLabel(section.type))}:
-              </Text>
-              {section.items.slice(0, 5).map((item, itemIndex) => (
-                <Text key={itemIndex} color={theme.colors.text}>
-                  • {item}
-                </Text>
-              ))}
-              {section.items.length > 5 && (
-                <Text color={theme.colors.textMuted}>
-                  ... +{section.items.length - 5} more
-                </Text>
-              )}
-            </Box>
-          ))}
-        </Box>
-      ))}
+        );
+      })}
+      {showScrollDown && (
+        <Text color={theme.colors.textMuted}>  ▼ scroll down</Text>
+      )}
     </Box>
   );
 }
