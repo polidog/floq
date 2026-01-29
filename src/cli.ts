@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, setTurso, disableTurso, syncCommand } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, syncCommand, resetDatabase } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
 import { VERSION } from './version.js';
 
@@ -144,12 +144,12 @@ configCmd
 
 configCmd
   .command('mode [mode]')
-  .description('Set view mode (gtd, kanban) or show current mode')
+  .description('Set view mode (gtd, kanban) or select interactively')
   .action(async (mode?: string) => {
     if (mode) {
       await setViewModeCommand(mode);
     } else {
-      await showViewMode();
+      await selectMode();
     }
   });
 
@@ -177,6 +177,19 @@ program
   .description('Sync with Turso cloud')
   .action(async () => {
     await syncCommand();
+  });
+
+// Database commands
+const dbCmd = program
+  .command('db')
+  .description('Database management commands');
+
+dbCmd
+  .command('reset')
+  .description('Reset the database (delete all data)')
+  .option('-f, --force', 'Skip confirmation')
+  .action(async (options: { force?: boolean }) => {
+    await resetDatabase(options.force ?? false);
   });
 
 // Comment command

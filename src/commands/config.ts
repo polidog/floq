@@ -1,8 +1,12 @@
 import { render } from 'ink';
 import React from 'react';
-import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, setTursoConfig, type Locale, type ThemeName, type ViewMode } from '../config.js';
+import { createInterface } from 'readline';
+import { unlinkSync, existsSync, readdirSync } from 'fs';
+import { dirname, basename, join } from 'path';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, type Locale, type ThemeName, type ViewMode } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
+import { ModeSelector } from '../ui/ModeSelector.js';
 import { syncDb } from '../db/index.js';
 import { VALID_THEMES, themes } from '../ui/theme/themes.js';
 
@@ -109,6 +113,27 @@ export async function setViewModeCommand(mode: string): Promise<void> {
   console.log(messages[mode as ViewMode]);
 }
 
+export async function selectMode(): Promise<void> {
+  return new Promise((resolve) => {
+    const { unmount } = render(
+      React.createElement(ModeSelector, {
+        onSelect: (mode: ViewMode) => {
+          unmount();
+          setViewMode(mode);
+
+          const messages: Record<ViewMode, string> = {
+            gtd: 'View mode set to GTD',
+            kanban: 'View mode set to Kanban',
+          };
+
+          console.log(messages[mode]);
+          resolve();
+        },
+      })
+    );
+  });
+}
+
 export async function setTurso(url: string, token: string): Promise<void> {
   setTursoConfig({ url, authToken: token });
   console.log('Turso sync enabled');
@@ -140,6 +165,97 @@ export async function syncCommand(): Promise<void> {
     console.error('  1. Check your Turso URL and auth token');
     console.error('  2. Verify network connectivity');
     console.error('  3. Try again later');
+    process.exit(1);
+  }
+}
+
+async function confirm(message: string): Promise<boolean> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(`${message} (y/N): `, (answer) => {
+      rl.close();
+      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
+    });
+  });
+}
+
+async function clearTursoData(): Promise<void> {
+  const turso = getTursoConfig();
+  if (!turso) return;
+
+  const { createClient } = await import('@libsql/client');
+  const client = createClient({
+    url: turso.url,
+    authToken: turso.authToken,
+  });
+
+  try {
+    await client.execute('DELETE FROM comments');
+    await client.execute('DELETE FROM tasks');
+    console.log('Turso cloud data cleared.');
+  } finally {
+    client.close();
+  }
+}
+
+export async function resetDatabase(force: boolean): Promise<void> {
+  const dbPath = getDbPath();
+  const dbDir = dirname(dbPath);
+  const dbName = basename(dbPath, '.db');
+  const tursoEnabled = isTursoEnabled();
+
+  // Find all related database files
+  const relatedFiles: string[] = [];
+  if (existsSync(dbDir)) {
+    const files = readdirSync(dbDir);
+    for (const file of files) {
+      // Match: floq.db, floq.db-wal, floq.db-shm, floq-turso.db-info, etc.
+      if (file.startsWith(dbName)) {
+        relatedFiles.push(join(dbDir, file));
+      }
+    }
+  }
+
+  if (relatedFiles.length === 0 && !tursoEnabled) {
+    console.log('Database files do not exist.');
+    return;
+  }
+
+  if (!force) {
+    if (relatedFiles.length > 0) {
+      console.log('This will delete the following local files:');
+      for (const file of relatedFiles) {
+        console.log(`  ${file}`);
+      }
+    }
+    if (tursoEnabled) {
+      console.log('This will also delete all data in Turso cloud.');
+    }
+    const confirmed = await confirm('Are you sure?');
+    if (!confirmed) {
+      console.log('Cancelled.');
+      return;
+    }
+  }
+
+  try {
+    // Clear Turso cloud data first
+    if (tursoEnabled) {
+      await clearTursoData();
+    }
+
+    // Delete local files
+    for (const file of relatedFiles) {
+      unlinkSync(file);
+    }
+    console.log('Database reset complete.');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Failed to reset database: ${message}`);
     process.exit(1);
   }
 }
