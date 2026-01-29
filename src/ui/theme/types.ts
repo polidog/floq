@@ -14,7 +14,17 @@ export type ThemeName =
   | 'solarized-light'
   | 'synthwave'
   | 'paper'
-  | 'coffee';
+  | 'coffee'
+  | 'nord'
+  | 'dracula'
+  | 'monokai'
+  | 'gruvbox'
+  | 'tokyo-night'
+  | 'catppuccin'
+  | 'ocean'
+  | 'sakura'
+  | 'msx'
+  | 'pc-98';
 
 export type BorderStyleType = 'single' | 'double' | 'round' | 'bold' | 'singleDouble' | 'doubleSingle' | 'classic';
 
