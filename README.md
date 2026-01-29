@@ -1,5 +1,7 @@
 # Floq
 
+[日本語](./README.ja.md)
+
 A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes.
 
 ## Features

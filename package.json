@@ -1,16 +1,21 @@
 {
   "name": "floq",
   "version": "1.0.0",
-  "description": "Floq - Getting Things Done Task Manager",
+  "description": "Floq - Getting Things Done Task Manager with MS-DOS style themes",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "floq": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
+    "prepublishOnly": "npm run build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
@@ -19,10 +24,18 @@
     "task",
     "todo",
     "cli",
-    "tui"
+    "tui",
+    "terminal",
+    "dos",
+    "retro"
   ],
-  "author": "",
+  "author": "polidog",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/polidog/gtd-cli.git"
+  },
+  "homepage": "https://github.com/polidog/gtd-cli#readme",
   "dependencies": {
     "better-sqlite3": "^11.7.0",
     "commander": "^13.1.0",

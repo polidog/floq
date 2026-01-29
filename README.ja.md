@@ -1,5 +1,7 @@
 # Floq
 
+[English](./README.md)
+
 MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getting Things Done）タスクマネージャー。
 
 ## 特徴
