@@ -10,6 +10,13 @@ export const ja: Translations = {
     done: '完了',
   },
 
+  // Kanban mode labels
+  kanban: {
+    todo: 'TODO',
+    doing: '作業中',
+    done: '完了',
+  },
+
   // Project status
   projectStatus: {
     active: 'アクティブなプロジェクト',
@@ -131,6 +138,23 @@ export const ja: Translations = {
       backFromProject: 'プロジェクト詳細から戻る',
       taskDetail: 'タスク詳細を表示',
       addComment: 'コメント追加',
+      other: 'その他',
+      showHelp: 'このヘルプを表示',
+      quit: '終了',
+      closeHint: '任意のキーで閉じる',
+    },
+    // Kanban mode help
+    kanbanHelp: {
+      title: 'Kanbanショートカット',
+      navigation: 'ナビゲーション',
+      columnSwitch: 'カラム切替',
+      columnDirect: 'カラムに直接ジャンプ',
+      taskSelect: 'タスク選択',
+      actions: 'アクション',
+      addTask: '新規タスク追加 (TODOへ)',
+      completeTask: '完了へ移動',
+      moveRight: '次のカラムへ移動',
+      moveLeft: '前のカラムへ戻す',
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
