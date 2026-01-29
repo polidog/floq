@@ -20,11 +20,14 @@ const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
 type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project' | 'search';
 
+type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
+
 interface KanbanBoardProps {
   onSwitchToGtd?: () => void;
+  onOpenSettings?: (mode: SettingsMode) => void;
 }
 
-export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactElement {
+export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps): React.ReactElement {
   const theme = useTheme();
   const { exit } = useApp();
   const [mode, setMode] = useState<KanbanMode>('normal');
@@ -430,6 +433,24 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
       setSearchQuery('');
       setSearchResults([]);
       setSearchResultIndex(0);
+      return;
+    }
+
+    // Settings: Theme selector
+    if (input === 'T' && onOpenSettings) {
+      onOpenSettings('theme-select');
+      return;
+    }
+
+    // Settings: Mode selector
+    if (input === 'V' && onOpenSettings) {
+      onOpenSettings('mode-select');
+      return;
+    }
+
+    // Settings: Language selector
+    if (input === 'L' && onOpenSettings) {
+      onOpenSettings('lang-select');
       return;
     }
 

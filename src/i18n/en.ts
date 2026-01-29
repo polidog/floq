@@ -142,6 +142,10 @@ export const en = {
       taskDetail: 'View task details',
       addComment: 'Add comment',
       searchTasks: 'Search tasks',
+      settings: 'Settings',
+      changeTheme: 'Change theme',
+      changeViewMode: 'Change view mode',
+      changeLanguage: 'Change language',
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
@@ -171,6 +175,10 @@ export const en = {
       moveRight: 'Move task to next column',
       moveLeft: 'Move task to previous column',
       searchTasks: 'Search tasks',
+      settings: 'Settings',
+      changeTheme: 'Change theme',
+      changeViewMode: 'Change view mode',
+      changeLanguage: 'Change language',
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
@@ -294,6 +302,10 @@ export type HelpTranslations = {
   taskDetail: string;
   addComment: string;
   searchTasks: string;
+  settings: string;
+  changeTheme: string;
+  changeViewMode: string;
+  changeLanguage: string;
   other: string;
   showHelp: string;
   quit: string;
@@ -323,6 +335,10 @@ export type KanbanHelpTranslations = {
   moveRight: string;
   moveLeft: string;
   searchTasks: string;
+  settings: string;
+  changeTheme: string;
+  changeViewMode: string;
+  changeLanguage: string;
   other: string;
   showHelp: string;
   quit: string;

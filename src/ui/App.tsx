@@ -9,10 +9,14 @@ import { FunctionKeyBar } from './components/FunctionKeyBar.js';
 import { SearchBar } from './components/SearchBar.js';
 import { SearchResults } from './components/SearchResults.js';
 import { SplashScreen } from './SplashScreen.js';
+import { ThemeSelector } from './ThemeSelector.js';
+import { ModeSelector } from './ModeSelector.js';
+import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme } from './theme/index.js';
-import { getThemeName, getViewMode, isTursoEnabled } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled } from '../config.js';
+import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
@@ -24,18 +28,77 @@ const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'don
 type TasksByTab = Record<TabType, Task[]>;
 type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete';
 
+type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
+
 export function App(): React.ReactElement {
-  const themeName = getThemeName();
-  const viewMode = getViewMode();
+  const [themeName, setThemeNameState] = useState<ThemeName>(getThemeName);
+  const [viewMode, setViewModeState] = useState<ViewMode>(getViewMode);
+  const [settingsMode, setSettingsMode] = useState<SettingsMode>('none');
+  const [, forceUpdate] = useState({});
+
+  const handleThemeSelect = (theme: ThemeName) => {
+    setThemeName(theme);
+    setThemeNameState(theme);
+    setSettingsMode('none');
+  };
+
+  const handleModeSelect = (mode: ViewMode) => {
+    setViewMode(mode);
+    setViewModeState(mode);
+    setSettingsMode('none');
+  };
+
+  const handleLocaleSelect = (locale: Locale) => {
+    setLocale(locale);
+    setSettingsMode('none');
+    forceUpdate({});
+  };
+
+  const handleSettingsCancel = () => {
+    setSettingsMode('none');
+  };
+
+  // Settings selector screens
+  if (settingsMode === 'theme-select') {
+    return (
+      <ThemeProvider themeName={themeName}>
+        <ThemeSelector onSelect={handleThemeSelect} onCancel={handleSettingsCancel} />
+      </ThemeProvider>
+    );
+  }
+
+  if (settingsMode === 'mode-select') {
+    return (
+      <ThemeProvider themeName={themeName}>
+        <ModeSelector onSelect={handleModeSelect} onCancel={handleSettingsCancel} />
+      </ThemeProvider>
+    );
+  }
+
+  if (settingsMode === 'lang-select') {
+    return (
+      <ThemeProvider themeName={themeName}>
+        <LanguageSelector onSelect={handleLocaleSelect} onCancel={handleSettingsCancel} />
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider themeName={themeName}>
-      {viewMode === 'kanban' ? <KanbanBoard /> : <AppContent />}
+      {viewMode === 'kanban' ? (
+        <KanbanBoard onOpenSettings={setSettingsMode} />
+      ) : (
+        <AppContent onOpenSettings={setSettingsMode} />
+      )}
     </ThemeProvider>
   );
 }
 
-function AppContent(): React.ReactElement {
+interface AppContentProps {
+  onOpenSettings: (mode: SettingsMode) => void;
+}
+
+function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const theme = useTheme();
   const { exit } = useApp();
   const [mode, setMode] = useState<Mode>('splash');
@@ -614,6 +677,24 @@ function AppContent(): React.ReactElement {
       setSearchQuery('');
       setSearchResults([]);
       setSearchResultIndex(0);
+      return;
+    }
+
+    // Settings: Theme selector
+    if (input === 'T') {
+      onOpenSettings('theme-select');
+      return;
+    }
+
+    // Settings: Mode selector
+    if (input === 'V') {
+      onOpenSettings('mode-select');
+      return;
+    }
+
+    // Settings: Language selector
+    if (input === 'L') {
+      onOpenSettings('lang-select');
       return;
     }
 

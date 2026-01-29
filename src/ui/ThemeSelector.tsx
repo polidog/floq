@@ -6,14 +6,19 @@ import { getThemeName } from '../config.js';
 
 interface ThemeSelectorProps {
   onSelect: (theme: ThemeName) => void;
+  onCancel?: () => void;
 }
 
-export function ThemeSelector({ onSelect }: ThemeSelectorProps): React.ReactElement {
+export function ThemeSelector({ onSelect, onCancel }: ThemeSelectorProps): React.ReactElement {
   const currentTheme = getThemeName();
   const initialIndex = VALID_THEMES.indexOf(currentTheme);
   const [selectedIndex, setSelectedIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
 
   useInput((input, key) => {
+    if (key.escape && onCancel) {
+      onCancel();
+      return;
+    }
     // j or down arrow: move down
     if (input === 'j' || key.downArrow) {
       setSelectedIndex((prev) => (prev < VALID_THEMES.length - 1 ? prev + 1 : 0));
@@ -31,7 +36,7 @@ export function ThemeSelector({ onSelect }: ThemeSelectorProps): React.ReactElem
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold>Select a theme:</Text>
-      <Text dimColor>j/k: select, Enter: confirm</Text>
+      <Text dimColor>j/k: select, Enter: confirm, Esc: cancel</Text>
       <Box flexDirection="column" marginTop={1}>
         {VALID_THEMES.map((themeName, index) => {
           const theme = themes[themeName];

@@ -16,14 +16,19 @@ const modeDescriptions: Record<ViewMode, string> = {
 
 interface ModeSelectorProps {
   onSelect: (mode: ViewMode) => void;
+  onCancel?: () => void;
 }
 
-export function ModeSelector({ onSelect }: ModeSelectorProps): React.ReactElement {
+export function ModeSelector({ onSelect, onCancel }: ModeSelectorProps): React.ReactElement {
   const currentMode = getViewMode();
   const initialIndex = VALID_VIEW_MODES.indexOf(currentMode);
   const [selectedIndex, setSelectedIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
 
   useInput((input, key) => {
+    if (key.escape && onCancel) {
+      onCancel();
+      return;
+    }
     // j or down arrow: move down
     if (input === 'j' || key.downArrow) {
       setSelectedIndex((prev) => (prev < VALID_VIEW_MODES.length - 1 ? prev + 1 : 0));
@@ -41,7 +46,7 @@ export function ModeSelector({ onSelect }: ModeSelectorProps): React.ReactElemen
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold>Select a view mode:</Text>
-      <Text dimColor>j/k: select, Enter: confirm</Text>
+      <Text dimColor>j/k: select, Enter: confirm, Esc: cancel</Text>
       <Box flexDirection="column" marginTop={1}>
         {VALID_VIEW_MODES.map((mode, index) => {
           const isSelected = index === selectedIndex;

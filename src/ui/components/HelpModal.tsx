@@ -252,6 +252,23 @@ function GTDKeybindingsContent(): React.ReactElement {
 
       <Box flexDirection="column" marginBottom={1}>
         <Text bold color={theme.colors.accent}>
+          {formatTitle(help.settings)}
+        </Text>
+        <Box paddingLeft={2} flexDirection="column">
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>T</Text>        {help.changeTheme}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>V</Text>        {help.changeViewMode}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>L</Text>        {help.changeLanguage}
+          </Text>
+        </Box>
+      </Box>
+
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.colors.accent}>
           {formatTitle(help.other)}
         </Text>
         <Box paddingLeft={2} flexDirection="column">
@@ -313,6 +330,23 @@ function KanbanKeybindingsContent(): React.ReactElement {
           </Text>
           <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>BS</Text>       {help.moveLeft}
+          </Text>
+        </Box>
+      </Box>
+
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.colors.accent}>
+          {formatTitle(help.settings)}
+        </Text>
+        <Box paddingLeft={2} flexDirection="column">
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>T</Text>        {help.changeTheme}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>V</Text>        {help.changeViewMode}
+          </Text>
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>L</Text>        {help.changeLanguage}
           </Text>
         </Box>
       </Box>
