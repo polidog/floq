@@ -6,6 +6,7 @@ import { t, fmt } from '../i18n/index.js';
 interface AddOptions {
   project?: string;
   description?: string;
+  context?: string;
 }
 
 export async function addTask(title: string, options: AddOptions): Promise<void> {
@@ -28,12 +29,15 @@ export async function addTask(title: string, options: AddOptions): Promise<void>
     parentId = projects[0].id;
   }
 
+  const context = options.context?.toLowerCase().replace(/^@/, '');
+
   const task: schema.NewTask = {
     id: uuidv4(),
     title,
     description: options.description,
     status: 'inbox',
     parentId,
+    context: context || null,
     createdAt: now,
     updatedAt: now,
   };

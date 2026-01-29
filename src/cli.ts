@@ -14,6 +14,7 @@ import {
 } from './commands/project.js';
 import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, syncCommand, resetDatabase } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
+import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
 import { runSetupWizard } from './commands/setup.js';
 import { VERSION } from './version.js';
 
@@ -36,6 +37,7 @@ program
   .description('Add a new task to Inbox')
   .option('-p, --project <name>', 'Add to a specific project')
   .option('-d, --description <text>', 'Add a description')
+  .option('-c, --context <context>', 'Set context (e.g., work, home)')
   .action(async (title: string, options) => {
     await addTask(title, options);
   });
@@ -203,6 +205,32 @@ program
     } else {
       await listComments(taskId);
     }
+  });
+
+// Context commands
+const contextCmd = program
+  .command('context')
+  .description('Context management commands');
+
+contextCmd
+  .command('list')
+  .description('List available contexts')
+  .action(async () => {
+    await listContexts();
+  });
+
+contextCmd
+  .command('add <name>')
+  .description('Add a new context')
+  .action(async (name: string) => {
+    await addContextCommand(name);
+  });
+
+contextCmd
+  .command('remove <name>')
+  .description('Remove a context')
+  .action(async (name: string) => {
+    await removeContextCommand(name);
   });
 
 // Setup wizard command

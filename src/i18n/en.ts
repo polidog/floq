@@ -70,6 +70,14 @@ export const en = {
       noComments: 'No comments',
       listHeader: 'Comments for "{title}":',
     },
+    context: {
+      list: 'Available contexts:',
+      added: 'Added context: @{context}',
+      removed: 'Removed context: @{context}',
+      alreadyExists: 'Context @{context} already exists.',
+      notFound: 'Context @{context} not found.',
+      noContexts: 'No contexts configured.',
+    },
   },
 
   // TUI
@@ -142,6 +150,8 @@ export const en = {
       taskDetail: 'View task details',
       addComment: 'Add comment',
       searchTasks: 'Search tasks',
+      filterByContext: 'Filter by context',
+      setContext: 'Set context',
       settings: 'Settings',
       changeTheme: 'Change theme',
       changeViewMode: 'Change view mode',
@@ -215,6 +225,22 @@ export const en = {
       noResults: 'No matching tasks',
       resultsTitle: 'Search Results',
       searchTasks: 'Search tasks',
+    },
+    // Context
+    context: {
+      label: 'Context',
+      filter: 'Filter by context',
+      filterHelp: 'j/k: select, Enter: confirm, Esc: cancel',
+      all: 'All',
+      none: 'No context',
+      setContext: 'Set context',
+      setContextHelp: 'j/k: select, Enter: confirm, Esc: cancel',
+      contextSet: 'Set context @{context} for "{title}"',
+      contextCleared: 'Cleared context for "{title}"',
+      filterActive: '@{context}',
+      addNew: '+ New context',
+      newContext: 'New context: ',
+      newContextPlaceholder: 'Enter context name...',
     },
     // Info tab
     info: {
@@ -311,6 +337,8 @@ export type HelpTranslations = {
   taskDetail: string;
   addComment: string;
   searchTasks: string;
+  filterByContext: string;
+  setContext: string;
   settings: string;
   changeTheme: string;
   changeViewMode: string;
@@ -386,6 +414,22 @@ export type SearchTranslations = {
   searchTasks: string;
 };
 
+export type ContextTranslations = {
+  label: string;
+  filter: string;
+  filterHelp: string;
+  all: string;
+  none: string;
+  setContext: string;
+  setContextHelp: string;
+  contextSet: string;
+  contextCleared: string;
+  filterActive: string;
+  addNew: string;
+  newContext: string;
+  newContextPlaceholder: string;
+};
+
 export type InfoTranslations = {
   settings: string;
   database: string;
@@ -432,6 +476,7 @@ export type TuiTranslations = {
   whatsNew: WhatsNewTranslations;
   kanbanHelp: KanbanHelpTranslations;
   search: SearchTranslations;
+  context: ContextTranslations;
   info: InfoTranslations;
   addComment: string;
   noComments: string;
@@ -515,6 +560,7 @@ export type Translations = {
     done: Record<string, string>;
     project: Record<string, string>;
     comment: Record<string, string>;
+    context: Record<string, string>;
   };
   tui: TuiTranslations;
   setup: SetupTranslations;

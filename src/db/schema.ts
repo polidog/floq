@@ -8,6 +8,7 @@ export const tasks = sqliteTable('tasks', {
   isProject: integer('is_project', { mode: 'boolean' }).notNull().default(false),
   parentId: text('parent_id'),
   waitingFor: text('waiting_for'),
+  context: text('context'),
   dueDate: integer('due_date', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),

@@ -11,7 +11,7 @@ import { SearchResults } from './SearchResults.js';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import type { BorderStyleType } from '../theme/types.js';
@@ -22,11 +22,12 @@ import {
   LinkTaskCommand,
   CreateCommentCommand,
   DeleteCommentCommand,
+  SetContextCommand,
 } from '../history/index.js';
 
 const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
-type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project' | 'search';
+type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project' | 'search' | 'context-filter' | 'set-context' | 'add-context';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -62,6 +63,10 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
+  // Context filter state
+  const [contextFilter, setContextFilter] = useState<string | null>(null);
+  const [contextSelectIndex, setContextSelectIndex] = useState(0);
+  const [availableContexts, setAvailableContexts] = useState<string[]>([]);
 
   const i18n = t();
 
@@ -72,8 +77,15 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
   const loadTasks = useCallback(async () => {
     const db = getDb();
 
+    // Apply context filter helper
+    const filterByContext = (taskList: Task[]): Task[] => {
+      if (contextFilter === null) return taskList;
+      if (contextFilter === '') return taskList.filter(t => !t.context);
+      return taskList.filter(t => t.context === contextFilter);
+    };
+
     // TODO: inbox + someday (non-project tasks)
-    const todoTasks = await db
+    let todoTasks = await db
       .select()
       .from(schema.tasks)
       .where(and(
@@ -82,7 +94,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       ));
 
     // Doing: next + waiting (non-project tasks)
-    const doingTasks = await db
+    let doingTasks = await db
       .select()
       .from(schema.tasks)
       .where(and(
@@ -91,7 +103,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       ));
 
     // Done: done (non-project tasks)
-    const doneTasks = await db
+    let doneTasks = await db
       .select()
       .from(schema.tasks)
       .where(and(
@@ -109,12 +121,13 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       ));
 
     setTasks({
-      todo: todoTasks,
-      doing: doingTasks,
-      done: doneTasks,
+      todo: filterByContext(todoTasks),
+      doing: filterByContext(doingTasks),
+      done: filterByContext(doneTasks),
     });
     setProjects(projectTasks);
-  }, []);
+    setAvailableContexts(getContexts());
+  }, [contextFilter]);
 
   useEffect(() => {
     loadTasks();
@@ -274,6 +287,24 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       return;
     }
 
+    // Handle add-context mode submit
+    if (mode === 'add-context') {
+      if (value.trim()) {
+        const newContext = value.trim().toLowerCase().replace(/^@/, '');
+        addContext(newContext);
+        setAvailableContexts(getContexts());
+        // Set the new context on the current task
+        if (currentTasks.length > 0) {
+          const task = currentTasks[selectedTaskIndex];
+          await setTaskContext(task, newContext);
+        }
+      }
+      setInputValue('');
+      setContextSelectIndex(0);
+      setMode('normal');
+      return;
+    }
+
     if (value.trim()) {
       await addTask(value);
     }
@@ -353,6 +384,23 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     setMessage(fmt(i18n.tui.completed, { title: task.title }));
     await loadTasks();
   }, [i18n.tui.completed, loadTasks, history]);
+
+  const setTaskContext = useCallback(async (task: Task, context: string | null) => {
+    const description = context
+      ? fmt(i18n.tui.context?.contextSet || 'Set context @{context} for "{title}"', { context, title: task.title })
+      : fmt(i18n.tui.context?.contextCleared || 'Cleared context for "{title}"', { title: task.title });
+
+    const command = new SetContextCommand({
+      taskId: task.id,
+      fromContext: task.context,
+      toContext: context,
+      description,
+    });
+
+    await history.execute(command);
+    setMessage(description);
+    await loadTasks();
+  }, [i18n.tui.context, loadTasks, history]);
 
   const getColumnLabel = (column: KanbanColumnType): string => {
     return i18n.kanban[column];
@@ -479,6 +527,87 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       return;
     }
 
+    // Handle context-filter mode
+    if (mode === 'context-filter') {
+      if (key.escape) {
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+
+      const contextOptions = ['all', 'none', ...availableContexts];
+      if (key.upArrow || input === 'k') {
+        setContextSelectIndex((prev) => (prev > 0 ? prev - 1 : contextOptions.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setContextSelectIndex((prev) => (prev < contextOptions.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      if (key.return) {
+        const selected = contextOptions[contextSelectIndex];
+        if (selected === 'all') {
+          setContextFilter(null);
+        } else if (selected === 'none') {
+          setContextFilter('');
+        } else {
+          setContextFilter(selected);
+        }
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+      return;
+    }
+
+    // Handle set-context mode
+    if (mode === 'set-context') {
+      if (key.escape) {
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+
+      const contextOptions = ['clear', ...availableContexts, 'new'];
+      if (key.upArrow || input === 'k') {
+        setContextSelectIndex((prev) => (prev > 0 ? prev - 1 : contextOptions.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setContextSelectIndex((prev) => (prev < contextOptions.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      if (key.return && currentTasks.length > 0) {
+        const selected = contextOptions[contextSelectIndex];
+        if (selected === 'new') {
+          setMode('add-context');
+          setInputValue('');
+          return;
+        }
+        const task = currentTasks[selectedTaskIndex];
+        if (selected === 'clear') {
+          setTaskContext(task, null);
+        } else {
+          setTaskContext(task, selected);
+        }
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+      return;
+    }
+
+    // Handle add-context mode
+    if (mode === 'add-context') {
+      if (key.escape) {
+        setInputValue('');
+        setMode('set-context');
+      }
+      return;
+    }
+
     // Clear message on any input
     if (message) {
       setMessage(null);
@@ -496,6 +625,20 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       setSearchQuery('');
       setSearchResults([]);
       setSearchResultIndex(0);
+      return;
+    }
+
+    // Context filter mode
+    if (input === '@') {
+      setContextSelectIndex(0);
+      setMode('context-filter');
+      return;
+    }
+
+    // Set context mode (c key)
+    if (input === 'c' && currentTasks.length > 0) {
+      setContextSelectIndex(0);
+      setMode('set-context');
       return;
     }
 
@@ -694,6 +837,11 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
               ? (tursoEnabled ? ' ☁️ turso' : ' 💾 local')
               : (tursoEnabled ? ' [DB]TURSO' : ' [DB]local')}
           </Text>
+          {contextFilter !== null && (
+            <Text color={theme.colors.accent}>
+              {' '}@{contextFilter === '' ? (i18n.tui.context?.none || 'none') : contextFilter}
+            </Text>
+          )}
         </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>
@@ -722,11 +870,24 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
             {selectedTask.description && (
               <Text color={theme.colors.textMuted}>{selectedTask.description}</Text>
             )}
-            <Text color={theme.colors.textMuted}>
-              {i18n.status[selectedTask.status]}
-              {selectedTask.waitingFor && ` - ${selectedTask.waitingFor}`}
-              {selectedTask.dueDate && ` (${selectedTask.dueDate.toLocaleDateString()})`}
-            </Text>
+            <Box marginTop={1}>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailStatus}: </Text>
+              <Text color={theme.colors.accent}>
+                {i18n.status[selectedTask.status]}
+                {selectedTask.waitingFor && ` (${selectedTask.waitingFor})`}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.context ? `@${selectedTask.context}` : (i18n.tui.context?.none || 'No context')}
+              </Text>
+            </Box>
+            {selectedTask.dueDate && (
+              <Text color={theme.colors.textMuted}>
+                Due: {selectedTask.dueDate.toLocaleDateString()}
+              </Text>
+            )}
           </Box>
 
           {/* Comments section */}
@@ -817,6 +978,79 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
             />
           )}
         </>
+      ) : mode === 'context-filter' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.filter || 'Filter by context'}
+          </Text>
+          <Box flexDirection="column" marginTop={1} borderStyle={theme.borders.list as BorderStyleType} borderColor={theme.colors.borderActive} paddingX={1}>
+            {['all', 'none', ...availableContexts].map((ctx, index) => {
+              const label = ctx === 'all'
+                ? (i18n.tui.context?.all || 'All')
+                : ctx === 'none'
+                  ? (i18n.tui.context?.none || 'No context')
+                  : `@${ctx}`;
+              const isActive = (ctx === 'all' && contextFilter === null) ||
+                (ctx === 'none' && contextFilter === '') ||
+                (ctx !== 'all' && ctx !== 'none' && contextFilter === ctx);
+              return (
+                <Text
+                  key={ctx}
+                  color={index === contextSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                  bold={index === contextSelectIndex}
+                >
+                  {index === contextSelectIndex ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                  {label}
+                  {isActive && ' *'}
+                </Text>
+              );
+            })}
+          </Box>
+          <Text color={theme.colors.textMuted}>{i18n.tui.context?.filterHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
+      ) : mode === 'set-context' && currentTasks.length > 0 ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.setContext || 'Set context'}: {currentTasks[selectedTaskIndex]?.title}
+          </Text>
+          <Box flexDirection="column" marginTop={1} borderStyle={theme.borders.list as BorderStyleType} borderColor={theme.colors.borderActive} paddingX={1}>
+            {['clear', ...availableContexts, 'new'].map((ctx, index) => {
+              const label = ctx === 'clear'
+                ? (i18n.tui.context?.none || 'No context')
+                : ctx === 'new'
+                  ? (i18n.tui.context?.addNew || '+ New context')
+                  : `@${ctx}`;
+              const currentContext = currentTasks[selectedTaskIndex]?.context;
+              const isActive = (ctx === 'clear' && !currentContext) ||
+                (ctx !== 'clear' && ctx !== 'new' && currentContext === ctx);
+              return (
+                <Text
+                  key={ctx}
+                  color={index === contextSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                  bold={index === contextSelectIndex}
+                >
+                  {index === contextSelectIndex ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                  {label}
+                  {isActive && ' *'}
+                </Text>
+              );
+            })}
+          </Box>
+          <Text color={theme.colors.textMuted}>{i18n.tui.context?.setContextHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
+      ) : mode === 'add-context' ? (
+        <Box marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.newContext || 'New context: '}
+          </Text>
+          <TextInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleInputSubmit}
+            placeholder={i18n.tui.context?.newContextPlaceholder || 'Enter context name...'}
+          />
+          <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
+        </Box>
       ) : (
         <>
           {/* Column headers (numbers) */}

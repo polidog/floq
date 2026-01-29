@@ -72,6 +72,14 @@ export const ja: Translations = {
       noComments: 'コメントはありません',
       listHeader: '「{title}」のコメント:',
     },
+    context: {
+      list: '利用可能なコンテキスト:',
+      added: 'コンテキストを追加しました: @{context}',
+      removed: 'コンテキストを削除しました: @{context}',
+      alreadyExists: 'コンテキスト @{context} は既に存在します。',
+      notFound: 'コンテキスト @{context} が見つかりません。',
+      noContexts: 'コンテキストが設定されていません。',
+    },
   },
 
   // TUI
@@ -144,6 +152,8 @@ export const ja: Translations = {
       taskDetail: 'タスク詳細を表示',
       addComment: 'コメント追加',
       searchTasks: 'タスク検索',
+      filterByContext: 'コンテキストフィルター',
+      setContext: 'コンテキスト設定',
       settings: '設定',
       changeTheme: 'テーマ変更',
       changeViewMode: '表示モード変更',
@@ -217,6 +227,22 @@ export const ja: Translations = {
       noResults: '該当するタスクがありません',
       resultsTitle: '検索結果',
       searchTasks: 'タスク検索',
+    },
+    // Context
+    context: {
+      label: 'コンテキスト',
+      filter: 'コンテキストでフィルター',
+      filterHelp: 'j/k: 選択, Enter: 確定, Esc: キャンセル',
+      all: 'すべて',
+      none: 'コンテキストなし',
+      setContext: 'コンテキスト設定',
+      setContextHelp: 'j/k: 選択, Enter: 確定, Esc: キャンセル',
+      contextSet: '「{title}」にコンテキスト @{context} を設定しました',
+      contextCleared: '「{title}」のコンテキストをクリアしました',
+      filterActive: '@{context}',
+      addNew: '+ 新規コンテキスト',
+      newContext: '新規コンテキスト: ',
+      newContextPlaceholder: 'コンテキスト名を入力...',
     },
     // Info tab
     info: {

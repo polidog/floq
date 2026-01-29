@@ -10,6 +10,7 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe, Done
 - **Kanban Mode**: 3-column kanban board view (TODO, Doing, Done)
 - **Projects**: Organize tasks into projects with progress tracking
+- **Contexts**: Tag tasks with contexts (@work, @home, etc.) and filter by context
 - **Task Search**: Quick search across all tasks with `/`
 - **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
@@ -57,6 +58,8 @@ floq
 | `w` | Move to Waiting For (prompts for person) |
 | `p` | Convert to project |
 | `P` | Link to project |
+| `c` | Set context |
+| `@` | Filter by context |
 | `Enter` | Open task detail / Open project |
 | `Esc/b` | Back |
 | `/` | Search tasks |
@@ -106,6 +109,8 @@ floq
 | `d` | Mark as done |
 | `m` | Move task right (→) |
 | `Backspace` | Move task left (←) |
+| `c` | Set context |
+| `@` | Filter by context |
 | `Enter` | Open task detail |
 | `/` | Search tasks |
 | `r` | Refresh |
@@ -142,6 +147,7 @@ floq setup
 # Add task
 floq add "Task title"
 floq add "Task title" -p "Project name"
+floq add "Task title" -c work           # With context
 
 # List tasks
 floq list              # All non-done tasks
@@ -168,6 +174,11 @@ floq project complete <id>
 # Comments
 floq comment <id> "Comment text"  # Add comment
 floq comment <id>                 # List comments
+
+# Contexts
+floq context list                 # List available contexts
+floq context add <name>           # Add new context
+floq context remove <name>        # Remove context
 ```
 
 ## Configuration

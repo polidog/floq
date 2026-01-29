@@ -10,6 +10,7 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 - **GTDワークフロー**: Inbox、Next Actions、Waiting For、Someday/Maybe、Done
 - **カンバンモード**: 3カラムのカンバンボード表示（TODO、Doing、Done）
 - **プロジェクト**: タスクをプロジェクトに整理（進捗バー表示付き）
+- **コンテキスト**: タスクにコンテキスト（@work、@homeなど）を設定してフィルタリング
 - **タスク検索**: `/` キーで全タスクを素早く検索
 - **コメント**: タスクにメモやコメントを追加
 - **クラウド同期**: [Turso](https://turso.tech/)のembedded replicasによるオプションの同期機能
@@ -57,6 +58,8 @@ floq
 | `w` | Waiting Forに移動（担当者入力） |
 | `p` | プロジェクトに変換 |
 | `P` | プロジェクトに紐付け |
+| `c` | コンテキスト設定 |
+| `@` | コンテキストでフィルター |
 | `Enter` | タスク詳細を開く / プロジェクトを開く |
 | `Esc/b` | 戻る |
 | `/` | タスク検索 |
@@ -106,6 +109,8 @@ floq
 | `d` | 完了にする |
 | `m` | タスクを右に移動（→） |
 | `Backspace` | タスクを左に移動（←） |
+| `c` | コンテキスト設定 |
+| `@` | コンテキストでフィルター |
 | `Enter` | タスク詳細を開く |
 | `/` | タスク検索 |
 | `r` | 更新 |
@@ -142,6 +147,7 @@ floq setup
 # タスク追加
 floq add "タスクのタイトル"
 floq add "タスクのタイトル" -p "プロジェクト名"
+floq add "タスクのタイトル" -c work   # コンテキスト付き
 
 # タスク一覧
 floq list              # 未完了タスク全て
@@ -168,6 +174,11 @@ floq project complete <id>
 # コメント
 floq comment <id> "コメント内容"  # コメント追加
 floq comment <id>                  # コメント一覧
+
+# コンテキスト
+floq context list                  # コンテキスト一覧
+floq context add <name>            # コンテキスト追加
+floq context remove <name>         # コンテキスト削除
 ```
 
 ## 設定

@@ -48,12 +48,16 @@ export interface Config {
   theme: ThemeName;  // UIテーマ
   viewMode: ViewMode; // GTD or Kanban view mode
   turso?: TursoConfig; // Turso sync config
+  contexts?: string[]; // Available contexts for tasks
 }
+
+const DEFAULT_CONTEXTS = ['work', 'home'];
 
 const DEFAULT_CONFIG: Config = {
   locale: 'en',
   theme: 'modern',
   viewMode: 'gtd',
+  contexts: DEFAULT_CONTEXTS,
 };
 
 let configCache: Config | null = null;
@@ -152,4 +156,30 @@ export function setViewMode(viewMode: ViewMode): void {
 
 export function isFirstRun(): boolean {
   return !existsSync(CONFIG_FILE);
+}
+
+export function getContexts(): string[] {
+  return loadConfig().contexts || DEFAULT_CONTEXTS;
+}
+
+export function addContext(context: string): boolean {
+  const contexts = getContexts();
+  const normalized = context.toLowerCase().replace(/^@/, '');
+  if (contexts.includes(normalized)) {
+    return false;
+  }
+  saveConfig({ contexts: [...contexts, normalized] });
+  return true;
+}
+
+export function removeContext(context: string): boolean {
+  const contexts = getContexts();
+  const normalized = context.toLowerCase().replace(/^@/, '');
+  const index = contexts.indexOf(normalized);
+  if (index === -1) {
+    return false;
+  }
+  const newContexts = contexts.filter(c => c !== normalized);
+  saveConfig({ contexts: newContexts });
+  return true;
 }

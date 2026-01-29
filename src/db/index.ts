@@ -29,6 +29,7 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
     const tableInfoResult = await remoteClient.execute("PRAGMA table_info(tasks)");
     const tableInfo = tableInfoResult.rows as unknown as { name: string }[];
     const tableExists = tableInfo.length > 0;
+    const hasContext = tableInfo.some(col => col.name === 'context');
 
     if (!tableExists) {
       // Fresh install: create new schema on remote
@@ -41,6 +42,7 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
           is_project INTEGER NOT NULL DEFAULT 0,
           parent_id TEXT,
           waiting_for TEXT,
+          context TEXT,
           due_date INTEGER,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL
@@ -50,6 +52,11 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
       await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)");
       await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id)");
       await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_is_project ON tasks(is_project)");
+      await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_context ON tasks(context)");
+    } else if (!hasContext) {
+      // Migration: add context column
+      await remoteClient.execute("ALTER TABLE tasks ADD COLUMN context TEXT");
+      await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_context ON tasks(context)");
     }
 
     // Create comments table
@@ -75,6 +82,7 @@ async function initializeLocalSchema(): Promise<void> {
   const tableInfo = tableInfoResult.rows as unknown as { name: string }[];
   const hasProjectId = tableInfo.some(col => col.name === 'project_id');
   const hasIsProject = tableInfo.some(col => col.name === 'is_project');
+  const hasContext = tableInfo.some(col => col.name === 'context');
   const tableExists = tableInfo.length > 0;
 
   if (tableExists && hasProjectId && !hasIsProject) {
@@ -111,6 +119,7 @@ async function initializeLocalSchema(): Promise<void> {
         is_project INTEGER NOT NULL DEFAULT 0,
         parent_id TEXT,
         waiting_for TEXT,
+        context TEXT,
         due_date INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
@@ -120,6 +129,13 @@ async function initializeLocalSchema(): Promise<void> {
     await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)");
     await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id)");
     await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_is_project ON tasks(is_project)");
+    await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_context ON tasks(context)");
+  }
+
+  // Migration: add context column if missing
+  if (tableExists && !hasContext) {
+    await client.execute("ALTER TABLE tasks ADD COLUMN context TEXT");
+    await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_context ON tasks(context)");
   }
 
   // Create comments table

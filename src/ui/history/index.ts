@@ -18,4 +18,5 @@ export {
   ConvertToProjectCommand,
   CreateCommentCommand,
   DeleteCommentCommand,
+  SetContextCommand,
 } from './commands/index.js';

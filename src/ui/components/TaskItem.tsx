@@ -27,8 +27,11 @@ export function TaskItem({ task, isSelected, projectName, progress }: TaskItemPr
       <Text color={isSelected ? theme.colors.textSelected : theme.colors.text} bold={isSelected}>
         {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
         [{shortId}] {task.title}
+        {task.context && (
+          <Text color={theme.colors.accent}> @{task.context}</Text>
+        )}
         {projectName && (
-          <Text color={theme.colors.statusSomeday}> @{projectName}</Text>
+          <Text color={theme.colors.statusSomeday}> [{projectName}]</Text>
         )}
         {progress && progress.total > 0 && (
           <ProgressBar completed={progress.completed} total={progress.total} />

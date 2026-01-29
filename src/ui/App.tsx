@@ -15,7 +15,7 @@ import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme } from './theme/index.js';
-import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { VERSION } from '../version.js';
@@ -31,13 +31,14 @@ import {
   ConvertToProjectCommand,
   CreateCommentCommand,
   DeleteCommentCommand,
+  SetContextCommand,
 } from './history/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete';
+type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -142,6 +143,10 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
+  // Context filter state
+  const [contextFilter, setContextFilter] = useState<string | null>(null); // null = all, '' = no context, string = specific context
+  const [contextSelectIndex, setContextSelectIndex] = useState(0);
+  const [availableContexts, setAvailableContexts] = useState<string[]>([]);
 
   const i18n = t();
 
@@ -159,16 +164,29 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     // Load all tasks (including project children) by status
     const statusList = ['inbox', 'next', 'waiting', 'someday', 'done'] as const;
     for (const status of statusList) {
-      newTasks[status] = await db
+      let allTasks = await db
         .select()
         .from(schema.tasks)
         .where(and(
           eq(schema.tasks.status, status),
           eq(schema.tasks.isProject, false)
         ));
+
+      // Apply context filter
+      if (contextFilter !== null) {
+        if (contextFilter === '') {
+          // Filter to tasks with no context
+          allTasks = allTasks.filter(t => !t.context);
+        } else {
+          // Filter to specific context
+          allTasks = allTasks.filter(t => t.context === contextFilter);
+        }
+      }
+
+      newTasks[status] = allTasks;
     }
 
-    // Load projects (isProject = true, not done)
+    // Load projects (isProject = true, not done) - projects don't get context filtered
     newTasks.projects = await db
       .select()
       .from(schema.tasks)
@@ -191,7 +209,8 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     setProjectProgress(progress);
 
     setTasks(newTasks);
-  }, []);
+    setAvailableContexts(getContexts());
+  }, [contextFilter]);
 
   // Get parent project for a task
   const getParentProject = (parentId: string | null): Task | undefined => {
@@ -343,6 +362,24 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Handle add-context mode submit
+    if (mode === 'add-context') {
+      if (value.trim()) {
+        const newContext = value.trim().toLowerCase().replace(/^@/, '');
+        addContext(newContext);
+        setAvailableContexts(getContexts());
+        // Set the new context on the current task
+        if (currentTasks.length > 0) {
+          const task = currentTasks[selectedTaskIndex];
+          await setTaskContext(task, newContext);
+        }
+      }
+      setInputValue('');
+      setContextSelectIndex(0);
+      setMode('normal');
+      return;
+    }
+
     if (value.trim()) {
       if (mode === 'add-comment' && selectedTask) {
         await addCommentToTask(selectedTask, value);
@@ -434,6 +471,23 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     setMessage(fmt(i18n.tui.madeProject || 'Made project: {title}', { title: task.title }));
     await loadTasks();
   }, [i18n.tui.madeProject, loadTasks, history]);
+
+  const setTaskContext = useCallback(async (task: Task, context: string | null) => {
+    const description = context
+      ? fmt(i18n.tui.context?.contextSet || 'Set context @{context} for "{title}"', { context, title: task.title })
+      : fmt(i18n.tui.context?.contextCleared || 'Cleared context for "{title}"', { title: task.title });
+
+    const command = new SetContextCommand({
+      taskId: task.id,
+      fromContext: task.context,
+      toContext: context,
+      description,
+    });
+
+    await history.execute(command);
+    setMessage(description);
+    await loadTasks();
+  }, [i18n.tui.context, loadTasks, history]);
 
   const deleteTask = useCallback(async (task: Task) => {
     const command = new DeleteTaskCommand({
@@ -626,6 +680,91 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Handle context-filter mode
+    if (mode === 'context-filter') {
+      if (key.escape) {
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+
+      // Navigate context options (All, No context, then each context)
+      const contextOptions = ['all', 'none', ...availableContexts];
+      if (key.upArrow || input === 'k') {
+        setContextSelectIndex((prev) => (prev > 0 ? prev - 1 : contextOptions.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setContextSelectIndex((prev) => (prev < contextOptions.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Select context with Enter
+      if (key.return) {
+        const selected = contextOptions[contextSelectIndex];
+        if (selected === 'all') {
+          setContextFilter(null);
+        } else if (selected === 'none') {
+          setContextFilter('');
+        } else {
+          setContextFilter(selected);
+        }
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+      return;
+    }
+
+    // Handle set-context mode
+    if (mode === 'set-context') {
+      if (key.escape) {
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+
+      // Navigate context options (Clear, each context, then + New)
+      const contextOptions = ['clear', ...availableContexts, 'new'];
+      if (key.upArrow || input === 'k') {
+        setContextSelectIndex((prev) => (prev > 0 ? prev - 1 : contextOptions.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setContextSelectIndex((prev) => (prev < contextOptions.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Select context with Enter
+      if (key.return && currentTasks.length > 0) {
+        const selected = contextOptions[contextSelectIndex];
+        if (selected === 'new') {
+          setMode('add-context');
+          setInputValue('');
+          return;
+        }
+        const task = currentTasks[selectedTaskIndex];
+        if (selected === 'clear') {
+          setTaskContext(task, null);
+        } else {
+          setTaskContext(task, selected);
+        }
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+      return;
+    }
+
+    // Handle add-context mode
+    if (mode === 'add-context') {
+      if (key.escape) {
+        setInputValue('');
+        setMode('set-context');
+      }
+      return;
+    }
+
     // Handle project-detail mode
     if (mode === 'project-detail') {
       if (key.escape || key.backspace || input === 'b') {
@@ -736,6 +875,20 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       setSearchQuery('');
       setSearchResults([]);
       setSearchResultIndex(0);
+      return;
+    }
+
+    // Context filter mode
+    if (input === '@') {
+      setContextSelectIndex(0);
+      setMode('context-filter');
+      return;
+    }
+
+    // Set context mode (c key)
+    if (input === 'c' && currentTasks.length > 0 && currentTab !== 'projects') {
+      setContextSelectIndex(0);
+      setMode('set-context');
       return;
     }
 
@@ -1003,6 +1156,11 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
               ? (tursoEnabled ? ' ☁️ turso' : ' 💾 local')
               : (tursoEnabled ? ' [DB]TURSO' : ' [DB]local')}
           </Text>
+          {contextFilter !== null && (
+            <Text color={theme.colors.accent}>
+              {' '}@{contextFilter === '' ? (i18n.tui.context?.none || 'none') : contextFilter}
+            </Text>
+          )}
         </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>
@@ -1074,6 +1232,12 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
               <Text color={theme.colors.accent}>
                 {i18n.status[selectedTask.status]}
                 {selectedTask.waitingFor && ` (${selectedTask.waitingFor})`}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.context ? `@${selectedTask.context}` : (i18n.tui.context?.none || 'No context')}
               </Text>
             </Box>
           </Box>
@@ -1229,6 +1393,88 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
             ))}
           </Box>
           <Text color={theme.colors.textMuted}>{i18n.tui.selectProjectHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
+      )}
+
+      {/* Context filter selector */}
+      {mode === 'context-filter' && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.filter || 'Filter by context'}
+          </Text>
+          <Box flexDirection="column" marginTop={1} borderStyle={theme.borders.list as BorderStyleType} borderColor={theme.colors.borderActive} paddingX={1}>
+            {['all', 'none', ...availableContexts].map((ctx, index) => {
+              const label = ctx === 'all'
+                ? (i18n.tui.context?.all || 'All')
+                : ctx === 'none'
+                  ? (i18n.tui.context?.none || 'No context')
+                  : `@${ctx}`;
+              const isActive = (ctx === 'all' && contextFilter === null) ||
+                (ctx === 'none' && contextFilter === '') ||
+                (ctx !== 'all' && ctx !== 'none' && contextFilter === ctx);
+              return (
+                <Text
+                  key={ctx}
+                  color={index === contextSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                  bold={index === contextSelectIndex}
+                >
+                  {index === contextSelectIndex ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                  {label}
+                  {isActive && ' *'}
+                </Text>
+              );
+            })}
+          </Box>
+          <Text color={theme.colors.textMuted}>{i18n.tui.context?.filterHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
+      )}
+
+      {/* Set context selector */}
+      {mode === 'set-context' && currentTasks.length > 0 && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.setContext || 'Set context'}: {currentTasks[selectedTaskIndex]?.title}
+          </Text>
+          <Box flexDirection="column" marginTop={1} borderStyle={theme.borders.list as BorderStyleType} borderColor={theme.colors.borderActive} paddingX={1}>
+            {['clear', ...availableContexts, 'new'].map((ctx, index) => {
+              const label = ctx === 'clear'
+                ? (i18n.tui.context?.none || 'No context')
+                : ctx === 'new'
+                  ? (i18n.tui.context?.addNew || '+ New context')
+                  : `@${ctx}`;
+              const currentContext = currentTasks[selectedTaskIndex]?.context;
+              const isActive = (ctx === 'clear' && !currentContext) ||
+                (ctx !== 'clear' && ctx !== 'new' && currentContext === ctx);
+              return (
+                <Text
+                  key={ctx}
+                  color={index === contextSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                  bold={index === contextSelectIndex}
+                >
+                  {index === contextSelectIndex ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                  {label}
+                  {isActive && ' *'}
+                </Text>
+              );
+            })}
+          </Box>
+          <Text color={theme.colors.textMuted}>{i18n.tui.context?.setContextHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
+      )}
+
+      {/* Add new context input */}
+      {mode === 'add-context' && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.newContext || 'New context: '}
+          </Text>
+          <TextInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleInputSubmit}
+            placeholder={i18n.tui.context?.newContextPlaceholder || 'Enter context name...'}
+          />
+          <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
         </Box>
       )}
 
