@@ -56,6 +56,13 @@ export const en = {
       statusLabel: 'Status: {status}',
       tasksCount: 'Tasks: {count}',
     },
+    comment: {
+      added: 'Comment added to "{title}"',
+      notFound: 'Task not found: {id}',
+      multipleMatch: 'Multiple tasks match "{id}". Please be more specific:',
+      noComments: 'No comments',
+      listHeader: 'Comments for "{title}":',
+    },
   },
 
   // TUI
@@ -113,11 +120,20 @@ export const en = {
       linkToProject: 'Link task to project',
       openProject: 'Open project (on Projects tab)',
       backFromProject: 'Back from project detail',
+      taskDetail: 'View task details',
+      addComment: 'Add comment',
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
       closeHint: 'Press any key to close',
     },
+    addComment: 'New comment: ',
+    noComments: 'No comments yet',
+    commentHint: 'i: add comment',
+    commentAdded: 'Comment added',
+    taskDetailTitle: 'Task Details',
+    taskDetailFooter: 'i=comment b/Esc=back',
+    comments: 'Comments',
   },
 };
 
@@ -139,6 +155,8 @@ export type HelpTranslations = {
   linkToProject: string;
   openProject: string;
   backFromProject: string;
+  taskDetail: string;
+  addComment: string;
   other: string;
   showHelp: string;
   quit: string;
@@ -180,6 +198,13 @@ export type TuiTranslations = {
   back: string;
   keyBar: KeyBarTranslations;
   help: HelpTranslations;
+  addComment: string;
+  noComments: string;
+  commentHint: string;
+  commentAdded: string;
+  taskDetailTitle: string;
+  taskDetailFooter: string;
+  comments: string;
 };
 
 export type Translations = {
@@ -191,6 +216,7 @@ export type Translations = {
     move: Record<string, string>;
     done: Record<string, string>;
     project: Record<string, string>;
+    comment: Record<string, string>;
   };
   tui: TuiTranslations;
 };

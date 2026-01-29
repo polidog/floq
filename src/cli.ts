@@ -13,6 +13,7 @@ import {
   completeProject,
 } from './commands/project.js';
 import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, setTurso, disableTurso, syncCommand } from './commands/config.js';
+import { addComment, listComments } from './commands/comment.js';
 import { VERSION } from './version.js';
 
 const program = new Command();
@@ -165,6 +166,18 @@ program
   .description('Sync with Turso cloud')
   .action(async () => {
     await syncCommand();
+  });
+
+// Comment command
+program
+  .command('comment <taskId> [content]')
+  .description('Add or list comments for a task')
+  .action(async (taskId: string, content?: string) => {
+    if (content) {
+      await addComment(taskId, content);
+    } else {
+      await listComments(taskId);
+    }
   });
 
 export { program };

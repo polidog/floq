@@ -51,6 +51,17 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
       await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id)");
       await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_is_project ON tasks(is_project)");
     }
+
+    // Create comments table
+    await remoteClient.execute(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id TEXT PRIMARY KEY,
+        task_id TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    `);
+    await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_comments_task_id ON comments(task_id)");
   } finally {
     remoteClient.close();
   }
@@ -110,6 +121,17 @@ async function initializeLocalSchema(): Promise<void> {
     await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id)");
     await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_is_project ON tasks(is_project)");
   }
+
+  // Create comments table
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )
+  `);
+  await client.execute("CREATE INDEX IF NOT EXISTS idx_comments_task_id ON comments(task_id)");
 }
 
 // DB 初期化

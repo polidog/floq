@@ -11,14 +11,15 @@ import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme } from './theme/index.js';
 import { getThemeName, isTursoEnabled, getTursoConfig } from '../config.js';
-import type { Task } from '../db/schema.js';
+import { VERSION } from '../version.js';
+import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project';
+type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment';
 
 export function App(): React.ReactElement {
   const themeName = getThemeName();
@@ -49,6 +50,8 @@ function AppContent(): React.ReactElement {
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [taskToLink, setTaskToLink] = useState<Task | null>(null);
   const [projectSelectIndex, setProjectSelectIndex] = useState(0);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskComments, setTaskComments] = useState<Comment[]>([]);
 
   const i18n = t();
 
@@ -101,6 +104,15 @@ function AppContent(): React.ReactElement {
     setProjectTasks(children);
   }, []);
 
+  const loadTaskComments = useCallback(async (taskId: string) => {
+    const db = getDb();
+    const comments = await db
+      .select()
+      .from(schema.comments)
+      .where(eq(schema.comments.taskId, taskId));
+    setTaskComments(comments);
+  }, []);
+
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
@@ -127,9 +139,24 @@ function AppContent(): React.ReactElement {
     await loadTasks();
   }, [i18n.tui.added, loadTasks]);
 
+  const addCommentToTask = useCallback(async (task: Task, content: string) => {
+    const db = getDb();
+    await db.insert(schema.comments).values({
+      id: uuidv4(),
+      taskId: task.id,
+      content: content.trim(),
+      createdAt: new Date(),
+    });
+    setMessage(i18n.tui.commentAdded || 'Comment added');
+    await loadTaskComments(task.id);
+  }, [i18n.tui.commentAdded, loadTaskComments]);
+
   const handleInputSubmit = async (value: string) => {
     if (value.trim()) {
-      if (mode === 'add-to-project' && selectedProject) {
+      if (mode === 'add-comment' && selectedTask) {
+        await addCommentToTask(selectedTask, value);
+        setMode('task-detail');
+      } else if (mode === 'add-to-project' && selectedProject) {
         await addTask(value, selectedProject.id);
         await loadProjectTasks(selectedProject.id);
         setMode('project-detail');
@@ -138,7 +165,11 @@ function AppContent(): React.ReactElement {
         setMode('normal');
       }
     } else {
-      setMode(mode === 'add-to-project' ? 'project-detail' : 'normal');
+      if (mode === 'add-comment') {
+        setMode('task-detail');
+      } else {
+        setMode(mode === 'add-to-project' ? 'project-detail' : 'normal');
+      }
     }
     setInputValue('');
   };
@@ -208,10 +239,33 @@ function AppContent(): React.ReactElement {
     }
 
     // Handle add mode
-    if (mode === 'add' || mode === 'add-to-project') {
+    if (mode === 'add' || mode === 'add-to-project' || mode === 'add-comment') {
       if (key.escape) {
         setInputValue('');
-        setMode(mode === 'add-to-project' ? 'project-detail' : 'normal');
+        if (mode === 'add-comment') {
+          setMode('task-detail');
+        } else if (mode === 'add-to-project') {
+          setMode('project-detail');
+        } else {
+          setMode('normal');
+        }
+      }
+      return;
+    }
+
+    // Handle task-detail mode
+    if (mode === 'task-detail') {
+      if (key.escape || key.backspace || input === 'b') {
+        setMode('normal');
+        setSelectedTask(null);
+        setTaskComments([]);
+        return;
+      }
+
+      // Add comment
+      if (input === 'i') {
+        setMode('add-comment');
+        return;
       }
       return;
     }
@@ -415,6 +469,15 @@ function AppContent(): React.ReactElement {
       return;
     }
 
+    // Enter to view task details (on non-projects tabs)
+    if (key.return && currentTab !== 'projects' && currentTasks.length > 0) {
+      const task = currentTasks[selectedTaskIndex];
+      setSelectedTask(task);
+      loadTaskComments(task.id);
+      setMode('task-detail');
+      return;
+    }
+
     // Mark as project (p key)
     if (input === 'p' && currentTasks.length > 0 && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
@@ -531,6 +594,9 @@ function AppContent(): React.ReactElement {
           <Text bold color={theme.colors.primary}>
             {formatTitle(i18n.tui.title)}
           </Text>
+          <Text color={theme.colors.textMuted}>
+            {theme.name === 'modern' ? ` v${VERSION}` : ` VER ${VERSION}`}
+          </Text>
           {tursoEnabled && (
             <Text color={theme.colors.accent}>
               {theme.name === 'modern' ? ' ☁️ ' : ' [SYNC] '}{tursoHost}
@@ -576,33 +642,113 @@ function AppContent(): React.ReactElement {
         </Box>
       )}
 
-      {/* Task list */}
-      <Box
-        flexDirection="column"
-        borderStyle={theme.borders.list as BorderStyleType}
-        borderColor={theme.colors.border}
-        paddingX={1}
-        paddingY={1}
-        minHeight={10}
-      >
-        {currentTasks.length === 0 ? (
-          <Text color={theme.colors.textMuted} italic>
-            {i18n.tui.noTasks}
-          </Text>
-        ) : (
-          currentTasks.map((task, index) => {
-            const parentProject = getParentProject(task.parentId);
-            return (
-              <TaskItem
-                key={task.id}
-                task={task}
-                isSelected={index === selectedTaskIndex}
-                projectName={parentProject?.title}
+      {/* Task detail view */}
+      {(mode === 'task-detail' || mode === 'add-comment') && selectedTask && (
+        <Box flexDirection="column">
+          {/* Task detail header */}
+          <Box marginBottom={1}>
+            <Text color={theme.colors.accent} bold>
+              {theme.name === 'modern' ? '📋 ' : '>> '}{i18n.tui.taskDetailTitle || 'Task Details'}
+            </Text>
+            <Text color={theme.colors.textMuted}> (Esc/b: {i18n.tui.back || 'back'}, {i18n.tui.commentHint || 'i: add comment'})</Text>
+          </Box>
+
+          {/* Task info */}
+          <Box
+            flexDirection="column"
+            borderStyle={theme.borders.list as BorderStyleType}
+            borderColor={theme.colors.border}
+            paddingX={1}
+            paddingY={1}
+            marginBottom={1}
+          >
+            <Text color={theme.colors.text} bold>{selectedTask.title}</Text>
+            {selectedTask.description && (
+              <Text color={theme.colors.textMuted}>{selectedTask.description}</Text>
+            )}
+            <Text color={theme.colors.textMuted}>
+              {i18n.status[selectedTask.status]}
+              {selectedTask.waitingFor && ` - ${selectedTask.waitingFor}`}
+            </Text>
+          </Box>
+
+          {/* Comments section */}
+          <Box marginBottom={1}>
+            <Text color={theme.colors.secondary} bold>
+              {i18n.tui.comments || 'Comments'} ({taskComments.length})
+            </Text>
+          </Box>
+          <Box
+            flexDirection="column"
+            borderStyle={theme.borders.list as BorderStyleType}
+            borderColor={theme.colors.border}
+            paddingX={1}
+            paddingY={1}
+            minHeight={5}
+          >
+            {taskComments.length === 0 ? (
+              <Text color={theme.colors.textMuted} italic>
+                {i18n.tui.noComments || 'No comments yet'}
+              </Text>
+            ) : (
+              taskComments.map((comment) => (
+                <Box key={comment.id} flexDirection="column" marginBottom={1}>
+                  <Text color={theme.colors.textMuted}>
+                    [{comment.createdAt.toLocaleString()}]
+                  </Text>
+                  <Text color={theme.colors.text}>{comment.content}</Text>
+                </Box>
+              ))
+            )}
+          </Box>
+
+          {/* Add comment input */}
+          {mode === 'add-comment' && (
+            <Box marginTop={1}>
+              <Text color={theme.colors.secondary} bold>
+                {i18n.tui.addComment || 'New comment: '}
+              </Text>
+              <TextInput
+                value={inputValue}
+                onChange={setInputValue}
+                onSubmit={handleInputSubmit}
+                placeholder=""
               />
-            );
-          })
-        )}
-      </Box>
+              <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {/* Task list */}
+      {mode !== 'task-detail' && mode !== 'add-comment' && (
+        <Box
+          flexDirection="column"
+          borderStyle={theme.borders.list as BorderStyleType}
+          borderColor={theme.colors.border}
+          paddingX={1}
+          paddingY={1}
+          minHeight={10}
+        >
+          {currentTasks.length === 0 ? (
+            <Text color={theme.colors.textMuted} italic>
+              {i18n.tui.noTasks}
+            </Text>
+          ) : (
+            currentTasks.map((task, index) => {
+              const parentProject = getParentProject(task.parentId);
+              return (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  isSelected={index === selectedTaskIndex}
+                  projectName={parentProject?.title}
+                />
+              );
+            })
+          )}
+        </Box>
+      )}
 
       {/* Add task input */}
       {(mode === 'add' || mode === 'add-to-project') && (
@@ -652,7 +798,9 @@ function AppContent(): React.ReactElement {
 
       {/* Footer / Function key bar */}
       <Box marginTop={1}>
-        {theme.style.showFunctionKeys ? (
+        {(mode === 'task-detail' || mode === 'add-comment') ? (
+          <Text color={theme.colors.textMuted}>{i18n.tui.taskDetailFooter || 'i=comment b/Esc=back'}</Text>
+        ) : theme.style.showFunctionKeys ? (
           <FunctionKeyBar />
         ) : (
           <Text color={theme.colors.textMuted}>{i18n.tui.footer}</Text>

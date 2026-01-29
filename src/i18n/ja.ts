@@ -58,6 +58,13 @@ export const ja: Translations = {
       statusLabel: 'ステータス: {status}',
       tasksCount: 'タスク: {count}件',
     },
+    comment: {
+      added: '「{title}」にコメントを追加しました',
+      notFound: 'タスクが見つかりません: {id}',
+      multipleMatch: '「{id}」に一致するタスクが複数あります。より具体的に指定してください:',
+      noComments: 'コメントはありません',
+      listHeader: '「{title}」のコメント:',
+    },
   },
 
   // TUI
@@ -115,10 +122,19 @@ export const ja: Translations = {
       linkToProject: 'タスクをプロジェクトに紐づけ',
       openProject: 'プロジェクトを開く (Projectsタブ)',
       backFromProject: 'プロジェクト詳細から戻る',
+      taskDetail: 'タスク詳細を表示',
+      addComment: 'コメント追加',
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
       closeHint: '任意のキーで閉じる',
     },
+    addComment: '新規コメント: ',
+    noComments: 'コメントはまだありません',
+    commentHint: 'i: コメント追加',
+    commentAdded: 'コメントを追加しました',
+    taskDetailTitle: 'タスク詳細',
+    taskDetailFooter: 'i=コメント b/Esc=戻る',
+    comments: 'コメント',
   },
 };
