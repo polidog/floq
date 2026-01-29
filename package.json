@@ -33,9 +33,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/polidog/gtd-cli.git"
+    "url": "git+https://github.com/polidog/floq.git"
   },
-  "homepage": "https://github.com/polidog/gtd-cli#readme",
+  "homepage": "https://github.com/polidog/floq#readme",
   "dependencies": {
     "@libsql/client": "^0.17.0",
     "better-sqlite3": "^11.7.0",
