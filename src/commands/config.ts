@@ -1,5 +1,8 @@
+import { render } from 'ink';
+import React from 'react';
 import { loadConfig, saveConfig, getDbPath, type Locale, type ThemeName } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
+import { ThemeSelector } from '../ui/ThemeSelector.js';
 
 const VALID_LOCALES: Locale[] = ['en', 'ja'];
 const VALID_THEMES: ThemeName[] = ['modern', 'norton-commander', 'dos-prompt', 'turbo-pascal'];
@@ -63,4 +66,27 @@ export async function setTheme(theme: string): Promise<void> {
   };
 
   console.log(messages[theme as ThemeName]);
+}
+
+export async function selectTheme(): Promise<void> {
+  return new Promise((resolve) => {
+    const { unmount } = render(
+      React.createElement(ThemeSelector, {
+        onSelect: (theme: ThemeName) => {
+          unmount();
+          saveConfig({ theme });
+
+          const messages: Record<ThemeName, string> = {
+            'modern': 'Theme set to Modern',
+            'norton-commander': 'Theme set to Norton Commander (MS-DOS style)',
+            'dos-prompt': 'Theme set to DOS Prompt (green on black)',
+            'turbo-pascal': 'Theme set to Turbo Pascal IDE',
+          };
+
+          console.log(messages[theme]);
+          resolve();
+        },
+      })
+    );
+  });
 }

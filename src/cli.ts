@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme } from './commands/config.js';
 
 const program = new Command();
 
@@ -130,10 +130,14 @@ configCmd
   });
 
 configCmd
-  .command('theme <name>')
-  .description('Set UI theme (modern, norton-commander, dos-prompt, turbo-pascal)')
-  .action(async (name: string) => {
-    await setTheme(name);
+  .command('theme [name]')
+  .description('Set UI theme (interactive if no name provided)')
+  .action(async (name?: string) => {
+    if (name) {
+      await setTheme(name);
+    } else {
+      await selectTheme();
+    }
   });
 
 export { program };
