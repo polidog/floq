@@ -101,6 +101,7 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
     // Close modal
     if (key.escape || key.return || input === 'q' || input === ' ') {
       onClose();
+      return;
     }
   });
 

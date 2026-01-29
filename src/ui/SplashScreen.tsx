@@ -106,7 +106,7 @@ export function SplashScreen({ onComplete, duration = 1500 }: SplashScreenProps)
 
       {/* Version */}
       <Box marginTop={1}>
-        <Text color={theme.colors.textMuted} dimColor={!isDosStyle}>
+        <Text color={isDosStyle ? theme.colors.textMuted : theme.colors.muted}>
           {isDosStyle ? `VER ${VERSION}` : `v${VERSION}`}
         </Text>
       </Box>

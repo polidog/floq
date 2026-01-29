@@ -418,11 +418,6 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
-    // Handle help mode - let HelpModal handle input
-    if (mode === 'help') {
-      return;
-    }
-
     // Handle search mode
     if (mode === 'search') {
       if (key.escape) {
@@ -883,7 +878,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       setMessage(i18n.tui.refreshed);
       return;
     }
-  });
+  }, { isActive: mode !== 'help' });
 
   // Splash screen
   if (mode === 'splash') {
