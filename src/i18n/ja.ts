@@ -122,6 +122,7 @@ export const ja: Translations = {
       title: 'キーボードショートカット',
       whatsNewTab: '更新履歴',
       keybindingsTab: 'キー操作',
+      infoTab: '情報',
       tabHint: 'Tab: 表示切替',
       navigation: 'ナビゲーション',
       tabSwitch: 'タブ切替 (5=プロジェクト, 6=完了)',
@@ -185,6 +186,7 @@ export const ja: Translations = {
     commentDeleted: 'コメントを削除しました',
     taskDetailTitle: 'タスク詳細',
     taskDetailFooter: 'j/k=選択 i=コメント d=削除 P=紐づけ b/Esc=戻る',
+    taskDetailStatus: 'ステータス',
     comments: 'コメント',
     projectTasks: 'タスク一覧',
     // Search
@@ -195,6 +197,22 @@ export const ja: Translations = {
       noResults: '該当するタスクがありません',
       resultsTitle: '検索結果',
       searchTasks: 'タスク検索',
+    },
+    // Info tab
+    info: {
+      settings: '設定',
+      database: 'データベース',
+      paths: 'パス',
+      theme: 'テーマ',
+      language: '言語',
+      viewMode: '表示モード',
+      dbType: '種類',
+      dbPath: 'パス',
+      tursoUrl: 'Turso URL',
+      configFile: '設定ファイル',
+      dataDir: 'データディレクトリ',
+      local: 'ローカル',
+      turso: 'turso',
     },
   },
 

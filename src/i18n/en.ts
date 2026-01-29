@@ -120,6 +120,7 @@ export const en = {
       title: 'Keyboard Shortcuts',
       whatsNewTab: "What's New",
       keybindingsTab: 'Keybindings',
+      infoTab: 'Info',
       tabHint: 'Tab: switch view',
       navigation: 'Navigation',
       tabSwitch: 'Switch tab (5=Projects, 6=Done)',
@@ -183,6 +184,7 @@ export const en = {
     commentDeleted: 'Comment deleted',
     taskDetailTitle: 'Task Details',
     taskDetailFooter: 'j/k=select i=comment d=delete P=link b/Esc=back',
+    taskDetailStatus: 'Status',
     comments: 'Comments',
     projectTasks: 'Tasks',
     // Search
@@ -193,6 +195,22 @@ export const en = {
       noResults: 'No matching tasks',
       resultsTitle: 'Search Results',
       searchTasks: 'Search tasks',
+    },
+    // Info tab
+    info: {
+      settings: 'Settings',
+      database: 'Database',
+      paths: 'Paths',
+      theme: 'Theme',
+      language: 'Language',
+      viewMode: 'View Mode',
+      dbType: 'Type',
+      dbPath: 'Path',
+      tursoUrl: 'Turso URL',
+      configFile: 'Config File',
+      dataDir: 'Data Directory',
+      local: 'local',
+      turso: 'turso',
     },
   },
 
@@ -251,6 +269,7 @@ export type HelpTranslations = {
   title: string;
   whatsNewTab: string;
   keybindingsTab: string;
+  infoTab: string;
   tabHint: string;
   navigation: string;
   tabSwitch: string;
@@ -337,6 +356,22 @@ export type SearchTranslations = {
   searchTasks: string;
 };
 
+export type InfoTranslations = {
+  settings: string;
+  database: string;
+  paths: string;
+  theme: string;
+  language: string;
+  viewMode: string;
+  dbType: string;
+  dbPath: string;
+  tursoUrl: string;
+  configFile: string;
+  dataDir: string;
+  local: string;
+  turso: string;
+};
+
 export type TuiTranslations = {
   title: string;
   helpHint: string;
@@ -367,6 +402,7 @@ export type TuiTranslations = {
   whatsNew: WhatsNewTranslations;
   kanbanHelp: KanbanHelpTranslations;
   search: SearchTranslations;
+  info: InfoTranslations;
   addComment: string;
   noComments: string;
   commentHint: string;
@@ -375,6 +411,7 @@ export type TuiTranslations = {
   commentDeleted: string;
   taskDetailTitle: string;
   taskDetailFooter: string;
+  taskDetailStatus: string;
   comments: string;
   projectTasks: string;
 };

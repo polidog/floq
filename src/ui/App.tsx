@@ -874,10 +874,13 @@ function AppContent(): React.ReactElement {
             {selectedTask.description && (
               <Text color={theme.colors.textMuted}>{selectedTask.description}</Text>
             )}
-            <Text color={theme.colors.textMuted}>
-              {i18n.status[selectedTask.status]}
-              {selectedTask.waitingFor && ` - ${selectedTask.waitingFor}`}
-            </Text>
+            <Box marginTop={1}>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailStatus}: </Text>
+              <Text color={theme.colors.accent}>
+                {i18n.status[selectedTask.status]}
+                {selectedTask.waitingFor && ` (${selectedTask.waitingFor})`}
+              </Text>
+            </Box>
           </Box>
 
           {/* Comments section */}
