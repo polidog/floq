@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-01-30
+
+### Added
+- Context feature for task filtering (@work, @home, etc.)
+- Context CLI commands (list, add, remove)
+- `--context` / `-c` option to add command
+- `@` key to filter tasks by context in TUI
+- `c` key to set context on tasks in TUI
+- Context badge display on task items
+- Context display in task detail view
+- Add new contexts directly from TUI
+
 ## [0.3.1] - 2025-01-29
 
 ### Fixed
