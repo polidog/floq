@@ -120,6 +120,9 @@ export const ja: Translations = {
     // Help modal
     help: {
       title: 'キーボードショートカット',
+      whatsNewTab: '更新履歴',
+      keybindingsTab: 'キー操作',
+      tabHint: 'Tab: 表示切替',
       navigation: 'ナビゲーション',
       tabSwitch: 'タブ切替 (5=プロジェクト, 6=完了)',
       prevNextTab: '前後のタブ',
@@ -142,7 +145,18 @@ export const ja: Translations = {
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
-      closeHint: '任意のキーで閉じる',
+      closeHint: 'Esc/q: 閉じる',
+    },
+    // What's New / Changelog
+    whatsNew: {
+      title: '更新履歴',
+      noChanges: '更新履歴はありません',
+      added: '追加',
+      changed: '変更',
+      deprecated: '非推奨',
+      removed: '削除',
+      fixed: '修正',
+      security: 'セキュリティ',
     },
     // Kanban mode help
     kanbanHelp: {
@@ -159,15 +173,66 @@ export const ja: Translations = {
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
-      closeHint: '任意のキーで閉じる',
+      closeHint: 'Esc/q: 閉じる',
     },
     addComment: '新規コメント: ',
     noComments: 'コメントはまだありません',
     commentHint: 'i: コメント追加',
+    linkHint: 'P: プロジェクト紐づけ',
     commentAdded: 'コメントを追加しました',
     commentDeleted: 'コメントを削除しました',
     taskDetailTitle: 'タスク詳細',
-    taskDetailFooter: 'j/k=選択 i=コメント d=削除 b/Esc=戻る',
+    taskDetailFooter: 'j/k=選択 i=コメント d=削除 P=紐づけ b/Esc=戻る',
     comments: 'コメント',
+  },
+
+  // Setup wizard
+  setup: {
+    welcome: {
+      title: 'Floqへようこそ!',
+      subtitle: 'タスクマネージャーを設定しましょう',
+      instruction: '任意のキーを押して設定を開始...',
+    },
+    language: {
+      title: '言語を選択',
+      hint: 'j/k: 選択, Enter: 確定, Esc: 戻る',
+    },
+    theme: {
+      title: 'テーマを選択',
+      hint: 'j/k: 選択, Enter: 確定, Esc: 戻る',
+    },
+    viewMode: {
+      title: '表示モードを選択',
+      hint: 'j/k: 選択, Enter: 確定, Esc: 戻る',
+      gtd: 'GTD (Getting Things Done)',
+      gtdDesc: 'Inbox、次のアクション、連絡待ち、いつかやるリストによるクラシックGTDワークフロー',
+      kanban: 'Kanbanボード',
+      kanbanDesc: '3カラムのKanbanボード表示',
+    },
+    database: {
+      title: 'データベースモードを選択',
+      local: 'ローカル',
+      localDesc: 'このデバイスにデータをローカル保存',
+      turso: 'Turso Cloud',
+      tursoDesc: 'Turso経由でデバイス間でデータを同期',
+      hint: 'j/k: 選択, Enter: 確定, Esc: 戻る',
+    },
+    turso: {
+      urlPrompt: 'TursoデータベースURL',
+      urlPlaceholder: 'libsql://your-db.turso.io',
+      urlError: 'URLはlibsql://で始まる必要があります',
+      tokenPrompt: 'Turso認証トークン',
+      tokenError: 'トークンは空にできません',
+      inputHint: 'Enter: 確定, Esc: 戻る',
+    },
+    complete: {
+      title: '設定完了!',
+      summary: '設定内容:',
+      language: '言語',
+      theme: 'テーマ',
+      viewMode: '表示モード',
+      database: 'データベース',
+      confirm: 'Enterを押してFloqを開始...',
+    },
   },
 };

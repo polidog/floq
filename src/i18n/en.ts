@@ -118,6 +118,9 @@ export const en = {
     // Help modal
     help: {
       title: 'Keyboard Shortcuts',
+      whatsNewTab: "What's New",
+      keybindingsTab: 'Keybindings',
+      tabHint: 'Tab: switch view',
       navigation: 'Navigation',
       tabSwitch: 'Switch tab (5=Projects, 6=Done)',
       prevNextTab: 'Previous/Next tab',
@@ -140,7 +143,18 @@ export const en = {
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
-      closeHint: 'Press any key to close',
+      closeHint: 'Esc/q: close',
+    },
+    // What's New / Changelog
+    whatsNew: {
+      title: "What's New",
+      noChanges: 'No changelog available',
+      added: 'Added',
+      changed: 'Changed',
+      deprecated: 'Deprecated',
+      removed: 'Removed',
+      fixed: 'Fixed',
+      security: 'Security',
     },
     // Kanban mode help
     kanbanHelp: {
@@ -157,21 +171,75 @@ export const en = {
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
-      closeHint: 'Press any key to close',
+      closeHint: 'Esc/q: close',
     },
     addComment: 'New comment: ',
     noComments: 'No comments yet',
     commentHint: 'i: add comment',
+    linkHint: 'P: link to project',
     commentAdded: 'Comment added',
     commentDeleted: 'Comment deleted',
     taskDetailTitle: 'Task Details',
-    taskDetailFooter: 'j/k=select i=comment d=delete b/Esc=back',
+    taskDetailFooter: 'j/k=select i=comment d=delete P=link b/Esc=back',
     comments: 'Comments',
+  },
+
+  // Setup wizard
+  setup: {
+    welcome: {
+      title: 'Welcome to Floq!',
+      subtitle: 'Let\'s configure your task manager',
+      instruction: 'Press any key to start setup...',
+    },
+    language: {
+      title: 'Select Language',
+      hint: 'j/k: select, Enter: confirm, Esc: back',
+    },
+    theme: {
+      title: 'Select Theme',
+      hint: 'j/k: select, Enter: confirm, Esc: back',
+    },
+    viewMode: {
+      title: 'Select View Mode',
+      hint: 'j/k: select, Enter: confirm, Esc: back',
+      gtd: 'GTD (Getting Things Done)',
+      gtdDesc: 'Classic GTD workflow with Inbox, Next, Waiting, Someday lists',
+      kanban: 'Kanban Board',
+      kanbanDesc: '3-column kanban board view',
+    },
+    database: {
+      title: 'Select Database Mode',
+      local: 'Local',
+      localDesc: 'Store data locally on this device',
+      turso: 'Turso Cloud',
+      tursoDesc: 'Sync data across devices via Turso',
+      hint: 'j/k: select, Enter: confirm, Esc: back',
+    },
+    turso: {
+      urlPrompt: 'Turso Database URL',
+      urlPlaceholder: 'libsql://your-db.turso.io',
+      urlError: 'URL must start with libsql://',
+      tokenPrompt: 'Turso Auth Token',
+      tokenError: 'Token cannot be empty',
+      inputHint: 'Enter: confirm, Esc: back',
+    },
+    complete: {
+      title: 'Setup Complete!',
+      summary: 'Your settings:',
+      language: 'Language',
+      theme: 'Theme',
+      viewMode: 'View Mode',
+      database: 'Database',
+      confirm: 'Press Enter to save and start Floq...',
+    },
   },
 };
 
 export type HelpTranslations = {
   title: string;
+  whatsNewTab: string;
+  keybindingsTab: string;
+  tabHint: string;
   navigation: string;
   tabSwitch: string;
   prevNextTab: string;
@@ -195,6 +263,17 @@ export type HelpTranslations = {
   showHelp: string;
   quit: string;
   closeHint: string;
+};
+
+export type WhatsNewTranslations = {
+  title: string;
+  noChanges: string;
+  added: string;
+  changed: string;
+  deprecated: string;
+  removed: string;
+  fixed: string;
+  security: string;
 };
 
 export type KanbanHelpTranslations = {
@@ -262,15 +341,66 @@ export type TuiTranslations = {
   back: string;
   keyBar: KeyBarTranslations;
   help: HelpTranslations;
+  whatsNew: WhatsNewTranslations;
   kanbanHelp: KanbanHelpTranslations;
   addComment: string;
   noComments: string;
   commentHint: string;
+  linkHint: string;
   commentAdded: string;
   commentDeleted: string;
   taskDetailTitle: string;
   taskDetailFooter: string;
   comments: string;
+};
+
+export type SetupTranslations = {
+  welcome: {
+    title: string;
+    subtitle: string;
+    instruction: string;
+  };
+  language: {
+    title: string;
+    hint: string;
+  };
+  theme: {
+    title: string;
+    hint: string;
+  };
+  viewMode: {
+    title: string;
+    hint: string;
+    gtd: string;
+    gtdDesc: string;
+    kanban: string;
+    kanbanDesc: string;
+  };
+  database: {
+    title: string;
+    local: string;
+    localDesc: string;
+    turso: string;
+    tursoDesc: string;
+    hint: string;
+  };
+  turso: {
+    urlPrompt: string;
+    urlPlaceholder: string;
+    urlError: string;
+    tokenPrompt: string;
+    tokenError: string;
+    inputHint: string;
+  };
+  complete: {
+    title: string;
+    summary: string;
+    language: string;
+    theme: string;
+    viewMode: string;
+    database: string;
+    confirm: string;
+  };
 };
 
 export type Translations = {
@@ -286,4 +416,5 @@ export type Translations = {
     comment: Record<string, string>;
   };
   tui: TuiTranslations;
+  setup: SetupTranslations;
 };

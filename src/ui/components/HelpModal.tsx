@@ -1,24 +1,38 @@
-import React from 'react';
-import { Box, Text } from 'ink';
+import React, { useState } from 'react';
+import { Box, Text, useInput } from 'ink';
 import { t } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import type { BorderStyleType } from '../theme/types.js';
+import { parseChangelog } from '../../changelog.js';
 
 interface HelpModalProps {
   onClose: () => void;
   isKanban?: boolean;
 }
 
+type TabType = 'keybindings' | 'whatsNew';
+
 export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.ReactElement {
+  const [activeTab, setActiveTab] = useState<TabType>('keybindings');
   const i18n = t();
   const theme = useTheme();
-
-  // Show Kanban help if in Kanban mode
-  if (isKanban) {
-    return <KanbanHelpModal onClose={onClose} />;
-  }
-
   const help = i18n.tui.help;
+
+  useInput((input, key) => {
+    if (key.tab) {
+      setActiveTab(prev => prev === 'keybindings' ? 'whatsNew' : 'keybindings');
+    } else if (input === 'h' || key.leftArrow) {
+      if (activeTab !== 'keybindings') {
+        setActiveTab('keybindings');
+      }
+    } else if (input === 'l' || key.rightArrow) {
+      if (activeTab !== 'whatsNew') {
+        setActiveTab('whatsNew');
+      }
+    } else if (key.escape || key.return || input === 'q' || input === ' ') {
+      onClose();
+    }
+  });
 
   const formatTitle = (title: string) =>
     theme.style.headerUppercase ? title.toUpperCase() : title;
@@ -31,12 +45,58 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
       paddingX={2}
       paddingY={1}
     >
+      {/* Tabs */}
       <Box justifyContent="center" marginBottom={1}>
-        <Text bold color={theme.colors.secondary}>
-          {formatTitle(help.title)}
-        </Text>
+        <Box>
+          <Text
+            bold={activeTab === 'keybindings'}
+            color={activeTab === 'keybindings' ? theme.colors.secondary : theme.colors.textMuted}
+            inverse={activeTab === 'keybindings'}
+          >
+            {' '}{formatTitle(help.keybindingsTab)}{' '}
+          </Text>
+          <Text color={theme.colors.textMuted}> │ </Text>
+          <Text
+            bold={activeTab === 'whatsNew'}
+            color={activeTab === 'whatsNew' ? theme.colors.secondary : theme.colors.textMuted}
+            inverse={activeTab === 'whatsNew'}
+          >
+            {' '}{formatTitle(help.whatsNewTab)}{' '}
+          </Text>
+        </Box>
       </Box>
 
+      {/* Content */}
+      {activeTab === 'keybindings' ? (
+        isKanban ? (
+          <KanbanKeybindingsContent />
+        ) : (
+          <GTDKeybindingsContent />
+        )
+      ) : (
+        <WhatsNewContent />
+      )}
+
+      {/* Footer */}
+      <Box justifyContent="center" marginTop={1}>
+        <Text color={theme.colors.textMuted}>
+          {help.tabHint} | {help.closeHint}
+        </Text>
+      </Box>
+    </Box>
+  );
+}
+
+function GTDKeybindingsContent(): React.ReactElement {
+  const i18n = t();
+  const help = i18n.tui.help;
+  const theme = useTheme();
+
+  const formatTitle = (title: string) =>
+    theme.style.headerUppercase ? title.toUpperCase() : title;
+
+  return (
+    <>
       <Box flexDirection="column" marginBottom={1}>
         <Text bold color={theme.colors.accent}>
           {formatTitle(help.navigation)}
@@ -116,15 +176,11 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
           </Text>
         </Box>
       </Box>
-
-      <Box justifyContent="center" marginTop={1}>
-        <Text color={theme.colors.textMuted}>{help.closeHint}</Text>
-      </Box>
-    </Box>
+    </>
   );
 }
 
-function KanbanHelpModal({ onClose }: { onClose: () => void }): React.ReactElement {
+function KanbanKeybindingsContent(): React.ReactElement {
   const i18n = t();
   const help = i18n.tui.kanbanHelp;
   const theme = useTheme();
@@ -133,19 +189,7 @@ function KanbanHelpModal({ onClose }: { onClose: () => void }): React.ReactEleme
     theme.style.headerUppercase ? title.toUpperCase() : title;
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle={theme.borders.modal as BorderStyleType}
-      borderColor={theme.colors.borderActive}
-      paddingX={2}
-      paddingY={1}
-    >
-      <Box justifyContent="center" marginBottom={1}>
-        <Text bold color={theme.colors.secondary}>
-          {formatTitle(help.title)}
-        </Text>
-      </Box>
-
+    <>
       <Box flexDirection="column" marginBottom={1}>
         <Text bold color={theme.colors.accent}>
           {formatTitle(help.navigation)}
@@ -196,10 +240,65 @@ function KanbanHelpModal({ onClose }: { onClose: () => void }): React.ReactEleme
           </Text>
         </Box>
       </Box>
+    </>
+  );
+}
 
-      <Box justifyContent="center" marginTop={1}>
-        <Text color={theme.colors.textMuted}>{help.closeHint}</Text>
+function WhatsNewContent(): React.ReactElement {
+  const i18n = t();
+  const whatsNew = i18n.tui.whatsNew;
+  const theme = useTheme();
+  const changelog = parseChangelog();
+
+  const formatTitle = (title: string) =>
+    theme.style.headerUppercase ? title.toUpperCase() : title;
+
+  const getSectionLabel = (type: string): string => {
+    const labels: Record<string, string> = {
+      Added: whatsNew.added,
+      Changed: whatsNew.changed,
+      Deprecated: whatsNew.deprecated,
+      Removed: whatsNew.removed,
+      Fixed: whatsNew.fixed,
+      Security: whatsNew.security,
+    };
+    return labels[type] || type;
+  };
+
+  if (changelog.entries.length === 0) {
+    return (
+      <Box justifyContent="center" paddingY={2}>
+        <Text color={theme.colors.textMuted}>{whatsNew.noChanges}</Text>
       </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      {changelog.entries.slice(0, 3).map((entry, index) => (
+        <Box key={entry.version} flexDirection="column" marginBottom={index < 2 ? 1 : 0}>
+          <Text bold color={theme.colors.accent}>
+            v{entry.version} {entry.date && <Text color={theme.colors.textMuted}>({entry.date})</Text>}
+          </Text>
+          {entry.sections.map((section) => (
+            <Box key={section.type} flexDirection="column" paddingLeft={2}>
+              <Text color={theme.colors.secondary}>
+                {formatTitle(getSectionLabel(section.type))}:
+              </Text>
+              {section.items.slice(0, 5).map((item, itemIndex) => (
+                <Text key={itemIndex} color={theme.colors.text}>
+                  • {item}
+                </Text>
+              ))}
+              {section.items.length > 5 && (
+                <Text color={theme.colors.textMuted}>
+                  ... +{section.items.length - 5} more
+                </Text>
+              )}
+            </Box>
+          ))}
+        </Box>
+      ))}
     </Box>
   );
 }
