@@ -578,7 +578,7 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
           <Text color={tursoEnabled ? theme.colors.accent : theme.colors.textMuted}>
             {theme.name === 'modern'
               ? (tursoEnabled ? ' ☁️ turso' : ' 💾 local')
-              : (tursoEnabled ? ' [DB]turso' : ' [DB]local')}
+              : (tursoEnabled ? ' [DB]TURSO' : ' [DB]local')}
           </Text>
         </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
