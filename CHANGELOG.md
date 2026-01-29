@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-01-29
+
+### Added
+- Task deletion with D key and inline confirmation dialog
+- Status label display in task detail view
+- Info tab translations for internationalization
+
 ## [0.2.0] - 2025-01-29
 
 ### Added
