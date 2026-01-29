@@ -98,11 +98,12 @@ floq config show
 floq config lang en    # English
 floq config lang ja    # Japanese
 
-# Set theme
+# Set theme (interactive selector with j/k navigation)
+floq config theme
+
+# Or specify directly
 floq config theme modern           # Default
-floq config theme norton-commander # MS-DOS style
-floq config theme dos-prompt       # Green on black
-floq config theme turbo-pascal     # IDE style
+floq config theme synthwave        # Neon 80s aesthetic
 
 # Set database path
 floq config db /path/to/custom.db
@@ -147,26 +148,28 @@ floq config turso --disable
 
 ## Themes
 
-### modern (default)
-Clean, minimal style with single borders.
+16 themes available. Use `floq config theme` for interactive selection (j/k to navigate).
 
-### norton-commander
-- Double-line borders (╔═╗║╚═╝)
-- Uppercase headers
-- Function key bar at bottom
-- Cyan/yellow color scheme
+| Theme | Description |
+|-------|-------------|
+| `modern` | Clean, minimal style (default) |
+| `norton-commander` | MS-DOS file manager style |
+| `dos-prompt` | Green CRT monitor |
+| `turbo-pascal` | Borland IDE style |
+| `classic-mac` | Macintosh System 7 monochrome |
+| `apple-ii` | Apple ][ green phosphor |
+| `commodore-64` | C64 blue/purple palette |
+| `amiga-workbench` | Amiga orange & blue |
+| `matrix` | Digital rain green |
+| `amber-crt` | Amber monitor |
+| `phosphor` | CRT phosphor glow |
+| `solarized-dark` | Solarized dark palette |
+| `solarized-light` | Solarized light palette |
+| `synthwave` | Neon 80s aesthetic |
+| `paper` | Light minimal theme |
+| `coffee` | Warm brown tones |
 
-### dos-prompt
-- Single-line borders
-- Green text (CRT monitor style)
-- Simple `>` selection indicator
-
-### turbo-pascal
-- Double-line borders
-- Yellow accents
-- IDE-style appearance
-
-> **Note**: Background colors depend on your terminal settings. For the full DOS experience, configure your terminal's background color to blue (#0000AA).
+> **Note**: Background colors depend on your terminal settings.
 
 ## Data Storage
 

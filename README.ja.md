@@ -98,11 +98,12 @@ floq config show
 floq config lang en    # 英語
 floq config lang ja    # 日本語
 
-# テーマ設定
+# テーマ設定（j/kで選択するインタラクティブセレクター）
+floq config theme
+
+# または直接指定
 floq config theme modern           # デフォルト
-floq config theme norton-commander # MS-DOSスタイル
-floq config theme dos-prompt       # 緑テキスト
-floq config theme turbo-pascal     # IDEスタイル
+floq config theme synthwave        # ネオン80sスタイル
 
 # データベースパス設定
 floq config db /path/to/custom.db
@@ -147,26 +148,28 @@ floq config turso --disable
 
 ## テーマ
 
-### modern（デフォルト）
-シンプルでクリーンなスタイル。シングルボーダー。
+16種類のテーマが利用可能。`floq config theme` でインタラクティブに選択（j/kで移動）。
 
-### norton-commander
-- ダブルラインボーダー（╔═╗║╚═╝）
-- 大文字ヘッダー
-- 画面下部にファンクションキーバー
-- シアン/黄色のカラースキーム
+| テーマ | 説明 |
+|--------|------|
+| `modern` | シンプルでクリーン（デフォルト） |
+| `norton-commander` | MS-DOSファイルマネージャー風 |
+| `dos-prompt` | 緑のCRTモニター |
+| `turbo-pascal` | Borland IDE風 |
+| `classic-mac` | Macintosh System 7モノクロ |
+| `apple-ii` | Apple ][ グリーンモニター |
+| `commodore-64` | C64の青紫カラー |
+| `amiga-workbench` | Amigaのオレンジ＆ブルー |
+| `matrix` | デジタルレイン風グリーン |
+| `amber-crt` | 琥珀色モニター |
+| `phosphor` | CRT残光エフェクト |
+| `solarized-dark` | Solarizedダーク |
+| `solarized-light` | Solarizedライト |
+| `synthwave` | ネオン80sスタイル |
+| `paper` | 紙とインク風ライト |
+| `coffee` | 暖かみのある茶系 |
 
-### dos-prompt
-- シングルラインボーダー
-- 緑テキスト（CRTモニター風）
-- シンプルな `>` 選択インジケータ
-
-### turbo-pascal
-- ダブルラインボーダー
-- 黄色のアクセント
-- IDE風の外観
-
-> **注意**: 背景色はターミナルの設定に依存します。完全なDOS体験のためには、ターミナルの背景色を青（#0000AA）に設定してください。
+> **注意**: 背景色はターミナルの設定に依存します。
 
 ## データ保存場所
 

@@ -1,4 +1,20 @@
-export type ThemeName = 'modern' | 'norton-commander' | 'dos-prompt' | 'turbo-pascal';
+export type ThemeName =
+  | 'modern'
+  | 'norton-commander'
+  | 'dos-prompt'
+  | 'turbo-pascal'
+  | 'classic-mac'
+  | 'apple-ii'
+  | 'commodore-64'
+  | 'amiga-workbench'
+  | 'matrix'
+  | 'amber-crt'
+  | 'phosphor'
+  | 'solarized-dark'
+  | 'solarized-light'
+  | 'synthwave'
+  | 'paper'
+  | 'coffee';
 
 export type BorderStyleType = 'single' | 'double' | 'round' | 'bold' | 'singleDouble' | 'doubleSingle' | 'classic';
 

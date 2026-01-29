@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { dirname, join, isAbsolute } from 'path';
 import { CONFIG_FILE, DATA_DIR } from './paths.js';
+import type { ThemeName } from './ui/theme/types.js';
 
 export type Locale = 'en' | 'ja';
-export type ThemeName = 'modern' | 'norton-commander' | 'dos-prompt' | 'turbo-pascal';
+export type { ThemeName };
 
 export interface TursoConfig {
   url: string;       // libsql://xxx.turso.io
