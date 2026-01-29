@@ -9,6 +9,7 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 - **TUIインターフェース**: Ink（CLI用React）で構築されたインタラクティブなターミナルUI
 - **GTDワークフロー**: Inbox、Next Actions、Waiting For、Someday/Maybe
 - **プロジェクト**: タスクをプロジェクトに整理
+- **クラウド同期**: [Turso](https://turso.tech/)のembedded replicasによるオプションの同期機能
 - **テーマ**: MS-DOSノスタルジックスタイルを含む複数テーマ
 - **多言語対応**: 英語・日本語サポート
 - **Vimスタイルナビゲーション**: hjklまたは矢印キーで操作
@@ -107,6 +108,42 @@ floq config theme turbo-pascal     # IDEスタイル
 floq config db /path/to/custom.db
 floq config db                     # デフォルトに戻す
 ```
+
+## クラウド同期（Turso）
+
+Floqは[Turso](https://turso.tech/)を使用したクラウド同期をサポートしています。Embedded replicasにより、データはクラウドに同期されつつ、オフラインでも利用可能です。
+
+### セットアップ
+
+1. [turso.tech](https://turso.tech/)でデータベースを作成
+2. データベースURLと認証トークンを取得
+3. Floqを設定:
+
+```bash
+# Turso同期を有効化
+floq config turso --url libsql://your-db.turso.io --token your-auth-token
+
+# 設定確認
+floq config show
+
+# 手動同期
+floq sync
+
+# Turso同期を無効化
+floq config turso --disable
+```
+
+### 仕組み
+
+- **Embedded Replicas**: ローカルSQLiteデータベースがTursoクラウドと同期
+- **オフラインサポート**: オフラインでも動作し、接続時に同期
+- **自動同期**: オンライン時は60秒ごとにバックグラウンド同期
+- **データベース分離**: Tursoモードは`gtd-turso.db`を使用し、ローカルDBと競合しない
+
+### ステータス表示
+
+- TUIヘッダーに接続状態を表示（Tursoはクラウドアイコン、ローカルはローカルアイコン）
+- CLIコマンド実行時、Turso有効時は`🔄 Turso sync: hostname`を表示
 
 ## テーマ
 

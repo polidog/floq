@@ -9,6 +9,7 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **TUI Interface**: Interactive terminal UI built with Ink (React for CLI)
 - **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe
 - **Projects**: Organize tasks into projects
+- **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
 - **Themes**: Multiple themes including MS-DOS nostalgic styles
 - **i18n**: English and Japanese support
 - **Vim-style Navigation**: Use hjkl or arrow keys
@@ -107,6 +108,42 @@ floq config theme turbo-pascal     # IDE style
 floq config db /path/to/custom.db
 floq config db                     # Reset to default
 ```
+
+## Cloud Sync (Turso)
+
+Floq supports cloud synchronization using [Turso](https://turso.tech/), a SQLite-compatible database service. With embedded replicas, your data syncs to the cloud while remaining available offline.
+
+### Setup
+
+1. Create a Turso database at [turso.tech](https://turso.tech/)
+2. Get your database URL and auth token
+3. Configure Floq:
+
+```bash
+# Enable Turso sync
+floq config turso --url libsql://your-db.turso.io --token your-auth-token
+
+# Check configuration
+floq config show
+
+# Manual sync
+floq sync
+
+# Disable Turso sync
+floq config turso --disable
+```
+
+### How It Works
+
+- **Embedded Replicas**: Local SQLite database syncs with Turso cloud
+- **Offline Support**: Works offline, syncs when connected
+- **Auto Sync**: Background sync every 60 seconds when online
+- **Separate Database**: Turso mode uses `gtd-turso.db` to avoid conflicts
+
+### Status Indicator
+
+- TUI header shows connection status (cloud icon for Turso, local icon for local mode)
+- CLI commands display `🔄 Turso sync: hostname` when Turso is enabled
 
 ## Themes
 
