@@ -1,12 +1,13 @@
 import { render } from 'ink';
 import React from 'react';
-import { loadConfig, saveConfig, getDbPath, isTursoEnabled, setTursoConfig, type Locale, type ThemeName } from '../config.js';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, setTursoConfig, type Locale, type ThemeName, type ViewMode } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
 import { syncDb } from '../db/index.js';
 import { VALID_THEMES, themes } from '../ui/theme/themes.js';
 
 const VALID_LOCALES: Locale[] = ['en', 'ja'];
+const VALID_VIEW_MODES: ViewMode[] = ['gtd', 'kanban'];
 
 export async function showConfig(): Promise<void> {
   const config = loadConfig();
@@ -17,6 +18,7 @@ export async function showConfig(): Promise<void> {
   console.log(`Language: ${config.locale}`);
   console.log(`Database: ${getDbPath()}`);
   console.log(`Theme: ${config.theme || 'modern'}`);
+  console.log(`View Mode: ${config.viewMode || 'gtd'}`);
   console.log(`Turso: ${isTursoEnabled() ? 'enabled' : 'disabled'}`);
 
   if (config.db_path) {
@@ -83,6 +85,28 @@ export async function selectTheme(): Promise<void> {
       })
     );
   });
+}
+
+export async function showViewMode(): Promise<void> {
+  const mode = getViewMode();
+  console.log(`Current view mode: ${mode}`);
+}
+
+export async function setViewModeCommand(mode: string): Promise<void> {
+  if (!VALID_VIEW_MODES.includes(mode as ViewMode)) {
+    console.error(`Invalid view mode: ${mode}`);
+    console.error(`Valid modes: ${VALID_VIEW_MODES.join(', ')}`);
+    process.exit(1);
+  }
+
+  setViewMode(mode as ViewMode);
+
+  const messages: Record<ViewMode, string> = {
+    gtd: 'View mode set to GTD',
+    kanban: 'View mode set to Kanban',
+  };
+
+  console.log(messages[mode as ViewMode]);
 }
 
 export async function setTurso(url: string, token: string): Promise<void> {

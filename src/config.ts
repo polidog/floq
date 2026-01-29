@@ -4,6 +4,7 @@ import { CONFIG_FILE, DATA_DIR } from './paths.js';
 import type { ThemeName } from './ui/theme/types.js';
 
 export type Locale = 'en' | 'ja';
+export type ViewMode = 'gtd' | 'kanban';
 export type { ThemeName };
 
 export interface TursoConfig {
@@ -15,12 +16,14 @@ export interface Config {
   locale: Locale;
   db_path?: string;  // カスタムDBパス（省略時はデフォルト）
   theme: ThemeName;  // UIテーマ
+  viewMode: ViewMode; // GTD or Kanban view mode
   turso?: TursoConfig; // Turso sync config
 }
 
 const DEFAULT_CONFIG: Config = {
   locale: 'en',
   theme: 'modern',
+  viewMode: 'gtd',
 };
 
 let configCache: Config | null = null;
@@ -107,4 +110,12 @@ export function getThemeName(): ThemeName {
 
 export function setThemeName(theme: ThemeName): void {
   saveConfig({ theme });
+}
+
+export function getViewMode(): ViewMode {
+  return loadConfig().viewMode || 'gtd';
+}
+
+export function setViewMode(viewMode: ViewMode): void {
+  saveConfig({ viewMode });
 }

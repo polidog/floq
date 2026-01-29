@@ -10,7 +10,8 @@ import { SplashScreen } from './SplashScreen.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme } from './theme/index.js';
-import { getThemeName, isTursoEnabled, getTursoConfig } from '../config.js';
+import { getThemeName, getViewMode, isTursoEnabled, getTursoConfig } from '../config.js';
+import { KanbanBoard } from './components/KanbanBoard.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
@@ -23,10 +24,11 @@ type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-d
 
 export function App(): React.ReactElement {
   const themeName = getThemeName();
+  const viewMode = getViewMode();
 
   return (
     <ThemeProvider themeName={themeName}>
-      <AppContent />
+      {viewMode === 'kanban' ? <KanbanBoard /> : <AppContent />}
     </ThemeProvider>
   );
 }

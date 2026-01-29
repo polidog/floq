@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, setTurso, disableTurso, syncCommand } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, setTurso, disableTurso, syncCommand } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
 import { VERSION } from './version.js';
 
@@ -139,6 +139,17 @@ configCmd
       await setTheme(name);
     } else {
       await selectTheme();
+    }
+  });
+
+configCmd
+  .command('mode [mode]')
+  .description('Set view mode (gtd, kanban) or show current mode')
+  .action(async (mode?: string) => {
+    if (mode) {
+      await setViewModeCommand(mode);
+    } else {
+      await showViewMode();
     }
   });
 

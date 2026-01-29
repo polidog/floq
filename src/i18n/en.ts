@@ -8,6 +8,13 @@ export const en = {
     done: 'Done',
   },
 
+  // Kanban mode labels
+  kanban: {
+    todo: 'TODO',
+    doing: 'Doing',
+    done: 'Done',
+  },
+
   // Project status
   projectStatus: {
     active: 'Active Projects',
@@ -130,6 +137,23 @@ export const en = {
       quit: 'Quit',
       closeHint: 'Press any key to close',
     },
+    // Kanban mode help
+    kanbanHelp: {
+      title: 'Kanban Shortcuts',
+      navigation: 'Navigation',
+      columnSwitch: 'Switch column',
+      columnDirect: 'Jump to column directly',
+      taskSelect: 'Select task',
+      actions: 'Actions',
+      addTask: 'Add new task (to TODO)',
+      completeTask: 'Move to Done',
+      moveRight: 'Move task to next column',
+      moveLeft: 'Move task to previous column',
+      other: 'Other',
+      showHelp: 'Show this help',
+      quit: 'Quit',
+      closeHint: 'Press any key to close',
+    },
     addComment: 'New comment: ',
     noComments: 'No comments yet',
     commentHint: 'i: add comment',
@@ -165,6 +189,29 @@ export type HelpTranslations = {
   showHelp: string;
   quit: string;
   closeHint: string;
+};
+
+export type KanbanHelpTranslations = {
+  title: string;
+  navigation: string;
+  columnSwitch: string;
+  columnDirect: string;
+  taskSelect: string;
+  actions: string;
+  addTask: string;
+  completeTask: string;
+  moveRight: string;
+  moveLeft: string;
+  other: string;
+  showHelp: string;
+  quit: string;
+  closeHint: string;
+};
+
+export type KanbanTranslations = {
+  todo: string;
+  doing: string;
+  done: string;
 };
 
 export type KeyBarTranslations = {
@@ -205,6 +252,7 @@ export type TuiTranslations = {
   back: string;
   keyBar: KeyBarTranslations;
   help: HelpTranslations;
+  kanbanHelp: KanbanHelpTranslations;
   addComment: string;
   noComments: string;
   commentHint: string;
@@ -217,6 +265,7 @@ export type TuiTranslations = {
 
 export type Translations = {
   status: Record<string, string>;
+  kanban: KanbanTranslations;
   projectStatus: Record<string, string>;
   commands: {
     add: Record<string, string>;
