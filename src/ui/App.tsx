@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { TaskItem } from './components/TaskItem.js';
 import { HelpModal } from './components/HelpModal.js';
@@ -10,7 +10,7 @@ import { SplashScreen } from './SplashScreen.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme } from './theme/index.js';
-import { getThemeName } from '../config.js';
+import { getThemeName, isTursoEnabled, getTursoConfig } from '../config.js';
 import type { Task } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
 
@@ -52,7 +52,7 @@ function AppContent(): React.ReactElement {
 
   const i18n = t();
 
-  const loadTasks = () => {
+  const loadTasks = useCallback(async () => {
     const db = getDb();
     const newTasks: TasksByTab = {
       inbox: [],
@@ -65,28 +65,26 @@ function AppContent(): React.ReactElement {
     // Load all tasks (including project children) by status
     const statusList = ['inbox', 'next', 'waiting', 'someday'] as const;
     for (const status of statusList) {
-      newTasks[status] = db
+      newTasks[status] = await db
         .select()
         .from(schema.tasks)
         .where(and(
           eq(schema.tasks.status, status),
           eq(schema.tasks.isProject, false)
-        ))
-        .all();
+        ));
     }
 
     // Load projects (isProject = true, not done)
-    newTasks.projects = db
+    newTasks.projects = await db
       .select()
       .from(schema.tasks)
       .where(and(
         eq(schema.tasks.isProject, true),
         eq(schema.tasks.status, 'next')
-      ))
-      .all();
+      ));
 
     setTasks(newTasks);
-  };
+  }, []);
 
   // Get parent project for a task
   const getParentProject = (parentId: string | null): Task | undefined => {
@@ -94,29 +92,28 @@ function AppContent(): React.ReactElement {
     return tasks.projects.find(p => p.id === parentId);
   };
 
-  const loadProjectTasks = (projectId: string) => {
+  const loadProjectTasks = useCallback(async (projectId: string) => {
     const db = getDb();
-    const children = db
+    const children = await db
       .select()
       .from(schema.tasks)
-      .where(eq(schema.tasks.parentId, projectId))
-      .all();
+      .where(eq(schema.tasks.parentId, projectId));
     setProjectTasks(children);
-  };
+  }, []);
 
   useEffect(() => {
     loadTasks();
-  }, []);
+  }, [loadTasks]);
 
   const currentTab = TABS[currentListIndex];
   const currentTasks = mode === 'project-detail' ? projectTasks : tasks[currentTab];
 
-  const addTask = (title: string, parentId?: string) => {
+  const addTask = useCallback(async (title: string, parentId?: string) => {
     if (!title.trim()) return;
 
     const db = getDb();
     const now = new Date();
-    db.insert(schema.tasks)
+    await db.insert(schema.tasks)
       .values({
         id: uuidv4(),
         title: title.trim(),
@@ -124,21 +121,20 @@ function AppContent(): React.ReactElement {
         parentId: parentId || null,
         createdAt: now,
         updatedAt: now,
-      })
-      .run();
+      });
 
     setMessage(fmt(i18n.tui.added, { title: title.trim() }));
-    loadTasks();
-  };
+    await loadTasks();
+  }, [i18n.tui.added, loadTasks]);
 
-  const handleInputSubmit = (value: string) => {
+  const handleInputSubmit = async (value: string) => {
     if (value.trim()) {
       if (mode === 'add-to-project' && selectedProject) {
-        addTask(value, selectedProject.id);
-        loadProjectTasks(selectedProject.id);
+        await addTask(value, selectedProject.id);
+        await loadProjectTasks(selectedProject.id);
         setMode('project-detail');
       } else {
-        addTask(value);
+        await addTask(value);
         setMode('normal');
       }
     } else {
@@ -147,15 +143,41 @@ function AppContent(): React.ReactElement {
     setInputValue('');
   };
 
-  const linkTaskToProject = (task: Task, project: Task) => {
+  const linkTaskToProject = useCallback(async (task: Task, project: Task) => {
     const db = getDb();
-    db.update(schema.tasks)
+    await db.update(schema.tasks)
       .set({ parentId: project.id, updatedAt: new Date() })
-      .where(eq(schema.tasks.id, task.id))
-      .run();
+      .where(eq(schema.tasks.id, task.id));
     setMessage(fmt(i18n.tui.linkedToProject || 'Linked "{title}" to {project}', { title: task.title, project: project.title }));
-    loadTasks();
-  };
+    await loadTasks();
+  }, [i18n.tui.linkedToProject, loadTasks]);
+
+  const markTaskDone = useCallback(async (task: Task) => {
+    const db = getDb();
+    await db.update(schema.tasks)
+      .set({ status: 'done', updatedAt: new Date() })
+      .where(eq(schema.tasks.id, task.id));
+    setMessage(fmt(i18n.tui.completed, { title: task.title }));
+    await loadTasks();
+  }, [i18n.tui.completed, loadTasks]);
+
+  const moveTaskToStatus = useCallback(async (task: Task, status: 'inbox' | 'next' | 'someday') => {
+    const db = getDb();
+    await db.update(schema.tasks)
+      .set({ status, waitingFor: null, updatedAt: new Date() })
+      .where(eq(schema.tasks.id, task.id));
+    setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[status] }));
+    await loadTasks();
+  }, [i18n.tui.movedTo, i18n.status, loadTasks]);
+
+  const makeTaskProject = useCallback(async (task: Task) => {
+    const db = getDb();
+    await db.update(schema.tasks)
+      .set({ isProject: true, status: 'next', updatedAt: new Date() })
+      .where(eq(schema.tasks.id, task.id));
+    setMessage(fmt(i18n.tui.madeProject || 'Made project: {title}', { title: task.title }));
+    await loadTasks();
+  }, [i18n.tui.madeProject, loadTasks]);
 
   const getTabLabel = (tab: TabType): string => {
     switch (tab) {
@@ -254,16 +276,11 @@ function AppContent(): React.ReactElement {
       // Mark child task as done
       if (input === 'd' && projectTasks.length > 0) {
         const task = projectTasks[selectedTaskIndex];
-        const db = getDb();
-        db.update(schema.tasks)
-          .set({ status: 'done', updatedAt: new Date() })
-          .where(eq(schema.tasks.id, task.id))
-          .run();
-        setMessage(fmt(i18n.tui.completed, { title: task.title }));
-        if (selectedProject) {
-          loadProjectTasks(selectedProject.id);
-        }
-        loadTasks();
+        markTaskDone(task).then(() => {
+          if (selectedProject) {
+            loadProjectTasks(selectedProject.id);
+          }
+        });
         return;
       }
 
@@ -290,31 +307,21 @@ function AppContent(): React.ReactElement {
     if ((input === '\x1bOR' || input === '\x1b[13~') && currentTasks.length > 0) {
       // F3 - Done
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ status: 'done', updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.completed, { title: task.title }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      markTaskDone(task).then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
     if ((input === '\x1bOS' || input === '\x1b[14~') && currentTasks.length > 0 && currentTab !== 'next' && currentTab !== 'projects') {
       // F4 - Move to Next
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ status: 'next', waitingFor: null, updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status.next }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      moveTaskToStatus(task, 'next').then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
     if (input === '\x1b[15~') {
@@ -411,16 +418,11 @@ function AppContent(): React.ReactElement {
     // Mark as project (p key)
     if (input === 'p' && currentTasks.length > 0 && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ isProject: true, status: 'next', updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.madeProject || 'Made project: {title}', { title: task.title }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      makeTaskProject(task).then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
 
@@ -436,64 +438,44 @@ function AppContent(): React.ReactElement {
     // Mark as done
     if (input === 'd' && currentTasks.length > 0) {
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ status: 'done', updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.completed, { title: task.title }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      markTaskDone(task).then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
 
     // Move to next actions
     if (input === 'n' && currentTasks.length > 0 && currentTab !== 'next' && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ status: 'next', waitingFor: null, updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status.next }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      moveTaskToStatus(task, 'next').then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
 
     // Move to someday
     if (input === 's' && currentTasks.length > 0 && currentTab !== 'someday' && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ status: 'someday', waitingFor: null, updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status.someday }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      moveTaskToStatus(task, 'someday').then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
 
     // Move to inbox
     if (input === 'i' && currentTasks.length > 0 && currentTab !== 'inbox' && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
-      const db = getDb();
-      db.update(schema.tasks)
-        .set({ status: 'inbox', waitingFor: null, updatedAt: new Date() })
-        .where(eq(schema.tasks.id, task.id))
-        .run();
-      setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status.inbox }));
-      loadTasks();
-      if (selectedTaskIndex >= currentTasks.length - 1) {
-        setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
-      }
+      moveTaskToStatus(task, 'inbox').then(() => {
+        if (selectedTaskIndex >= currentTasks.length - 1) {
+          setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+        }
+      });
       return;
     }
 
@@ -527,13 +509,39 @@ function AppContent(): React.ReactElement {
     return `${open}${label}${close}`;
   };
 
+  // Turso 接続情報を取得
+  const tursoEnabled = isTursoEnabled();
+  const tursoHost = tursoEnabled ? (() => {
+    const config = getTursoConfig();
+    if (config) {
+      try {
+        return new URL(config.url).host;
+      } catch {
+        return config.url;
+      }
+    }
+    return '';
+  })() : '';
+
   return (
     <Box flexDirection="column" padding={1}>
       {/* Header */}
       <Box marginBottom={1} justifyContent="space-between">
-        <Text bold color={theme.colors.primary}>
-          {formatTitle(i18n.tui.title)}
-        </Text>
+        <Box>
+          <Text bold color={theme.colors.primary}>
+            {formatTitle(i18n.tui.title)}
+          </Text>
+          {tursoEnabled && (
+            <Text color={theme.colors.accent}>
+              {theme.name === 'modern' ? ' ☁️ ' : ' [SYNC] '}{tursoHost}
+            </Text>
+          )}
+          {!tursoEnabled && (
+            <Text color={theme.colors.textMuted}>
+              {theme.name === 'modern' ? ' 💾 local' : ' [LOCAL]'}
+            </Text>
+          )}
+        </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>
 

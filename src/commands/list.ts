@@ -15,11 +15,10 @@ export async function listTasks(status?: string): Promise<void> {
       process.exit(1);
     }
 
-    const tasks = db
+    const tasks = await db
       .select()
       .from(schema.tasks)
-      .where(eq(schema.tasks.status, status as TaskStatus))
-      .all();
+      .where(eq(schema.tasks.status, status as TaskStatus));
 
     console.log(`\n${i18n.status[status as TaskStatus]} (${tasks.length})`);
     console.log('─'.repeat(40));
@@ -47,11 +46,10 @@ export async function listTasks(status?: string): Promise<void> {
   const statuses: TaskStatus[] = ['inbox', 'next', 'waiting', 'someday'];
 
   for (const s of statuses) {
-    const tasks = db
+    const tasks = await db
       .select()
       .from(schema.tasks)
-      .where(eq(schema.tasks.status, s))
-      .all();
+      .where(eq(schema.tasks.status, s));
 
     console.log(`\n${i18n.status[s]} (${tasks.length})`);
     console.log('─'.repeat(40));
@@ -76,12 +74,12 @@ export async function listProjects(): Promise<void> {
   const db = getDb();
   const i18n = t();
 
-  const projects = db
+  const allProjects = await db
     .select()
     .from(schema.tasks)
-    .where(eq(schema.tasks.isProject, true))
-    .all()
-    .filter(p => p.status !== 'done');
+    .where(eq(schema.tasks.isProject, true));
+
+  const projects = allProjects.filter(p => p.status !== 'done');
 
   console.log(`\n${i18n.projectStatus.active} (${projects.length})`);
   console.log('─'.repeat(40));
@@ -90,11 +88,10 @@ export async function listProjects(): Promise<void> {
     console.log(`  ${i18n.commands.list.noProjects}`);
   } else {
     for (const project of projects) {
-      const childTasks = db
+      const childTasks = await db
         .select()
         .from(schema.tasks)
-        .where(eq(schema.tasks.parentId, project.id))
-        .all();
+        .where(eq(schema.tasks.parentId, project.id));
 
       const activeTasks = childTasks.filter(t => t.status !== 'done').length;
       const shortId = project.id.slice(0, 8);

@@ -24,11 +24,10 @@ export async function moveTask(
   }
 
   // Find task by ID prefix
-  const tasks = db
+  const tasks = await db
     .select()
     .from(schema.tasks)
-    .where(like(schema.tasks.id, `${taskId}%`))
-    .all();
+    .where(like(schema.tasks.id, `${taskId}%`));
 
   if (tasks.length === 0) {
     console.error(fmt(i18n.commands.move.notFound, { id: taskId }));
@@ -45,14 +44,13 @@ export async function moveTask(
 
   const task = tasks[0];
 
-  db.update(schema.tasks)
+  await db.update(schema.tasks)
     .set({
       status: targetStatus as TaskStatus,
       waitingFor: targetStatus === 'waiting' ? waitingFor : null,
       updatedAt: new Date(),
     })
-    .where(eq(schema.tasks.id, task.id))
-    .run();
+    .where(eq(schema.tasks.id, task.id));
 
   console.log(fmt(i18n.commands.move.success, {
     title: task.title,

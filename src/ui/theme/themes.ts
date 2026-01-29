@@ -58,8 +58,8 @@ export const nortonCommanderTheme: Theme = {
     textMuted: 'blue',
     textSelected: 'yellow',
     textHighlight: 'white',
-    fnKeyLabel: 'black',
-    fnKeyText: 'cyan',
+    fnKeyLabel: 'cyan',
+    fnKeyText: 'white',
   },
   borders: {
     main: 'double',

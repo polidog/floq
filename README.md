@@ -16,6 +16,14 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 ## Installation
 
 ```bash
+npm install -g floq
+```
+
+### From Source
+
+```bash
+git clone https://github.com/polidog/gtd-cli.git
+cd gtd-cli
 npm install
 npm run build
 npm link

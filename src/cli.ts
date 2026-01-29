@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, setTurso, disableTurso, syncCommand } from './commands/config.js';
 import { VERSION } from './version.js';
 
 const program = new Command();
@@ -139,6 +139,32 @@ configCmd
     } else {
       await selectTheme();
     }
+  });
+
+configCmd
+  .command('turso')
+  .description('Configure Turso cloud sync')
+  .option('--url <url>', 'Turso database URL (libsql://xxx.turso.io)')
+  .option('--token <token>', 'Turso auth token')
+  .option('--disable', 'Disable Turso sync')
+  .action(async (options: { url?: string; token?: string; disable?: boolean }) => {
+    if (options.disable) {
+      await disableTurso();
+    } else if (options.url && options.token) {
+      await setTurso(options.url, options.token);
+    } else {
+      console.error('Usage: floq config turso --url <url> --token <token>');
+      console.error('       floq config turso --disable');
+      process.exit(1);
+    }
+  });
+
+// Sync command
+program
+  .command('sync')
+  .description('Sync with Turso cloud')
+  .action(async () => {
+    await syncCommand();
   });
 
 export { program };

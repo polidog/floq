@@ -7,11 +7,10 @@ export async function markDone(taskId: string): Promise<void> {
   const i18n = t();
 
   // Find task by ID prefix
-  const tasks = db
+  const tasks = await db
     .select()
     .from(schema.tasks)
-    .where(like(schema.tasks.id, `${taskId}%`))
-    .all();
+    .where(like(schema.tasks.id, `${taskId}%`));
 
   if (tasks.length === 0) {
     console.error(fmt(i18n.commands.done.notFound, { id: taskId }));
@@ -33,13 +32,12 @@ export async function markDone(taskId: string): Promise<void> {
     return;
   }
 
-  db.update(schema.tasks)
+  await db.update(schema.tasks)
     .set({
       status: 'done',
       updatedAt: new Date(),
     })
-    .where(eq(schema.tasks.id, task.id))
-    .run();
+    .where(eq(schema.tasks.id, task.id));
 
   console.log(fmt(i18n.commands.done.success, { title: task.title }));
 }

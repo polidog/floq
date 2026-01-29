@@ -16,6 +16,14 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 ## インストール
 
 ```bash
+npm install -g floq
+```
+
+### ソースからインストール
+
+```bash
+git clone https://github.com/polidog/gtd-cli.git
+cd gtd-cli
 npm install
 npm run build
 npm link

@@ -16,17 +16,16 @@ export async function addTask(title: string, options: AddOptions): Promise<void>
   let parentId: string | undefined;
 
   if (options.project) {
-    const project = db
+    const projects = await db
       .select()
       .from(schema.tasks)
-      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.title, options.project)))
-      .get();
+      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.title, options.project)));
 
-    if (!project) {
+    if (projects.length === 0) {
       console.error(fmt(i18n.commands.add.projectNotFound, { project: options.project }));
       process.exit(1);
     }
-    parentId = project.id;
+    parentId = projects[0].id;
   }
 
   const task: schema.NewTask = {
@@ -39,7 +38,7 @@ export async function addTask(title: string, options: AddOptions): Promise<void>
     updatedAt: now,
   };
 
-  db.insert(schema.tasks).values(task).run();
+  await db.insert(schema.tasks).values(task);
 
   console.log(fmt(i18n.commands.add.success, { title }));
   if (parentId) {

@@ -37,6 +37,7 @@
   },
   "homepage": "https://github.com/polidog/gtd-cli#readme",
   "dependencies": {
+    "@libsql/client": "^0.17.0",
     "better-sqlite3": "^11.7.0",
     "commander": "^13.1.0",
     "drizzle-orm": "^0.39.1",

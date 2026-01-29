@@ -5,10 +5,16 @@ import { CONFIG_FILE, DATA_DIR } from './paths.js';
 export type Locale = 'en' | 'ja';
 export type ThemeName = 'modern' | 'norton-commander' | 'dos-prompt' | 'turbo-pascal';
 
+export interface TursoConfig {
+  url: string;       // libsql://xxx.turso.io
+  authToken: string; // Turso auth token
+}
+
 export interface Config {
   locale: Locale;
   db_path?: string;  // カスタムDBパス（省略時はデフォルト）
   theme: ThemeName;  // UIテーマ
+  turso?: TursoConfig; // Turso sync config
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -54,6 +60,19 @@ export function saveConfig(updates: Partial<Config>): void {
   }
 }
 
+export function getTursoConfig(): TursoConfig | undefined {
+  return loadConfig().turso;
+}
+
+export function setTursoConfig(config: TursoConfig | undefined): void {
+  saveConfig({ turso: config });
+}
+
+export function isTursoEnabled(): boolean {
+  const turso = getTursoConfig();
+  return turso !== undefined && turso.url !== '' && turso.authToken !== '';
+}
+
 export function getDbPath(): string {
   const config = loadConfig();
 
@@ -63,6 +82,11 @@ export function getDbPath(): string {
       return config.db_path;
     }
     return join(DATA_DIR, config.db_path);
+  }
+
+  // Turso モードでは別のDBファイルを使用（embedded replica 用）
+  if (isTursoEnabled()) {
+    return join(DATA_DIR, 'gtd-turso.db');
   }
 
   return join(DATA_DIR, 'gtd.db');

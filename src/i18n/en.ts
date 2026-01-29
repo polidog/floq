@@ -83,6 +83,17 @@ export const en = {
     selectProject: 'Select project for',
     selectProjectHelp: 'j/k: select, Enter: confirm, Esc: cancel',
     back: 'back',
+    // Action key bar labels
+    keyBar: {
+      add: 'Add',
+      done: 'Done',
+      next: 'Next',
+      someday: 'Someday',
+      inbox: 'Inbox',
+      project: 'Project',
+      help: 'Help',
+      quit: 'Quit',
+    },
     // Help modal
     help: {
       title: 'Keyboard Shortcuts',
@@ -134,6 +145,17 @@ export type HelpTranslations = {
   closeHint: string;
 };
 
+export type KeyBarTranslations = {
+  add: string;
+  done: string;
+  next: string;
+  someday: string;
+  inbox: string;
+  project: string;
+  help: string;
+  quit: string;
+};
+
 export type TuiTranslations = {
   title: string;
   helpHint: string;
@@ -156,6 +178,7 @@ export type TuiTranslations = {
   selectProject: string;
   selectProjectHelp: string;
   back: string;
+  keyBar: KeyBarTranslations;
   help: HelpTranslations;
 };
 

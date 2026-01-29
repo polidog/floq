@@ -13,13 +13,12 @@ export async function addProject(name: string, options: AddProjectOptions): Prom
   const i18n = t();
 
   // Check if project already exists
-  const existing = db
+  const existingProjects = await db
     .select()
     .from(schema.tasks)
-    .where(and(eq(schema.tasks.title, name), eq(schema.tasks.isProject, true)))
-    .get();
+    .where(and(eq(schema.tasks.title, name), eq(schema.tasks.isProject, true)));
 
-  if (existing) {
+  if (existingProjects.length > 0) {
     console.error(fmt(i18n.commands.project.alreadyExists, { name }));
     process.exit(1);
   }
@@ -34,7 +33,7 @@ export async function addProject(name: string, options: AddProjectOptions): Prom
     updatedAt: now,
   };
 
-  db.insert(schema.tasks).values(project).run();
+  await db.insert(schema.tasks).values(project);
 
   console.log(fmt(i18n.commands.project.created, { name }));
 }
@@ -51,11 +50,10 @@ export async function listProjectsCommand(): Promise<void> {
   };
 
   for (const status of statuses) {
-    const projects = db
+    const projects = await db
       .select()
       .from(schema.tasks)
-      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.status, status)))
-      .all();
+      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.status, status)));
 
     if (projects.length === 0 && status !== 'next') continue;
 
@@ -66,11 +64,10 @@ export async function listProjectsCommand(): Promise<void> {
       console.log(`  ${i18n.commands.project.noProjects}`);
     } else {
       for (const project of projects) {
-        const childTasks = db
+        const childTasks = await db
           .select()
           .from(schema.tasks)
-          .where(eq(schema.tasks.parentId, project.id))
-          .all();
+          .where(eq(schema.tasks.parentId, project.id));
 
         const activeTasks = childTasks.filter(t => t.status !== 'done').length;
         const doneTasks = childTasks.filter(t => t.status === 'done').length;
@@ -90,18 +87,16 @@ export async function showProject(projectId: string): Promise<void> {
   const i18n = t();
 
   // Find project by ID prefix or name
-  let projects = db
+  let projects = await db
     .select()
     .from(schema.tasks)
-    .where(and(eq(schema.tasks.isProject, true), like(schema.tasks.id, `${projectId}%`)))
-    .all();
+    .where(and(eq(schema.tasks.isProject, true), like(schema.tasks.id, `${projectId}%`)));
 
   if (projects.length === 0) {
-    projects = db
+    projects = await db
       .select()
       .from(schema.tasks)
-      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.title, projectId)))
-      .all();
+      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.title, projectId)));
   }
 
   if (projects.length === 0) {
@@ -118,11 +113,10 @@ export async function showProject(projectId: string): Promise<void> {
   }
 
   const project = projects[0];
-  const childTasks = db
+  const childTasks = await db
     .select()
     .from(schema.tasks)
-    .where(eq(schema.tasks.parentId, project.id))
-    .all();
+    .where(eq(schema.tasks.parentId, project.id));
 
   console.log(`\nProject: ${project.title}`);
   console.log('─'.repeat(40));
@@ -161,11 +155,10 @@ export async function completeProject(projectId: string): Promise<void> {
   const db = getDb();
   const i18n = t();
 
-  const projects = db
+  const projects = await db
     .select()
     .from(schema.tasks)
-    .where(and(eq(schema.tasks.isProject, true), like(schema.tasks.id, `${projectId}%`)))
-    .all();
+    .where(and(eq(schema.tasks.isProject, true), like(schema.tasks.id, `${projectId}%`)));
 
   if (projects.length === 0) {
     console.error(fmt(i18n.commands.project.notFound, { id: projectId }));
@@ -179,13 +172,12 @@ export async function completeProject(projectId: string): Promise<void> {
 
   const project = projects[0];
 
-  db.update(schema.tasks)
+  await db.update(schema.tasks)
     .set({
       status: 'done',
       updatedAt: new Date(),
     })
-    .where(eq(schema.tasks.id, project.id))
-    .run();
+    .where(eq(schema.tasks.id, project.id));
 
   console.log(fmt(i18n.commands.project.completed, { name: project.title }));
 }

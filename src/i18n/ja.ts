@@ -85,6 +85,17 @@ export const ja: Translations = {
     selectProject: 'プロジェクトを選択',
     selectProjectHelp: 'j/k: 選択, Enter: 確定, Esc: キャンセル',
     back: '戻る',
+    // Action key bar labels
+    keyBar: {
+      add: '追加',
+      done: '完了',
+      next: '次へ',
+      someday: 'いつか',
+      inbox: 'Inbox',
+      project: 'プロジェクト',
+      help: 'ヘルプ',
+      quit: '終了',
+    },
     // Help modal
     help: {
       title: 'キーボードショートカット',
