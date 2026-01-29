@@ -75,8 +75,10 @@ export const en = {
     added: 'Added: "{title}"',
     completed: 'Completed: "{title}"',
     movedTo: 'Moved "{title}" to {status}',
+    movedToWaiting: 'Moved "{title}" to Waiting (for {person})',
+    waitingFor: 'Waiting for: ',
     refreshed: 'Refreshed',
-    footer: 'a=add d=done n=next s=someday i=inbox p=project P=link',
+    footer: 'a=add d=done n=next s=someday w=waiting i=inbox p=project P=link',
     noTasks: 'No tasks',
     // Tab labels
     tabInbox: 'Inbox',
@@ -96,6 +98,7 @@ export const en = {
       done: 'Done',
       next: 'Next',
       someday: 'Someday',
+      waiting: 'Waiting',
       inbox: 'Inbox',
       project: 'Project',
       help: 'Help',
@@ -116,6 +119,7 @@ export const en = {
       completeTask: 'Complete selected task',
       moveToNext: 'Move to Next Actions',
       moveToSomeday: 'Move to Someday/Maybe',
+      moveToWaiting: 'Move to Waiting For',
       moveToInbox: 'Move to Inbox',
       refresh: 'Refresh list',
       projects: 'Projects',
@@ -152,6 +156,7 @@ export type HelpTranslations = {
   completeTask: string;
   moveToNext: string;
   moveToSomeday: string;
+  moveToWaiting: string;
   moveToInbox: string;
   refresh: string;
   projects: string;
@@ -172,6 +177,7 @@ export type KeyBarTranslations = {
   done: string;
   next: string;
   someday: string;
+  waiting: string;
   inbox: string;
   project: string;
   help: string;
@@ -190,6 +196,8 @@ export type TuiTranslations = {
   added: string;
   completed: string;
   movedTo: string;
+  movedToWaiting: string;
+  waitingFor: string;
   refreshed: string;
   footer: string;
   noTasks: string;

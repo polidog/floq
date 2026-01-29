@@ -65,6 +65,9 @@ export function HelpModal({ onClose }: HelpModalProps): React.ReactElement {
             <Text color={theme.colors.textHighlight}>s</Text>        {help.moveToSomeday}
           </Text>
           <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>w</Text>        {help.moveToWaiting}
+          </Text>
+          <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>i</Text>        {help.moveToInbox}
           </Text>
           <Text color={theme.colors.text}>

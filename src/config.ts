@@ -1,7 +1,29 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs';
 import { dirname, join, isAbsolute } from 'path';
 import { CONFIG_FILE, DATA_DIR } from './paths.js';
 import type { ThemeName } from './ui/theme/types.js';
+
+// Migrate legacy DB file names
+function migrateDbFiles(): void {
+  const legacyDb = join(DATA_DIR, 'gtd.db');
+  const newDb = join(DATA_DIR, 'floq.db');
+  const legacyTursoDb = join(DATA_DIR, 'gtd-turso.db');
+  const newTursoDb = join(DATA_DIR, 'floq-turso.db');
+
+  try {
+    if (existsSync(legacyDb) && !existsSync(newDb)) {
+      renameSync(legacyDb, newDb);
+    }
+    if (existsSync(legacyTursoDb) && !existsSync(newTursoDb)) {
+      renameSync(legacyTursoDb, newTursoDb);
+    }
+  } catch {
+    // Ignore migration errors
+  }
+}
+
+// Run DB file migration on module load
+migrateDbFiles();
 
 export type Locale = 'en' | 'ja';
 export type { ThemeName };
@@ -87,10 +109,10 @@ export function getDbPath(): string {
 
   // Turso モードでは別のDBファイルを使用（embedded replica 用）
   if (isTursoEnabled()) {
-    return join(DATA_DIR, 'gtd-turso.db');
+    return join(DATA_DIR, 'floq-turso.db');
   }
 
-  return join(DATA_DIR, 'gtd.db');
+  return join(DATA_DIR, 'floq.db');
 }
 
 export function getLocale(): Locale {

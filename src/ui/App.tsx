@@ -19,7 +19,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment';
+type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting';
 
 export function App(): React.ReactElement {
   const themeName = getThemeName();
@@ -53,6 +53,7 @@ function AppContent(): React.ReactElement {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskComments, setTaskComments] = useState<Comment[]>([]);
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
+  const [taskToWaiting, setTaskToWaiting] = useState<Task | null>(null);
 
   const i18n = t();
 
@@ -162,6 +163,16 @@ function AppContent(): React.ReactElement {
   }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask]);
 
   const handleInputSubmit = async (value: string) => {
+    if (mode === 'move-to-waiting' && taskToWaiting) {
+      if (value.trim()) {
+        await moveTaskToWaiting(taskToWaiting, value);
+      }
+      setTaskToWaiting(null);
+      setMode('normal');
+      setInputValue('');
+      return;
+    }
+
     if (value.trim()) {
       if (mode === 'add-comment' && selectedTask) {
         await addCommentToTask(selectedTask, value);
@@ -211,6 +222,15 @@ function AppContent(): React.ReactElement {
     await loadTasks();
   }, [i18n.tui.movedTo, i18n.status, loadTasks]);
 
+  const moveTaskToWaiting = useCallback(async (task: Task, waitingFor: string) => {
+    const db = getDb();
+    await db.update(schema.tasks)
+      .set({ status: 'waiting', waitingFor: waitingFor.trim(), updatedAt: new Date() })
+      .where(eq(schema.tasks.id, task.id));
+    setMessage(fmt(i18n.tui.movedToWaiting, { title: task.title, person: waitingFor.trim() }));
+    await loadTasks();
+  }, [i18n.tui.movedToWaiting, loadTasks]);
+
   const makeTaskProject = useCallback(async (task: Task) => {
     const db = getDb();
     await db.update(schema.tasks)
@@ -249,10 +269,13 @@ function AppContent(): React.ReactElement {
     }
 
     // Handle add mode
-    if (mode === 'add' || mode === 'add-to-project' || mode === 'add-comment') {
+    if (mode === 'add' || mode === 'add-to-project' || mode === 'add-comment' || mode === 'move-to-waiting') {
       if (key.escape) {
         setInputValue('');
-        if (mode === 'add-comment') {
+        if (mode === 'move-to-waiting') {
+          setTaskToWaiting(null);
+          setMode('normal');
+        } else if (mode === 'add-comment') {
           setMode('task-detail');
         } else if (mode === 'add-to-project') {
           setMode('project-detail');
@@ -563,6 +586,14 @@ function AppContent(): React.ReactElement {
       return;
     }
 
+    // Move to waiting
+    if (input === 'w' && currentTasks.length > 0 && currentTab !== 'waiting' && currentTab !== 'projects') {
+      const task = currentTasks[selectedTaskIndex];
+      setTaskToWaiting(task);
+      setMode('move-to-waiting');
+      return;
+    }
+
     // Move to inbox
     if (input === 'i' && currentTasks.length > 0 && currentTab !== 'inbox' && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
@@ -805,6 +836,22 @@ function AppContent(): React.ReactElement {
             onChange={setInputValue}
             onSubmit={handleInputSubmit}
             placeholder={i18n.tui.placeholder}
+          />
+          <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
+        </Box>
+      )}
+
+      {/* Move to waiting input */}
+      {mode === 'move-to-waiting' && taskToWaiting && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.waitingFor}
+          </Text>
+          <TextInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleInputSubmit}
+            placeholder=""
           />
           <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
         </Box>
