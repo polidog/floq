@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-01-29
+
+### Added
+- Vim-like undo/redo functionality
+
+### Fixed
+- Help modal input handling and splash screen theme color
+
 ## [0.2.3] - 2025-01-29
 
 ### Improved
