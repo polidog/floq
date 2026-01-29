@@ -52,6 +52,7 @@ function AppContent(): React.ReactElement {
   const [projectSelectIndex, setProjectSelectIndex] = useState(0);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskComments, setTaskComments] = useState<Comment[]>([]);
+  const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
 
   const i18n = t();
 
@@ -150,6 +151,15 @@ function AppContent(): React.ReactElement {
     setMessage(i18n.tui.commentAdded || 'Comment added');
     await loadTaskComments(task.id);
   }, [i18n.tui.commentAdded, loadTaskComments]);
+
+  const deleteComment = useCallback(async (comment: Comment) => {
+    const db = getDb();
+    await db.delete(schema.comments).where(eq(schema.comments.id, comment.id));
+    setMessage(i18n.tui.commentDeleted || 'Comment deleted');
+    if (selectedTask) {
+      await loadTaskComments(selectedTask.id);
+    }
+  }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask]);
 
   const handleInputSubmit = async (value: string) => {
     if (value.trim()) {
@@ -259,6 +269,28 @@ function AppContent(): React.ReactElement {
         setMode('normal');
         setSelectedTask(null);
         setTaskComments([]);
+        setSelectedCommentIndex(0);
+        return;
+      }
+
+      // Navigate comments
+      if (key.upArrow || input === 'k') {
+        setSelectedCommentIndex((prev) => (prev > 0 ? prev - 1 : Math.max(0, taskComments.length - 1)));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setSelectedCommentIndex((prev) => (prev < taskComments.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Delete comment
+      if (input === 'd' && taskComments.length > 0) {
+        const comment = taskComments[selectedCommentIndex];
+        deleteComment(comment).then(() => {
+          if (selectedCommentIndex >= taskComments.length - 1) {
+            setSelectedCommentIndex(Math.max(0, selectedCommentIndex - 1));
+          }
+        });
         return;
       }
 
@@ -691,14 +723,24 @@ function AppContent(): React.ReactElement {
                 {i18n.tui.noComments || 'No comments yet'}
               </Text>
             ) : (
-              taskComments.map((comment) => (
-                <Box key={comment.id} flexDirection="column" marginBottom={1}>
-                  <Text color={theme.colors.textMuted}>
-                    [{comment.createdAt.toLocaleString()}]
-                  </Text>
-                  <Text color={theme.colors.text}>{comment.content}</Text>
-                </Box>
-              ))
+              taskComments.map((comment, index) => {
+                const isSelected = index === selectedCommentIndex && mode === 'task-detail';
+                return (
+                  <Box key={comment.id} flexDirection="row" marginBottom={1}>
+                    <Text color={isSelected ? theme.colors.textSelected : theme.colors.textMuted}>
+                      {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                    </Text>
+                    <Box flexDirection="column">
+                      <Text color={theme.colors.textMuted}>
+                        [{comment.createdAt.toLocaleString()}]
+                      </Text>
+                      <Text color={isSelected ? theme.colors.textSelected : theme.colors.text} bold={isSelected}>
+                        {comment.content}
+                      </Text>
+                    </Box>
+                  </Box>
+                );
+              })
             )}
           </Box>
 
@@ -802,6 +844,7 @@ function AppContent(): React.ReactElement {
           theme.style.showFunctionKeys ? (
             <FunctionKeyBar keys={[
               { key: 'i', label: i18n.tui.keyBar.comment },
+              { key: 'd', label: i18n.tui.keyBar.delete },
               { key: 'b', label: i18n.tui.keyBar.back },
             ]} />
           ) : (

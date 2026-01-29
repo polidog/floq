@@ -102,6 +102,7 @@ export const en = {
       quit: 'Quit',
       comment: 'Comment',
       back: 'Back',
+      delete: 'Delete',
     },
     // Help modal
     help: {
@@ -133,8 +134,9 @@ export const en = {
     noComments: 'No comments yet',
     commentHint: 'i: add comment',
     commentAdded: 'Comment added',
+    commentDeleted: 'Comment deleted',
     taskDetailTitle: 'Task Details',
-    taskDetailFooter: 'i=comment b/Esc=back',
+    taskDetailFooter: 'j/k=select i=comment d=delete b/Esc=back',
     comments: 'Comments',
   },
 };
@@ -176,6 +178,7 @@ export type KeyBarTranslations = {
   quit: string;
   comment: string;
   back: string;
+  delete: string;
 };
 
 export type TuiTranslations = {
@@ -206,6 +209,7 @@ export type TuiTranslations = {
   noComments: string;
   commentHint: string;
   commentAdded: string;
+  commentDeleted: string;
   taskDetailTitle: string;
   taskDetailFooter: string;
   comments: string;

@@ -104,6 +104,7 @@ export const ja: Translations = {
       quit: '終了',
       comment: 'コメント',
       back: '戻る',
+      delete: '削除',
     },
     // Help modal
     help: {
@@ -135,8 +136,9 @@ export const ja: Translations = {
     noComments: 'コメントはまだありません',
     commentHint: 'i: コメント追加',
     commentAdded: 'コメントを追加しました',
+    commentDeleted: 'コメントを削除しました',
     taskDetailTitle: 'タスク詳細',
-    taskDetailFooter: 'i=コメント b/Esc=戻る',
+    taskDetailFooter: 'j/k=選択 i=コメント d=削除 b/Esc=戻る',
     comments: 'コメント',
   },
 };
