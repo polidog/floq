@@ -228,7 +228,7 @@ floq config turso --disable
 
 ## Themes
 
-16 themes available. Use `floq config theme` for interactive selection (j/k to navigate).
+26 themes available. Use `floq config theme` for interactive selection (j/k to navigate).
 
 | Theme | Description |
 |-------|-------------|
@@ -248,6 +248,16 @@ floq config turso --disable
 | `synthwave` | Neon 80s aesthetic |
 | `paper` | Light minimal theme |
 | `coffee` | Warm brown tones |
+| `nord` | Arctic, north-bluish palette |
+| `dracula` | Dark theme with vibrant colors |
+| `monokai` | Classic editor vivid colors |
+| `gruvbox` | Retro groove warm tones |
+| `tokyo-night` | Tokyo night lights inspired |
+| `catppuccin` | Soothing pastel theme |
+| `ocean` | Deep sea blue theme |
+| `sakura` | Cherry blossom pink |
+| `msx` | MSX computer (TMS9918) |
+| `pc-98` | NEC PC-9801 style |
 
 > **Note**: Background colors depend on your terminal settings.
 

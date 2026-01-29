@@ -228,7 +228,7 @@ floq config turso --disable
 
 ## テーマ
 
-16種類のテーマが利用可能。`floq config theme` でインタラクティブに選択（j/kで移動）。
+26種類のテーマが利用可能。`floq config theme` でインタラクティブに選択（j/kで移動）。
 
 | テーマ | 説明 |
 |--------|------|
@@ -248,6 +248,16 @@ floq config turso --disable
 | `synthwave` | ネオン80sスタイル |
 | `paper` | 紙とインク風ライト |
 | `coffee` | 暖かみのある茶系 |
+| `nord` | 北欧風ブルーグレー |
+| `dracula` | ダーク＆ビビッドカラー |
+| `monokai` | エディタ定番の鮮やかな配色 |
+| `gruvbox` | レトロな暖色系ダーク |
+| `tokyo-night` | 東京の夜景イメージ |
+| `catppuccin` | パステル系モダン |
+| `ocean` | 深海ブルー |
+| `sakura` | 桜ピンク |
+| `msx` | MSXコンピュータ（TMS9918） |
+| `pc-98` | NEC PC-9801風 |
 
 > **注意**: 背景色はターミナルの設定に依存します。
 
