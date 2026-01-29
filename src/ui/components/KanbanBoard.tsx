@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { KanbanColumn, type KanbanColumnType } from './KanbanColumn.js';
 import { HelpModal } from './HelpModal.js';
 import { FunctionKeyBar } from './FunctionKeyBar.js';
+import { SearchBar } from './SearchBar.js';
+import { SearchResults } from './SearchResults.js';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
@@ -16,7 +18,7 @@ import type { BorderStyleType } from '../theme/types.js';
 
 const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
-type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project';
+type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project' | 'search';
 
 interface KanbanBoardProps {
   onSwitchToGtd?: () => void;
@@ -44,6 +46,10 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
   const [projects, setProjects] = useState<Task[]>([]);
   const [projectSelectIndex, setProjectSelectIndex] = useState(0);
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Task[]>([]);
+  const [searchResultIndex, setSearchResultIndex] = useState(0);
 
   const i18n = t();
 
@@ -145,6 +151,34 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
   const currentTasks = tasks[currentColumn];
   const selectedTaskIndex = selectedTaskIndices[currentColumn];
 
+  // Get all tasks for search
+  const getAllTasks = useCallback((): Task[] => {
+    const allTasks: Task[] = [];
+    for (const col of COLUMNS) {
+      allTasks.push(...tasks[col]);
+    }
+    return allTasks;
+  }, [tasks]);
+
+  // Search tasks by query
+  const searchTasks = useCallback((query: string): Task[] => {
+    if (!query.trim()) return [];
+    const lowerQuery = query.toLowerCase();
+    const allTasks = getAllTasks();
+    return allTasks.filter(task =>
+      task.title.toLowerCase().includes(lowerQuery) ||
+      (task.description && task.description.toLowerCase().includes(lowerQuery))
+    );
+  }, [getAllTasks]);
+
+  // Handle search query change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    const results = searchTasks(value);
+    setSearchResults(results);
+    setSearchResultIndex(0);
+  }, [searchTasks]);
+
   const addTask = useCallback(async (title: string) => {
     if (!title.trim()) return;
 
@@ -170,6 +204,22 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
       }
       setMode('task-detail');
       setInputValue('');
+      return;
+    }
+
+    // Handle search mode submit
+    if (mode === 'search') {
+      if (searchResults.length > 0) {
+        const task = searchResults[searchResultIndex];
+        setSelectedTask(task);
+        loadTaskComments(task.id);
+        setMode('task-detail');
+      } else {
+        setMode('normal');
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchResultIndex(0);
       return;
     }
 
@@ -246,6 +296,32 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
     // Handle help mode - any key closes
     if (mode === 'help') {
       setMode('normal');
+      return;
+    }
+
+    // Handle search mode
+    if (mode === 'search') {
+      if (key.escape) {
+        setSearchQuery('');
+        setSearchResults([]);
+        setSearchResultIndex(0);
+        setMode('normal');
+        return;
+      }
+      // Navigate search results with Ctrl+j/k or Ctrl+n/p
+      if (key.ctrl && (input === 'j' || input === 'n')) {
+        setSearchResultIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (key.ctrl && (input === 'k' || input === 'p')) {
+        setSearchResultIndex((prev) =>
+          prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)
+        );
+        return;
+      }
+      // Let TextInput handle other keys
       return;
     }
 
@@ -345,6 +421,15 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
     // Show help
     if (input === '?') {
       setMode('help');
+      return;
+    }
+
+    // Search mode
+    if (input === '/') {
+      setMode('search');
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchResultIndex(0);
       return;
     }
 
@@ -623,6 +708,17 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
             </Box>
           )}
         </Box>
+      ) : mode === 'search' ? (
+        <>
+          {/* Search results */}
+          {searchQuery && (
+            <SearchResults
+              results={searchResults}
+              selectedIndex={searchResultIndex}
+              query={searchQuery}
+            />
+          )}
+        </>
       ) : (
         <>
           {/* Column headers (numbers) */}
@@ -666,6 +762,15 @@ export function KanbanBoard({ onSwitchToGtd }: KanbanBoardProps): React.ReactEle
           />
           <Text color={theme.colors.textMuted}> {i18n.tui.inputHelp}</Text>
         </Box>
+      )}
+
+      {/* Search bar */}
+      {mode === 'search' && (
+        <SearchBar
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onSubmit={handleInputSubmit}
+        />
       )}
 
       {/* Message */}

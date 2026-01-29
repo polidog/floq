@@ -14,6 +14,7 @@ import {
 } from './commands/project.js';
 import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, syncCommand, resetDatabase } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
+import { runSetupWizard } from './commands/setup.js';
 import { VERSION } from './version.js';
 
 const program = new Command();
@@ -202,6 +203,14 @@ program
     } else {
       await listComments(taskId);
     }
+  });
+
+// Setup wizard command
+program
+  .command('setup')
+  .description('Run the setup wizard')
+  .action(async () => {
+    await runSetupWizard();
   });
 
 export { program };

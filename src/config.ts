@@ -149,3 +149,7 @@ export function getViewMode(): ViewMode {
 export function setViewMode(viewMode: ViewMode): void {
   saveConfig({ viewMode });
 }
+
+export function isFirstRun(): boolean {
+  return !existsSync(CONFIG_FILE);
+}

@@ -142,6 +142,7 @@ export const ja: Translations = {
       backFromProject: 'プロジェクト詳細から戻る',
       taskDetail: 'タスク詳細を表示',
       addComment: 'コメント追加',
+      searchTasks: 'タスク検索',
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
@@ -170,6 +171,7 @@ export const ja: Translations = {
       completeTask: '完了へ移動',
       moveRight: '次のカラムへ移動',
       moveLeft: '前のカラムへ戻す',
+      searchTasks: 'タスク検索',
       other: 'その他',
       showHelp: 'このヘルプを表示',
       quit: '終了',
@@ -184,6 +186,16 @@ export const ja: Translations = {
     taskDetailTitle: 'タスク詳細',
     taskDetailFooter: 'j/k=選択 i=コメント d=削除 P=紐づけ b/Esc=戻る',
     comments: 'コメント',
+    projectTasks: 'タスク一覧',
+    // Search
+    search: {
+      prefix: '/',
+      placeholder: 'タスクを検索...',
+      help: '(Enterで選択, Ctrl+j/kで移動, Escでキャンセル)',
+      noResults: '該当するタスクがありません',
+      resultsTitle: '検索結果',
+      searchTasks: 'タスク検索',
+    },
   },
 
   // Setup wizard

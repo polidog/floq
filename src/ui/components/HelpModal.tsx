@@ -228,6 +228,9 @@ function GTDKeybindingsContent(): React.ReactElement {
         </Text>
         <Box paddingLeft={2} flexDirection="column">
           <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>/</Text>        {help.searchTasks}
+          </Text>
+          <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>?</Text>        {help.showHelp}
           </Text>
           <Text color={theme.colors.text}>
@@ -291,6 +294,9 @@ function KanbanKeybindingsContent(): React.ReactElement {
           {formatTitle(help.other)}
         </Text>
         <Box paddingLeft={2} flexDirection="column">
+          <Text color={theme.colors.text}>
+            <Text color={theme.colors.textHighlight}>/</Text>        {help.searchTasks}
+          </Text>
           <Text color={theme.colors.text}>
             <Text color={theme.colors.textHighlight}>?</Text>        {help.showHelp}
           </Text>

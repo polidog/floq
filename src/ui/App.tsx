@@ -3,9 +3,11 @@ import { Box, Text, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { TaskItem } from './components/TaskItem.js';
+import { TaskItem, type ProjectProgress } from './components/TaskItem.js';
 import { HelpModal } from './components/HelpModal.js';
 import { FunctionKeyBar } from './components/FunctionKeyBar.js';
+import { SearchBar } from './components/SearchBar.js';
+import { SearchResults } from './components/SearchResults.js';
 import { SplashScreen } from './SplashScreen.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
@@ -20,7 +22,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting';
+type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search';
 
 export function App(): React.ReactElement {
   const themeName = getThemeName();
@@ -57,6 +59,11 @@ function AppContent(): React.ReactElement {
   const [taskComments, setTaskComments] = useState<Comment[]>([]);
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
   const [taskToWaiting, setTaskToWaiting] = useState<Task | null>(null);
+  const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>({});
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Task[]>([]);
+  const [searchResultIndex, setSearchResultIndex] = useState(0);
 
   const i18n = t();
 
@@ -92,6 +99,19 @@ function AppContent(): React.ReactElement {
         eq(schema.tasks.status, 'next')
       ));
 
+    // Calculate progress for each project
+    const progress: Record<string, ProjectProgress> = {};
+    for (const project of newTasks.projects) {
+      const children = await db
+        .select()
+        .from(schema.tasks)
+        .where(eq(schema.tasks.parentId, project.id));
+      const total = children.length;
+      const completed = children.filter(t => t.status === 'done').length;
+      progress[project.id] = { completed, total };
+    }
+    setProjectProgress(progress);
+
     setTasks(newTasks);
   }, []);
 
@@ -125,6 +145,34 @@ function AppContent(): React.ReactElement {
 
   const currentTab = TABS[currentListIndex];
   const currentTasks = mode === 'project-detail' ? projectTasks : tasks[currentTab];
+
+  // Get all tasks for search (across all statuses)
+  const getAllTasks = useCallback((): Task[] => {
+    const allTasks: Task[] = [];
+    for (const tab of TABS) {
+      allTasks.push(...tasks[tab]);
+    }
+    return allTasks;
+  }, [tasks]);
+
+  // Search tasks by query
+  const searchTasks = useCallback((query: string): Task[] => {
+    if (!query.trim()) return [];
+    const lowerQuery = query.toLowerCase();
+    const allTasks = getAllTasks();
+    return allTasks.filter(task =>
+      task.title.toLowerCase().includes(lowerQuery) ||
+      (task.description && task.description.toLowerCase().includes(lowerQuery))
+    );
+  }, [getAllTasks]);
+
+  // Handle search query change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    const results = searchTasks(value);
+    setSearchResults(results);
+    setSearchResultIndex(0);
+  }, [searchTasks]);
 
   const addTask = useCallback(async (title: string, parentId?: string) => {
     if (!title.trim()) return;
@@ -174,6 +222,22 @@ function AppContent(): React.ReactElement {
       setTaskToWaiting(null);
       setMode('normal');
       setInputValue('');
+      return;
+    }
+
+    // Handle search mode submit
+    if (mode === 'search') {
+      if (searchResults.length > 0) {
+        const task = searchResults[searchResultIndex];
+        setSelectedTask(task);
+        loadTaskComments(task.id);
+        setMode('task-detail');
+      } else {
+        setMode('normal');
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchResultIndex(0);
       return;
     }
 
@@ -270,6 +334,32 @@ function AppContent(): React.ReactElement {
 
     // Handle help mode - let HelpModal handle input
     if (mode === 'help') {
+      return;
+    }
+
+    // Handle search mode
+    if (mode === 'search') {
+      if (key.escape) {
+        setSearchQuery('');
+        setSearchResults([]);
+        setSearchResultIndex(0);
+        setMode('normal');
+        return;
+      }
+      // Navigate search results with Ctrl+j/k or Ctrl+n/p
+      if (key.ctrl && (input === 'j' || input === 'n')) {
+        setSearchResultIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (key.ctrl && (input === 'k' || input === 'p')) {
+        setSearchResultIndex((prev) =>
+          prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)
+        );
+        return;
+      }
+      // Let TextInput handle other keys
       return;
     }
 
@@ -463,6 +553,15 @@ function AppContent(): React.ReactElement {
     // Show help
     if (input === '?') {
       setMode('help');
+      return;
+    }
+
+    // Search mode
+    if (input === '/') {
+      setMode('search');
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchResultIndex(0);
       return;
     }
 
@@ -717,12 +816,19 @@ function AppContent(): React.ReactElement {
 
       {/* Project detail header */}
       {mode === 'project-detail' && selectedProject && (
-        <Box marginBottom={1}>
-          <Text color={theme.colors.accent} bold>
-            {theme.name === 'modern' ? '📁 ' : '>> '}{selectedProject.title}
-          </Text>
-          <Text color={theme.colors.textMuted}> (Esc/b: {i18n.tui.back || 'back'})</Text>
-        </Box>
+        <>
+          <Box marginBottom={1}>
+            <Text color={theme.colors.accent} bold>
+              {theme.name === 'modern' ? '📁 ' : '>> '}{selectedProject.title}
+            </Text>
+            <Text color={theme.colors.textMuted}> (Esc/b: {i18n.tui.back || 'back'})</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text color={theme.colors.secondary} bold>
+              {i18n.tui.projectTasks || 'Tasks'} ({projectTasks.length})
+            </Text>
+          </Box>
+        </>
       )}
 
       {/* Task detail view */}
@@ -813,8 +919,17 @@ function AppContent(): React.ReactElement {
         </Box>
       )}
 
+      {/* Search results */}
+      {mode === 'search' && searchQuery && (
+        <SearchResults
+          results={searchResults}
+          selectedIndex={searchResultIndex}
+          query={searchQuery}
+        />
+      )}
+
       {/* Task list */}
-      {mode !== 'task-detail' && mode !== 'add-comment' && (
+      {mode !== 'task-detail' && mode !== 'add-comment' && mode !== 'search' && (
         <Box
           flexDirection="column"
           borderStyle={theme.borders.list as BorderStyleType}
@@ -830,12 +945,14 @@ function AppContent(): React.ReactElement {
           ) : (
             currentTasks.map((task, index) => {
               const parentProject = getParentProject(task.parentId);
+              const progress = currentTab === 'projects' ? projectProgress[task.id] : undefined;
               return (
                 <TaskItem
                   key={task.id}
                   task={task}
                   isSelected={index === selectedTaskIndex}
                   projectName={parentProject?.title}
+                  progress={progress}
                 />
               );
             })
@@ -896,6 +1013,15 @@ function AppContent(): React.ReactElement {
           </Box>
           <Text color={theme.colors.textMuted}>{i18n.tui.selectProjectHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
         </Box>
+      )}
+
+      {/* Search bar */}
+      {mode === 'search' && (
+        <SearchBar
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onSubmit={handleInputSubmit}
+        />
       )}
 
       {/* Message */}

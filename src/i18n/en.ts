@@ -140,6 +140,7 @@ export const en = {
       backFromProject: 'Back from project detail',
       taskDetail: 'View task details',
       addComment: 'Add comment',
+      searchTasks: 'Search tasks',
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
@@ -168,6 +169,7 @@ export const en = {
       completeTask: 'Move to Done',
       moveRight: 'Move task to next column',
       moveLeft: 'Move task to previous column',
+      searchTasks: 'Search tasks',
       other: 'Other',
       showHelp: 'Show this help',
       quit: 'Quit',
@@ -182,6 +184,16 @@ export const en = {
     taskDetailTitle: 'Task Details',
     taskDetailFooter: 'j/k=select i=comment d=delete P=link b/Esc=back',
     comments: 'Comments',
+    projectTasks: 'Tasks',
+    // Search
+    search: {
+      prefix: '/',
+      placeholder: 'Search tasks...',
+      help: '(Enter to select, Ctrl+j/k to navigate, Esc to cancel)',
+      noResults: 'No matching tasks',
+      resultsTitle: 'Search Results',
+      searchTasks: 'Search tasks',
+    },
   },
 
   // Setup wizard
@@ -259,6 +271,7 @@ export type HelpTranslations = {
   backFromProject: string;
   taskDetail: string;
   addComment: string;
+  searchTasks: string;
   other: string;
   showHelp: string;
   quit: string;
@@ -287,6 +300,7 @@ export type KanbanHelpTranslations = {
   completeTask: string;
   moveRight: string;
   moveLeft: string;
+  searchTasks: string;
   other: string;
   showHelp: string;
   quit: string;
@@ -312,6 +326,15 @@ export type KeyBarTranslations = {
   comment: string;
   back: string;
   delete: string;
+};
+
+export type SearchTranslations = {
+  prefix: string;
+  placeholder: string;
+  help: string;
+  noResults: string;
+  resultsTitle: string;
+  searchTasks: string;
 };
 
 export type TuiTranslations = {
@@ -343,6 +366,7 @@ export type TuiTranslations = {
   help: HelpTranslations;
   whatsNew: WhatsNewTranslations;
   kanbanHelp: KanbanHelpTranslations;
+  search: SearchTranslations;
   addComment: string;
   noComments: string;
   commentHint: string;
@@ -352,6 +376,7 @@ export type TuiTranslations = {
   taskDetailTitle: string;
   taskDetailFooter: string;
   comments: string;
+  projectTasks: string;
 };
 
 export type SetupTranslations = {
