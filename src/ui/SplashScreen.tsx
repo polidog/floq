@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { useTheme } from './theme/index.js';
+import { VERSION } from '../version.js';
 
 const LOGO_MODERN = `
   ███████╗██╗      ██████╗  ██████╗
@@ -106,7 +107,7 @@ export function SplashScreen({ onComplete, duration = 1500 }: SplashScreenProps)
       {/* Version */}
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted} dimColor={!isDosStyle}>
-          {isDosStyle ? 'VER 1.0.0' : 'v1.0.0'}
+          {isDosStyle ? `VER ${VERSION}` : `v${VERSION}`}
         </Text>
       </Box>
     </Box>

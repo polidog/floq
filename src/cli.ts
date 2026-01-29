@@ -13,13 +13,14 @@ import {
   completeProject,
 } from './commands/project.js';
 import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme } from './commands/config.js';
+import { VERSION } from './version.js';
 
 const program = new Command();
 
 program
   .name('floq')
   .description('Floq - Flow your tasks, clear your mind')
-  .version('1.0.0');
+  .version(VERSION);
 
 // Default command - launch TUI
 program
