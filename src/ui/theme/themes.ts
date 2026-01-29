@@ -949,28 +949,28 @@ export const sakuraTheme: Theme = {
   },
 };
 
-// MSX - Japanese retro computer style
+// MSX - Japanese retro computer style (TMS9918 palette)
 export const msxTheme: Theme = {
   name: 'msx',
   displayName: 'MSX',
   colors: {
-    primary: '#21c842',
+    primary: '#40b64a',
     secondary: '#5955df',
     accent: '#ffffff',
-    muted: '#4a4a4a',
-    border: '#21c842',
-    borderActive: '#ffffff',
+    muted: '#cacaca',
+    border: '#40b64a',
+    borderActive: '#73ce7c',
     background: '#000000',
-    statusInbox: '#5955df',
-    statusNext: '#21c842',
-    statusWaiting: '#d1b659',
-    statusSomeday: '#cc5252',
-    statusDone: '#4a4a4a',
-    text: '#21c842',
-    textMuted: '#4a4a4a',
+    statusInbox: '#64daee',
+    statusNext: '#40b64a',
+    statusWaiting: '#ddce85',
+    statusSomeday: '#b565b3',
+    statusDone: '#cacaca',
+    text: '#40b64a',
+    textMuted: '#cacaca',
     textSelected: '#ffffff',
-    textHighlight: '#21c842',
-    fnKeyLabel: '#21c842',
+    textHighlight: '#73ce7c',
+    fnKeyLabel: '#64daee',
     fnKeyText: '#000000',
   },
   borders: {
