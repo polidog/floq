@@ -64,6 +64,15 @@ floq
 | `?` | Help |
 | `q` | Quit |
 
+#### Search
+
+| Key | Action |
+|-----|--------|
+| `/` | Start search mode |
+| `↑/↓` or `Ctrl+j/k` | Navigate search results |
+| `Enter` | Jump to selected task's tab and select it |
+| `Esc` | Cancel search |
+
 #### Project Detail View
 
 | Key | Action |

@@ -238,6 +238,20 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     setSearchResultIndex(0);
   }, [searchTasks]);
 
+  // Navigate to a task from search results
+  const navigateToTask = useCallback((task: Task) => {
+    const targetTab = task.isProject ? 'projects' : task.status as TabType;
+    const tabIndex = TABS.indexOf(targetTab);
+    const tabTasks = tasks[targetTab];
+    const taskIndex = tabTasks.findIndex(t => t.id === task.id);
+
+    if (tabIndex >= 0 && taskIndex >= 0) {
+      setCurrentListIndex(tabIndex);
+      setSelectedTaskIndex(taskIndex);
+      setMode('normal');
+    }
+  }, [tasks]);
+
   const addTask = useCallback(async (title: string, parentId?: string) => {
     if (!title.trim()) return;
 
@@ -293,9 +307,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     if (mode === 'search') {
       if (searchResults.length > 0) {
         const task = searchResults[searchResultIndex];
-        setSelectedTask(task);
-        loadTaskComments(task.id);
-        setMode('task-detail');
+        navigateToTask(task);
       } else {
         setMode('normal');
       }
@@ -420,14 +432,14 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         setMode('normal');
         return;
       }
-      // Navigate search results with Ctrl+j/k or Ctrl+n/p
-      if (key.ctrl && (input === 'j' || input === 'n')) {
+      // Navigate search results with arrow keys, Ctrl+j/k, or Ctrl+n/p
+      if (key.downArrow || (key.ctrl && (input === 'j' || input === 'n'))) {
         setSearchResultIndex((prev) =>
           prev < searchResults.length - 1 ? prev + 1 : 0
         );
         return;
       }
-      if (key.ctrl && (input === 'k' || input === 'p')) {
+      if (key.upArrow || (key.ctrl && (input === 'k' || input === 'p'))) {
         setSearchResultIndex((prev) =>
           prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)
         );

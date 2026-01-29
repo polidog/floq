@@ -43,7 +43,7 @@ export function SearchResults({ results, selectedIndex, query }: SearchResultsPr
         results.slice(0, 10).map((task, index) => {
           const isSelected = index === selectedIndex;
           const shortId = task.id.slice(0, 8);
-          const statusLabel = i18n.status[task.status];
+          const displayLabel = task.isProject ? i18n.tui.keyBar.project : i18n.status[task.status];
 
           return (
             <Box key={task.id}>
@@ -53,7 +53,7 @@ export function SearchResults({ results, selectedIndex, query }: SearchResultsPr
               >
                 {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
                 [{shortId}] {task.title}
-                <Text color={theme.colors.textMuted}> ({statusLabel})</Text>
+                <Text color={theme.colors.textMuted}> ({displayLabel})</Text>
                 {task.waitingFor && (
                   <Text color={theme.colors.statusWaiting}> - {task.waitingFor}</Text>
                 )}

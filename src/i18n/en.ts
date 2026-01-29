@@ -202,7 +202,7 @@ export const en = {
     search: {
       prefix: '/',
       placeholder: 'Search tasks...',
-      help: '(Enter to select, Ctrl+j/k to navigate, Esc to cancel)',
+      help: '(Enter to select, ↑/↓ or Ctrl+j/k to navigate, Esc to cancel)',
       noResults: 'No matching tasks',
       resultsTitle: 'Search Results',
       searchTasks: 'Search tasks',

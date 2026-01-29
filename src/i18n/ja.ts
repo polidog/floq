@@ -204,7 +204,7 @@ export const ja: Translations = {
     search: {
       prefix: '/',
       placeholder: 'タスクを検索...',
-      help: '(Enterで選択, Ctrl+j/kで移動, Escでキャンセル)',
+      help: '(Enterで選択, ↑/↓またはCtrl+j/kで移動, Escでキャンセル)',
       noResults: '該当するタスクがありません',
       resultsTitle: '検索結果',
       searchTasks: 'タスク検索',

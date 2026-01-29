@@ -182,6 +182,31 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     setSearchResultIndex(0);
   }, [searchTasks]);
 
+  // Navigate to a task from search results
+  const navigateToTask = useCallback((task: Task) => {
+    // Determine which column the task belongs to based on status
+    let targetColumn: KanbanColumnType;
+    if (task.status === 'inbox' || task.status === 'someday') {
+      targetColumn = 'todo';
+    } else if (task.status === 'next' || task.status === 'waiting') {
+      targetColumn = 'doing';
+    } else {
+      targetColumn = 'done';
+    }
+
+    const columnIndex = COLUMNS.indexOf(targetColumn);
+    const taskIndex = tasks[targetColumn].findIndex(t => t.id === task.id);
+
+    if (columnIndex >= 0 && taskIndex >= 0) {
+      setCurrentColumnIndex(columnIndex);
+      setSelectedTaskIndices(prev => ({
+        ...prev,
+        [targetColumn]: taskIndex,
+      }));
+      setMode('normal');
+    }
+  }, [tasks]);
+
   const addTask = useCallback(async (title: string) => {
     if (!title.trim()) return;
 
@@ -214,9 +239,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     if (mode === 'search') {
       if (searchResults.length > 0) {
         const task = searchResults[searchResultIndex];
-        setSelectedTask(task);
-        loadTaskComments(task.id);
-        setMode('task-detail');
+        navigateToTask(task);
       } else {
         setMode('normal');
       }
@@ -311,14 +334,14 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
         setMode('normal');
         return;
       }
-      // Navigate search results with Ctrl+j/k or Ctrl+n/p
-      if (key.ctrl && (input === 'j' || input === 'n')) {
+      // Navigate search results with arrow keys, Ctrl+j/k, or Ctrl+n/p
+      if (key.downArrow || (key.ctrl && (input === 'j' || input === 'n'))) {
         setSearchResultIndex((prev) =>
           prev < searchResults.length - 1 ? prev + 1 : 0
         );
         return;
       }
-      if (key.ctrl && (input === 'k' || input === 'p')) {
+      if (key.upArrow || (key.ctrl && (input === 'k' || input === 'p'))) {
         setSearchResultIndex((prev) =>
           prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)
         );
