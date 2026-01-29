@@ -1,0 +1,43 @@
+{
+  "name": "floq",
+  "version": "1.0.0",
+  "description": "Floq - Getting Things Done Task Manager",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "floq": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "keywords": [
+    "gtd",
+    "task",
+    "todo",
+    "cli",
+    "tui"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "commander": "^13.1.0",
+    "drizzle-orm": "^0.39.1",
+    "ink": "^5.1.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.7",
+    "@types/react": "^18.3.18",
+    "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.30.4",
+    "typescript": "^5.7.3"
+  }
+}
