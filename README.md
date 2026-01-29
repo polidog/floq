@@ -64,14 +64,25 @@ floq
 | `?` | Help |
 | `q` | Quit |
 
+#### Project Detail View
+
+| Key | Action |
+|-----|--------|
+| `j/k` | Navigate tasks |
+| `a` | Add task to project |
+| `d` | Mark task as done |
+| `Enter` | Open task detail |
+| `Esc/b` | Back to projects list |
+
 #### Task Detail View
 
 | Key | Action |
 |-----|--------|
 | `i` | Add comment |
 | `d` | Delete selected comment |
+| `P` | Link to project |
 | `j/k` | Navigate comments |
-| `Esc/b` | Back to list |
+| `Esc/b` | Back to list / project |
 
 ### Keyboard Shortcuts (Kanban Mode)
 

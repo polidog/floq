@@ -384,7 +384,17 @@ function AppContent(): React.ReactElement {
     // Handle task-detail mode
     if (mode === 'task-detail') {
       if (key.escape || key.backspace || input === 'b') {
-        setMode('normal');
+        // If came from project-detail, go back to project-detail
+        if (selectedProject) {
+          setMode('project-detail');
+          // Find the task index in project tasks
+          const taskIndex = projectTasks.findIndex(t => t.id === selectedTask?.id);
+          if (taskIndex >= 0) {
+            setSelectedTaskIndex(taskIndex);
+          }
+        } else {
+          setMode('normal');
+        }
         setSelectedTask(null);
         setTaskComments([]);
         setSelectedCommentIndex(0);
@@ -495,6 +505,15 @@ function AppContent(): React.ReactElement {
             loadProjectTasks(selectedProject.id);
           }
         });
+        return;
+      }
+
+      // Enter to view task details
+      if (key.return && projectTasks.length > 0) {
+        const task = projectTasks[selectedTaskIndex];
+        setSelectedTask(task);
+        loadTaskComments(task.id);
+        setMode('task-detail');
         return;
       }
 
