@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-01-31
+
+### Added
+- Mario theme with SFC/Nintendo-style UI
+- Mario theme support for both GTD and Kanban modes
+- Dragon Quest style status header (job class, level, HP, MP)
+- Task detail view to Dragon Quest theme
+- i18n support for DQ/Mario theme footers
+
+### Fixed
+- Project linking from task detail in DQ theme
+- Context setting (c key) support for DQ/Mario themes
+- Missing c=context in footer help text
+
 ## [0.6.0] - 2025-01-31
 
 ### Added
