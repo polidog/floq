@@ -95,7 +95,7 @@ export const ja: Translations = {
     movedToWaiting: '「{title}」を連絡待ち({person})に移動しました',
     waitingFor: '待機相手: ',
     refreshed: '更新しました',
-    footer: 'a=追加 d=完了 D=削除 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ',
+    footer: 'a=追加 d=完了 D=削除 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ c=コンテキスト',
     // DQ/Mario style footers
     dqFooter: {
       tabs: 'j/k=選択 l/Enter=タスク 1-6=タブ a=追加 @=フィルター /=検索',

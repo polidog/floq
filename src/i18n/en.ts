@@ -93,7 +93,7 @@ export const en = {
     movedToWaiting: 'Moved "{title}" to Waiting (for {person})',
     waitingFor: 'Waiting for: ',
     refreshed: 'Refreshed',
-    footer: 'a=add d=done D=delete n=next s=someday w=waiting i=inbox p=project P=link',
+    footer: 'a=add d=done D=delete n=next s=someday w=waiting i=inbox p=project P=link c=context',
     // DQ/Mario style footers
     dqFooter: {
       tabs: 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search',
