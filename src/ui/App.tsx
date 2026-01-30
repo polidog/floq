@@ -20,6 +20,7 @@ import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTurs
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
+import { KanbanMario } from './components/KanbanMario.js';
 import { GtdDQ } from './components/GtdDQ.js';
 import { GtdMario } from './components/GtdMario.js';
 import { VERSION } from '../version.js';
@@ -118,7 +119,9 @@ export function App(): React.ReactElement {
     <ThemeProvider themeName={themeName}>
       <HistoryProvider>
         {viewMode === 'kanban' ? (
-          useDQStyle ? (
+          useMarioStyle ? (
+            <KanbanMario onOpenSettings={setSettingsMode} />
+          ) : useDQStyle ? (
             <KanbanDQ onOpenSettings={setSettingsMode} />
           ) : (
             <KanbanBoard onOpenSettings={setSettingsMode} />
