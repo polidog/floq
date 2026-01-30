@@ -8,6 +8,7 @@ interface TitledBoxProps {
   borderColor?: string;
   minHeight?: number;
   paddingX?: number;
+  showShadow?: boolean;
 }
 
 // Round border characters (DQ style)
@@ -19,6 +20,9 @@ const BORDER = {
   horizontal: '─',
   vertical: '│',
 };
+
+// Shadow character
+const SHADOW = '░';
 
 // Calculate display width of string (full-width chars = 2, half-width = 1)
 function getDisplayWidth(str: string): number {
@@ -51,14 +55,17 @@ export function TitledBox({
   borderColor,
   minHeight = 1,
   paddingX = 1,
+  showShadow = true,
 }: TitledBoxProps): React.ReactElement {
   const theme = useTheme();
   const { stdout } = useStdout();
   const color = borderColor || theme.colors.border;
+  const shadowColor = theme.colors.muted;
 
-  // Get terminal width, account for outer padding (1 on each side from parent Box)
+  // Get terminal width, account for outer padding and shadow
   const terminalWidth = stdout?.columns || 80;
-  const boxWidth = terminalWidth - 2; // Outer padding
+  const shadowWidth = showShadow ? 1 : 0;
+  const boxWidth = terminalWidth - 2 - shadowWidth; // Outer padding + shadow
   const innerWidth = boxWidth - 2; // Subtract left and right border characters
 
   // Calculate title section widths
@@ -66,9 +73,6 @@ export function TitledBox({
   const titleLength = getDisplayWidth(titleText);
 
   // Title format: "─── Title ─────..."
-  // Left part: 3 dashes + 1 space = 4 chars
-  // Title: titleLength chars
-  // Right part: 1 space + remaining dashes
   const leftDashes = 3;
   const titlePadding = titleLength > 0 ? 2 : 0; // spaces around title
   const rightDashes = innerWidth - leftDashes - titlePadding - titleLength;
@@ -85,9 +89,9 @@ export function TitledBox({
   const contentElements = hasContent ? childArray : [<Text key="empty"> </Text>];
 
   return (
-    <Box flexDirection="column" width={boxWidth}>
+    <Box flexDirection="column">
       {/* Top border with title */}
-      <Text>
+      <Box>
         <Text color={color}>{BORDER.topLeft}</Text>
         {titleLength > 0 ? (
           <>
@@ -99,7 +103,8 @@ export function TitledBox({
           <Text color={color}>{BORDER.horizontal.repeat(innerWidth)}</Text>
         )}
         <Text color={color}>{BORDER.topRight}</Text>
-      </Text>
+        {showShadow && <Text> </Text>}
+      </Box>
 
       {/* Content rows */}
       {contentElements.map((child, index) => (
@@ -109,6 +114,7 @@ export function TitledBox({
             <Box flexGrow={1}>{child}</Box>
           </Box>
           <Text color={color}>{BORDER.vertical}</Text>
+          {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
         </Box>
       ))}
 
@@ -116,19 +122,26 @@ export function TitledBox({
       {Array.from({ length: emptyRowsNeeded }).map((_, index) => (
         <Box key={`empty-${index}`}>
           <Text color={color}>{BORDER.vertical}</Text>
-          <Box width={innerWidth}>
-            <Text>{' '.repeat(innerWidth)}</Text>
-          </Box>
+          <Text>{' '.repeat(innerWidth)}</Text>
           <Text color={color}>{BORDER.vertical}</Text>
+          {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
         </Box>
       ))}
 
       {/* Bottom border */}
-      <Text>
+      <Box>
         <Text color={color}>{BORDER.bottomLeft}</Text>
         <Text color={color}>{BORDER.horizontal.repeat(innerWidth)}</Text>
         <Text color={color}>{BORDER.bottomRight}</Text>
-      </Text>
+        {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
+      </Box>
+
+      {/* Bottom shadow */}
+      {showShadow && (
+        <Box>
+          <Text color={shadowColor}> {SHADOW.repeat(boxWidth)}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

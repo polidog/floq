@@ -1,0 +1,630 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Text, useInput, useApp, useStdout } from 'ink';
+import TextInput from 'ink-text-input';
+import { eq, and, inArray, gte } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+import { getDb, schema } from '../../db/index.js';
+import { t, fmt } from '../../i18n/index.js';
+import { useTheme } from '../theme/index.js';
+import { isTursoEnabled, getContexts, addContext } from '../../config.js';
+import { VERSION } from '../../version.js';
+import type { Task, Comment } from '../../db/schema.js';
+import {
+  useHistory,
+  CreateTaskCommand,
+  MoveTaskCommand,
+  CreateCommentCommand,
+  DeleteCommentCommand,
+  SetContextCommand,
+} from '../history/index.js';
+
+type KanbanCategory = 'todo' | 'doing' | 'done';
+type PaneFocus = 'category' | 'tasks';
+type Mode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context';
+
+type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
+
+interface KanbanDQProps {
+  onOpenSettings?: (mode: SettingsMode) => void;
+}
+
+// Round border characters
+const BORDER = {
+  topLeft: '╭',
+  topRight: '╮',
+  bottomLeft: '╰',
+  bottomRight: '╯',
+  horizontal: '─',
+  vertical: '│',
+};
+
+const SHADOW = '░';
+
+function getDisplayWidth(str: string): number {
+  let width = 0;
+  for (const char of str) {
+    const code = char.charCodeAt(0);
+    if (
+      (code >= 0x1100 && code <= 0x115F) ||
+      (code >= 0x2E80 && code <= 0x9FFF) ||
+      (code >= 0xAC00 && code <= 0xD7AF) ||
+      (code >= 0xF900 && code <= 0xFAFF) ||
+      (code >= 0xFE10 && code <= 0xFE1F) ||
+      (code >= 0xFE30 && code <= 0xFE6F) ||
+      (code >= 0xFF00 && code <= 0xFF60) ||
+      (code >= 0xFFE0 && code <= 0xFFE6) ||
+      (code >= 0x20000 && code <= 0x2FFFF)
+    ) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
+interface TitledBoxProps {
+  title: string;
+  children: React.ReactNode;
+  width: number;
+  minHeight?: number;
+  isActive?: boolean;
+  showShadow?: boolean;
+}
+
+function TitledBoxInline({
+  title,
+  children,
+  width,
+  minHeight = 1,
+  isActive = false,
+  showShadow = true,
+}: TitledBoxProps): React.ReactElement {
+  const theme = useTheme();
+  const color = isActive ? theme.colors.borderActive : theme.colors.border;
+  const shadowColor = theme.colors.muted;
+  const innerWidth = width - 2;
+
+  const titleLength = getDisplayWidth(title);
+  const leftDashes = 3;
+  const titlePadding = 2;
+  const rightDashes = Math.max(0, innerWidth - leftDashes - titlePadding - titleLength);
+
+  const childArray = React.Children.toArray(children);
+  const contentRows = childArray.length || 1;
+  const emptyRowsNeeded = Math.max(0, minHeight - contentRows);
+
+  return (
+    <Box flexDirection="column">
+      {/* Top border */}
+      <Box>
+        <Text color={color}>{BORDER.topLeft}</Text>
+        <Text color={color}>{BORDER.horizontal.repeat(leftDashes)} </Text>
+        <Text color={theme.colors.accent} bold>{title}</Text>
+        <Text color={color}> {BORDER.horizontal.repeat(rightDashes)}</Text>
+        <Text color={color}>{BORDER.topRight}</Text>
+        {showShadow && <Text> </Text>}
+      </Box>
+
+      {/* Content */}
+      {childArray.length > 0 ? (
+        childArray.map((child, i) => (
+          <Box key={i}>
+            <Text color={color}>{BORDER.vertical}</Text>
+            <Box width={innerWidth} paddingX={1}>
+              <Box flexGrow={1}>{child}</Box>
+            </Box>
+            <Text color={color}>{BORDER.vertical}</Text>
+            {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
+          </Box>
+        ))
+      ) : (
+        <Box>
+          <Text color={color}>{BORDER.vertical}</Text>
+          <Box width={innerWidth}><Text> </Text></Box>
+          <Text color={color}>{BORDER.vertical}</Text>
+          {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
+        </Box>
+      )}
+
+      {/* Empty rows */}
+      {Array.from({ length: emptyRowsNeeded }).map((_, i) => (
+        <Box key={`empty-${i}`}>
+          <Text color={color}>{BORDER.vertical}</Text>
+          <Box width={innerWidth}><Text> </Text></Box>
+          <Text color={color}>{BORDER.vertical}</Text>
+          {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
+        </Box>
+      ))}
+
+      {/* Bottom border */}
+      <Box>
+        <Text color={color}>{BORDER.bottomLeft}</Text>
+        <Text color={color}>{BORDER.horizontal.repeat(innerWidth)}</Text>
+        <Text color={color}>{BORDER.bottomRight}</Text>
+        {showShadow && <Text color={shadowColor}>{SHADOW}</Text>}
+      </Box>
+
+      {/* Bottom shadow */}
+      {showShadow && (
+        <Box>
+          <Text color={shadowColor}> {SHADOW.repeat(width)}</Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+const CATEGORIES: KanbanCategory[] = ['todo', 'doing', 'done'];
+
+export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement {
+  const theme = useTheme();
+  const { exit } = useApp();
+  const { stdout } = useStdout();
+  const history = useHistory();
+  const i18n = t();
+
+  const [mode, setMode] = useState<Mode>('normal');
+  const [paneFocus, setPaneFocus] = useState<PaneFocus>('category');
+  const [selectedCategory, setSelectedCategory] = useState<KanbanCategory>('todo');
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
+  const [tasks, setTasks] = useState<Record<KanbanCategory, Task[]>>({
+    todo: [],
+    doing: [],
+    done: [],
+  });
+  const [message, setMessage] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskComments, setTaskComments] = useState<Comment[]>([]);
+  const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
+  const [contextFilter, setContextFilter] = useState<string | null>(null);
+  const [contextSelectIndex, setContextSelectIndex] = useState(0);
+  const [availableContexts, setAvailableContexts] = useState<string[]>([]);
+
+  const terminalWidth = stdout?.columns || 80;
+  const leftPaneWidth = 20;
+  const rightPaneWidth = terminalWidth - leftPaneWidth - 6;
+
+  const loadTasks = useCallback(async () => {
+    const db = getDb();
+
+    const filterByContext = (taskList: Task[]): Task[] => {
+      if (contextFilter === null) return taskList;
+      if (contextFilter === '') return taskList.filter(t => !t.context);
+      return taskList.filter(t => t.context === contextFilter);
+    };
+
+    let todoTasks = await db
+      .select()
+      .from(schema.tasks)
+      .where(and(
+        inArray(schema.tasks.status, ['inbox', 'someday']),
+        eq(schema.tasks.isProject, false)
+      ));
+
+    let doingTasks = await db
+      .select()
+      .from(schema.tasks)
+      .where(and(
+        inArray(schema.tasks.status, ['next', 'waiting']),
+        eq(schema.tasks.isProject, false)
+      ));
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    let doneTasks = await db
+      .select()
+      .from(schema.tasks)
+      .where(and(
+        eq(schema.tasks.status, 'done'),
+        eq(schema.tasks.isProject, false),
+        gte(schema.tasks.updatedAt, oneWeekAgo)
+      ));
+
+    setTasks({
+      todo: filterByContext(todoTasks),
+      doing: filterByContext(doingTasks),
+      done: filterByContext(doneTasks),
+    });
+    setAvailableContexts(getContexts());
+  }, [contextFilter]);
+
+  const loadTaskComments = useCallback(async (taskId: string) => {
+    const db = getDb();
+    const comments = await db
+      .select()
+      .from(schema.comments)
+      .where(eq(schema.comments.taskId, taskId));
+    setTaskComments(comments);
+  }, []);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const currentTasks = tasks[selectedCategory];
+
+  const getCategoryLabel = (cat: KanbanCategory): string => {
+    return i18n.kanban[cat];
+  };
+
+  const addTask = useCallback(async (title: string, context?: string | null) => {
+    if (!title.trim()) return;
+
+    const now = new Date();
+    const taskId = uuidv4();
+    const command = new CreateTaskCommand({
+      task: {
+        id: taskId,
+        title: title.trim(),
+        status: 'inbox',
+        context: context || null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      description: fmt(i18n.tui.added, { title: title.trim() }),
+    });
+
+    await history.execute(command);
+    setMessage(fmt(i18n.tui.added, { title: title.trim() }));
+    await loadTasks();
+  }, [i18n.tui.added, loadTasks, history]);
+
+  const moveTaskRight = useCallback(async (task: Task) => {
+    let newStatus: 'inbox' | 'next' | 'waiting' | 'someday' | 'done';
+
+    if (task.status === 'inbox' || task.status === 'someday') {
+      newStatus = 'next';
+    } else if (task.status === 'next' || task.status === 'waiting') {
+      newStatus = 'done';
+    } else {
+      return;
+    }
+
+    const command = new MoveTaskCommand({
+      taskId: task.id,
+      fromStatus: task.status,
+      toStatus: newStatus,
+      fromWaitingFor: task.waitingFor,
+      toWaitingFor: null,
+      description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[newStatus] }),
+    });
+
+    await history.execute(command);
+    setMessage(fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[newStatus] }));
+    await loadTasks();
+  }, [i18n.tui.movedTo, i18n.status, loadTasks, history]);
+
+  const markTaskDone = useCallback(async (task: Task) => {
+    const command = new MoveTaskCommand({
+      taskId: task.id,
+      fromStatus: task.status,
+      toStatus: 'done',
+      fromWaitingFor: task.waitingFor,
+      toWaitingFor: null,
+      description: fmt(i18n.tui.completed, { title: task.title }),
+    });
+
+    await history.execute(command);
+    setMessage(fmt(i18n.tui.completed, { title: task.title }));
+    await loadTasks();
+  }, [i18n.tui.completed, loadTasks, history]);
+
+  const handleInputSubmit = async (value: string) => {
+    if (mode === 'add') {
+      if (value.trim()) {
+        await addTask(value, contextFilter && contextFilter !== '' ? contextFilter : null);
+      }
+      setInputValue('');
+      setMode('normal');
+      return;
+    }
+
+    if (mode === 'add-context') {
+      if (value.trim()) {
+        const newContext = value.trim().toLowerCase().replace(/^@/, '');
+        addContext(newContext);
+        setAvailableContexts(getContexts());
+      }
+      setInputValue('');
+      setContextSelectIndex(0);
+      setMode('normal');
+      return;
+    }
+  };
+
+  useInput((input, key) => {
+    if (mode === 'add' || mode === 'add-comment' || mode === 'add-context') {
+      if (key.escape) {
+        setInputValue('');
+        setMode('normal');
+      }
+      return;
+    }
+
+    if (mode === 'context-filter') {
+      if (key.escape) {
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+
+      const contextOptions = ['all', 'none', ...availableContexts];
+      if (key.upArrow || input === 'k') {
+        setContextSelectIndex((prev) => (prev > 0 ? prev - 1 : contextOptions.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setContextSelectIndex((prev) => (prev < contextOptions.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      if (key.return) {
+        const selected = contextOptions[contextSelectIndex];
+        if (selected === 'all') {
+          setContextFilter(null);
+        } else if (selected === 'none') {
+          setContextFilter('');
+        } else {
+          setContextFilter(selected);
+        }
+        setContextSelectIndex(0);
+        setMode('normal');
+        return;
+      }
+      return;
+    }
+
+    if (message) setMessage(null);
+
+    // Quit
+    if (input === 'q' || (key.ctrl && input === 'c')) {
+      exit();
+      return;
+    }
+
+    // Help
+    if (input === '?') {
+      setMode('help');
+      return;
+    }
+
+    // Add task
+    if (input === 'a') {
+      setMode('add');
+      return;
+    }
+
+    // Context filter
+    if (input === '@') {
+      setContextSelectIndex(0);
+      setMode('context-filter');
+      return;
+    }
+
+    // Settings
+    if (input === 'T' && onOpenSettings) {
+      onOpenSettings('theme-select');
+      return;
+    }
+    if (input === 'V' && onOpenSettings) {
+      onOpenSettings('mode-select');
+      return;
+    }
+    if (input === 'L' && onOpenSettings) {
+      onOpenSettings('lang-select');
+      return;
+    }
+
+    // Navigation
+    if (paneFocus === 'category') {
+      if (key.upArrow || input === 'k') {
+        const idx = CATEGORIES.indexOf(selectedCategory);
+        setSelectedCategory(CATEGORIES[idx > 0 ? idx - 1 : CATEGORIES.length - 1]);
+        setSelectedTaskIndex(0);
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        const idx = CATEGORIES.indexOf(selectedCategory);
+        setSelectedCategory(CATEGORIES[idx < CATEGORIES.length - 1 ? idx + 1 : 0]);
+        setSelectedTaskIndex(0);
+        return;
+      }
+      if (key.rightArrow || input === 'l' || key.return) {
+        if (currentTasks.length > 0) {
+          setPaneFocus('tasks');
+        }
+        return;
+      }
+    }
+
+    if (paneFocus === 'tasks') {
+      if (key.escape || key.leftArrow || input === 'h') {
+        setPaneFocus('category');
+        return;
+      }
+      if (key.upArrow || input === 'k') {
+        setSelectedTaskIndex((prev) => (prev > 0 ? prev - 1 : currentTasks.length - 1));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setSelectedTaskIndex((prev) => (prev < currentTasks.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Mark done
+      if (input === 'd' && currentTasks.length > 0) {
+        const task = currentTasks[selectedTaskIndex];
+        markTaskDone(task).then(() => {
+          if (selectedTaskIndex >= currentTasks.length - 1) {
+            setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+          }
+        });
+        return;
+      }
+
+      // Move right
+      if (input === 'm' && currentTasks.length > 0 && selectedCategory !== 'done') {
+        const task = currentTasks[selectedTaskIndex];
+        moveTaskRight(task).then(() => {
+          if (selectedTaskIndex >= currentTasks.length - 1) {
+            setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+          }
+        });
+        return;
+      }
+
+      // Undo
+      if (input === 'u') {
+        history.undo().then((didUndo) => {
+          if (didUndo) {
+            setMessage(fmt(i18n.tui.undone, { action: history.undoDescription || '' }));
+            loadTasks();
+          } else {
+            setMessage(i18n.tui.nothingToUndo);
+          }
+        });
+        return;
+      }
+    }
+
+    // Refresh
+    if (input === 'r' && !key.ctrl) {
+      loadTasks();
+      setMessage(i18n.tui.refreshed);
+      return;
+    }
+  });
+
+  const tursoEnabled = isTursoEnabled();
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      {/* Header */}
+      <Box marginBottom={1} justifyContent="space-between">
+        <Box>
+          <Text bold color={theme.colors.primary}>FLOQ</Text>
+          <Text color={theme.colors.accent}> [KANBAN]</Text>
+          <Text color={theme.colors.textMuted}> v{VERSION}</Text>
+          <Text color={tursoEnabled ? theme.colors.accent : theme.colors.textMuted}>
+            {tursoEnabled ? ' [TURSO]' : ' [LOCAL]'}
+          </Text>
+          {contextFilter !== null && (
+            <Text color={theme.colors.accent}>
+              {' '}@{contextFilter === '' ? 'none' : contextFilter}
+            </Text>
+          )}
+        </Box>
+        <Text color={theme.colors.textMuted}>?=help q=quit</Text>
+      </Box>
+
+      {/* Main content */}
+      {mode === 'context-filter' ? (
+        <Box flexDirection="column">
+          <Text color={theme.colors.secondary} bold>Filter by context</Text>
+          <Box flexDirection="column" marginTop={1}>
+            {['all', 'none', ...availableContexts].map((ctx, index) => {
+              const label = ctx === 'all' ? 'All' : ctx === 'none' ? 'No context' : `@${ctx}`;
+              return (
+                <Text
+                  key={ctx}
+                  color={index === contextSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                  bold={index === contextSelectIndex}
+                >
+                  {index === contextSelectIndex ? '▶ ' : '  '}{label}
+                </Text>
+              );
+            })}
+          </Box>
+        </Box>
+      ) : (
+        <Box flexDirection="row">
+          {/* Left pane: Categories */}
+          <Box marginRight={2}>
+            <TitledBoxInline
+              title={'カテゴリ'}
+              width={leftPaneWidth}
+              minHeight={5}
+              isActive={paneFocus === 'category'}
+            >
+              {CATEGORIES.map((cat) => {
+                const isSelected = cat === selectedCategory;
+                const count = tasks[cat].length;
+                return (
+                  <Text
+                    key={cat}
+                    color={isSelected && paneFocus === 'category' ? theme.colors.textSelected : theme.colors.text}
+                    bold={isSelected}
+                  >
+                    {isSelected ? '▶ ' : '  '}{getCategoryLabel(cat)} ({count})
+                  </Text>
+                );
+              })}
+            </TitledBoxInline>
+          </Box>
+
+          {/* Right pane: Tasks */}
+          <Box flexGrow={1}>
+            <TitledBoxInline
+              title={getCategoryLabel(selectedCategory)}
+              width={rightPaneWidth}
+              minHeight={10}
+              isActive={paneFocus === 'tasks'}
+            >
+              {currentTasks.length === 0 ? (
+                <Text color={theme.colors.textMuted} italic>
+                  {i18n.tui.noTasks}
+                </Text>
+              ) : (
+                currentTasks.map((task, index) => {
+                  const isSelected = paneFocus === 'tasks' && index === selectedTaskIndex;
+                  return (
+                    <Text
+                      key={task.id}
+                      color={isSelected ? theme.colors.textSelected : theme.colors.text}
+                      bold={isSelected}
+                    >
+                      {isSelected ? '▶ ' : '  '}{task.title}
+                      {task.context && <Text color={theme.colors.muted}> @{task.context}</Text>}
+                    </Text>
+                  );
+                })
+              )}
+            </TitledBoxInline>
+          </Box>
+        </Box>
+      )}
+
+      {/* Add task input */}
+      {mode === 'add' && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.secondary} bold>{i18n.tui.newTask}</Text>
+          <TextInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleInputSubmit}
+            placeholder={i18n.tui.placeholder}
+          />
+        </Box>
+      )}
+
+      {/* Message */}
+      {message && mode === 'normal' && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.textHighlight}>{message}</Text>
+        </Box>
+      )}
+
+      {/* Footer */}
+      <Box marginTop={1}>
+        <Text color={theme.colors.textMuted}>
+          {paneFocus === 'category'
+            ? 'j/k=select l/Enter=tasks a=add @=filter'
+            : 'j/k=select h/Esc=back d=done m=move a=add u=undo'}
+        </Text>
+      </Box>
+    </Box>
+  );
+}

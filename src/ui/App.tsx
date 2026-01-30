@@ -15,10 +15,11 @@ import { ModeSelector } from './ModeSelector.js';
 import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
-import { ThemeProvider, useTheme } from './theme/index.js';
+import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
 import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
+import { KanbanDQ } from './components/KanbanDQ.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
@@ -96,11 +97,18 @@ export function App(): React.ReactElement {
     );
   }
 
+  const currentTheme = getTheme(themeName);
+  const useKanbanDQ = viewMode === 'kanban' && currentTheme.uiStyle === 'titled-box';
+
   return (
     <ThemeProvider themeName={themeName}>
       <HistoryProvider>
         {viewMode === 'kanban' ? (
-          <KanbanBoard onOpenSettings={setSettingsMode} />
+          useKanbanDQ ? (
+            <KanbanDQ onOpenSettings={setSettingsMode} />
+          ) : (
+            <KanbanBoard onOpenSettings={setSettingsMode} />
+          )
         ) : (
           <AppContent onOpenSettings={setSettingsMode} />
         )}
