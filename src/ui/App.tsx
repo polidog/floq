@@ -20,6 +20,7 @@ import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTurs
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
+import { GtdDQ } from './components/GtdDQ.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
@@ -98,19 +99,23 @@ export function App(): React.ReactElement {
   }
 
   const currentTheme = getTheme(themeName);
-  const useKanbanDQ = viewMode === 'kanban' && currentTheme.uiStyle === 'titled-box';
+  const useDQStyle = currentTheme.uiStyle === 'titled-box';
 
   return (
     <ThemeProvider themeName={themeName}>
       <HistoryProvider>
         {viewMode === 'kanban' ? (
-          useKanbanDQ ? (
+          useDQStyle ? (
             <KanbanDQ onOpenSettings={setSettingsMode} />
           ) : (
             <KanbanBoard onOpenSettings={setSettingsMode} />
           )
         ) : (
-          <AppContent onOpenSettings={setSettingsMode} />
+          useDQStyle ? (
+            <GtdDQ onOpenSettings={setSettingsMode} />
+          ) : (
+            <AppContent onOpenSettings={setSettingsMode} />
+          )
         )}
       </HistoryProvider>
     </ThemeProvider>
