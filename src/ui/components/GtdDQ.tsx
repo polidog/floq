@@ -473,6 +473,36 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     await loadTasks();
   }, [i18n.tui.linkedToProject, loadTasks, history]);
 
+  const addCommentToTask = useCallback(async (task: Task, content: string) => {
+    const commentId = uuidv4();
+    const command = new CreateCommentCommand({
+      comment: {
+        id: commentId,
+        taskId: task.id,
+        content: content.trim(),
+        createdAt: new Date(),
+      },
+      description: i18n.tui.commentAdded || 'Comment added',
+    });
+
+    await history.execute(command);
+    setMessage(i18n.tui.commentAdded || 'Comment added');
+    await loadTaskComments(task.id);
+  }, [history, i18n.tui.commentAdded, loadTaskComments]);
+
+  const deleteComment = useCallback(async (comment: Comment) => {
+    const command = new DeleteCommentCommand({
+      comment,
+      description: i18n.tui.commentDeleted || 'Comment deleted',
+    });
+
+    await history.execute(command);
+    setMessage(i18n.tui.commentDeleted || 'Comment deleted');
+    if (selectedTask) {
+      await loadTaskComments(selectedTask.id);
+    }
+  }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask, history]);
+
   const handleInputSubmit = async (value: string) => {
     // Handle search mode submit
     if (mode === 'search') {
@@ -485,6 +515,16 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       setSearchQuery('');
       setSearchResults([]);
       setSearchResultIndex(0);
+      return;
+    }
+
+    // Handle add-comment mode
+    if (mode === 'add-comment' && selectedTask) {
+      if (value.trim()) {
+        await addCommentToTask(selectedTask, value);
+      }
+      setInputValue('');
+      setMode('task-detail');
       return;
     }
 
@@ -542,10 +582,52 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           setMode('project-detail');
         } else if (mode === 'add-context') {
           setMode('set-context');
+        } else if (mode === 'add-comment') {
+          setMode('task-detail');
         } else {
           setMode('normal');
         }
       }
+      return;
+    }
+
+    // Handle task-detail mode
+    if (mode === 'task-detail') {
+      if (key.escape || input === 'b' || input === 'h' || key.leftArrow) {
+        setSelectedTask(null);
+        setTaskComments([]);
+        setSelectedCommentIndex(0);
+        setMode('normal');
+        return;
+      }
+
+      // Navigate comments
+      if (key.upArrow || input === 'k') {
+        setSelectedCommentIndex((prev) => (prev > 0 ? prev - 1 : Math.max(0, taskComments.length - 1)));
+        return;
+      }
+      if (key.downArrow || input === 'j') {
+        setSelectedCommentIndex((prev) => (prev < taskComments.length - 1 ? prev + 1 : 0));
+        return;
+      }
+
+      // Add comment
+      if (input === 'c' || input === 'i') {
+        setMode('add-comment');
+        return;
+      }
+
+      // Delete comment
+      if (input === 'D' && taskComments.length > 0) {
+        const comment = taskComments[selectedCommentIndex];
+        deleteComment(comment).then(() => {
+          if (selectedCommentIndex >= taskComments.length - 1) {
+            setSelectedCommentIndex(Math.max(0, selectedCommentIndex - 1));
+          }
+        });
+        return;
+      }
+
       return;
     }
 
@@ -814,6 +896,15 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         return;
       }
 
+      // Enter to view task details (on non-projects tabs)
+      if (key.return && currentTab !== 'projects' && currentTasks.length > 0) {
+        const task = currentTasks[selectedTaskIndex];
+        setSelectedTask(task);
+        loadTaskComments(task.id);
+        setMode('task-detail');
+        return;
+      }
+
       // Task actions
       if (currentTasks.length > 0) {
         const task = currentTasks[selectedTaskIndex];
@@ -991,6 +1082,64 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
             {fmt(i18n.tui.deleteConfirm || 'Delete "{title}"? (y/n)', { title: taskToDelete.title })}
           </Text>
         </Box>
+      ) : (mode === 'task-detail' || mode === 'add-comment') && selectedTask ? (
+        <Box flexDirection="column">
+          {/* Task detail header */}
+          <TitledBoxInline
+            title={i18n.tui.taskDetailTitle || 'Task Details'}
+            width={terminalWidth - 4}
+            minHeight={4}
+            isActive={true}
+          >
+            <Text color={theme.colors.text} bold>{selectedTask.title}</Text>
+            {selectedTask.description && (
+              <Text color={theme.colors.textMuted}>{selectedTask.description}</Text>
+            )}
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailStatus || 'Status'}: </Text>
+              <Text color={theme.colors.accent}>
+                {i18n.status[selectedTask.status]}
+                {selectedTask.waitingFor && ` (${selectedTask.waitingFor})`}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.context ? `@${selectedTask.context}` : (i18n.tui.context?.none || 'No context')}
+              </Text>
+            </Box>
+          </TitledBoxInline>
+
+          {/* Comments section */}
+          <Box marginTop={1}>
+            <TitledBoxInline
+              title={`${i18n.tui.comments || 'Comments'} (${taskComments.length})`}
+              width={terminalWidth - 4}
+              minHeight={5}
+              isActive={mode === 'task-detail'}
+            >
+              {taskComments.length === 0 ? (
+                <Text color={theme.colors.textMuted} italic>
+                  {i18n.tui.noComments || 'No comments yet'}
+                </Text>
+              ) : (
+                taskComments.map((comment, index) => {
+                  const isSelected = index === selectedCommentIndex && mode === 'task-detail';
+                  return (
+                    <Box key={comment.id} flexDirection="column" marginBottom={1}>
+                      <Text color={theme.colors.textMuted}>
+                        {isSelected ? '▶ ' : '  '}[{comment.createdAt.toLocaleString()}]
+                      </Text>
+                      <Text color={isSelected ? theme.colors.textSelected : theme.colors.text} bold={isSelected}>
+                        {'  '}{comment.content}
+                      </Text>
+                    </Box>
+                  );
+                })
+              )}
+            </TitledBoxInline>
+          </Box>
+        </Box>
       ) : (
         <Box flexDirection="row">
           {/* Left pane: Tabs */}
@@ -1113,6 +1262,19 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         </Box>
       )}
 
+      {/* Add comment input */}
+      {mode === 'add-comment' && selectedTask && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.secondary} bold>{i18n.tui.addComment || 'Add comment'}: </Text>
+          <TextInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleInputSubmit}
+            placeholder="Enter comment..."
+          />
+        </Box>
+      )}
+
       {/* Search bar */}
       {mode === 'search' && (
         <SearchBar
@@ -1141,11 +1303,13 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       {/* Footer */}
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted}>
-          {mode === 'project-detail'
-            ? 'j/k=select a=add d=done Esc/b=back /=search'
-            : paneFocus === 'tabs'
-              ? 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search'
-              : 'j/k=select h/Esc=back d=done n=next s=someday w=wait i=inbox p=project P=link D=delete u=undo /=search'}
+          {mode === 'task-detail'
+            ? 'j/k=select c/i=add comment D=delete comment Esc/b=back'
+            : mode === 'project-detail'
+              ? 'j/k=select a=add d=done Esc/b=back /=search'
+              : paneFocus === 'tabs'
+                ? 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search'
+                : 'j/k=select Enter=detail h/Esc=back d=done n=next s=someday w=wait i=inbox p=project P=link D=delete u=undo /=search'}
         </Text>
       </Box>
     </Box>
