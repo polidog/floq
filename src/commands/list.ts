@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and, gte } from 'drizzle-orm';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import type { TaskStatus } from '../db/schema.js';
@@ -15,10 +15,24 @@ export async function listTasks(status?: string): Promise<void> {
       process.exit(1);
     }
 
-    const tasks = await db
-      .select()
-      .from(schema.tasks)
-      .where(eq(schema.tasks.status, status as TaskStatus));
+    // For done status, only show tasks from the last week by default
+    let tasks;
+    if (status === 'done') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      tasks = await db
+        .select()
+        .from(schema.tasks)
+        .where(and(
+          eq(schema.tasks.status, 'done'),
+          gte(schema.tasks.updatedAt, oneWeekAgo)
+        ));
+    } else {
+      tasks = await db
+        .select()
+        .from(schema.tasks)
+        .where(eq(schema.tasks.status, status as TaskStatus));
+    }
 
     console.log(`\n${i18n.status[status as TaskStatus]} (${tasks.length})`);
     console.log('─'.repeat(40));

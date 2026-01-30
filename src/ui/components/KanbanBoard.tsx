@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { KanbanColumn, type KanbanColumnType } from './KanbanColumn.js';
 import { HelpModal } from './HelpModal.js';
@@ -102,13 +102,17 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
         eq(schema.tasks.isProject, false)
       ));
 
-    // Done: done (non-project tasks)
+    // Done: done (non-project tasks) - only show last week
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
     let doneTasks = await db
       .select()
       .from(schema.tasks)
       .where(and(
         eq(schema.tasks.status, 'done'),
-        eq(schema.tasks.isProject, false)
+        eq(schema.tasks.isProject, false),
+        gte(schema.tasks.updatedAt, oneWeekAgo)
       ));
 
     // Load projects for linking

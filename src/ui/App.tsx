@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { TaskItem, type ProjectProgress } from './components/TaskItem.js';
 import { HelpModal } from './components/HelpModal.js';
@@ -164,13 +164,24 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     // Load all tasks (including project children) by status
     const statusList = ['inbox', 'next', 'waiting', 'someday', 'done'] as const;
     for (const status of statusList) {
+      // For done tasks, only show those completed in the last week
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const conditions = [
+        eq(schema.tasks.status, status),
+        eq(schema.tasks.isProject, false),
+      ];
+
+      // Filter done tasks to last week only
+      if (status === 'done') {
+        conditions.push(gte(schema.tasks.updatedAt, oneWeekAgo));
+      }
+
       let allTasks = await db
         .select()
         .from(schema.tasks)
-        .where(and(
-          eq(schema.tasks.status, status),
-          eq(schema.tasks.isProject, false)
-        ));
+        .where(and(...conditions));
 
       // Apply context filter
       if (contextFilter !== null) {
