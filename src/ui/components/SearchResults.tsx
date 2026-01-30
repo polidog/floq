@@ -32,11 +32,15 @@ export function SearchResults({ results, selectedIndex, query, viewMode = 'gtd' 
     return <></>;
   }
 
+  // Mario theme uses green (pipe color) for search results
+  const isMarioStyle = theme.uiStyle === 'mario-block';
+  const boxBorderColor = isMarioStyle ? theme.colors.accent : theme.colors.borderActive;
+
   return (
     <Box
       flexDirection="column"
       borderStyle={theme.borders.list as BorderStyleType}
-      borderColor={theme.colors.borderActive}
+      borderColor={boxBorderColor}
       paddingX={1}
       paddingY={1}
       minHeight={5}

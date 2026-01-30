@@ -21,6 +21,7 @@ import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
 import { GtdDQ } from './components/GtdDQ.js';
+import { GtdMario } from './components/GtdMario.js';
 import { VERSION } from '../version.js';
 import type { Task, Comment } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
@@ -77,6 +78,7 @@ export function App(): React.ReactElement {
 
   const currentTheme = getTheme(themeName);
   const useDQStyle = currentTheme.uiStyle === 'titled-box';
+  const useMarioStyle = currentTheme.uiStyle === 'mario-block';
 
   // Show splash screen (all themes, configurable duration)
   if (showSplash) {
@@ -122,7 +124,9 @@ export function App(): React.ReactElement {
             <KanbanBoard onOpenSettings={setSettingsMode} />
           )
         ) : (
-          useDQStyle ? (
+          useMarioStyle ? (
+            <GtdMario onOpenSettings={setSettingsMode} />
+          ) : useDQStyle ? (
             <GtdDQ onOpenSettings={setSettingsMode} />
           ) : (
             <AppContent onOpenSettings={setSettingsMode} />

@@ -33,7 +33,8 @@ export type BorderStyleType = 'single' | 'double' | 'round' | 'bold' | 'singleDo
 // UI style determines how boxes are rendered
 // - 'default': Standard Ink Box with borderStyle
 // - 'titled-box': Custom TitledBox component with title embedded in top border (RPG style)
-export type UIStyleType = 'default' | 'titled-box';
+// - 'mario-block': Super Mario Bros style with block/brick borders
+export type UIStyleType = 'default' | 'titled-box' | 'mario-block';
 
 export interface ThemeColors {
   // Primary colors

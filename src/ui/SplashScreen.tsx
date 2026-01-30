@@ -57,6 +57,43 @@ const DQ_BORDER = {
 
 const TAGLINE = 'Flow your tasks, clear your mind';
 
+// Mario/Nintendo style splash - SFC boot screen inspired
+const MARIO_LOGO = [
+  '          ★  ★  ★  ★  ★  ★  ★  ★  ★',
+  '',
+  '    ████████ ██       ██████   ██████',
+  '    ██       ██      ██    ██ ██    ██',
+  '    ██████   ██      ██    ██ ██    ██',
+  '    ██       ██      ██    ██ ██ ▄▄ ██',
+  '    ██       ███████  ██████   ██████',
+  '',
+  '          ★  ★  ★  ★  ★  ★  ★  ★  ★',
+];
+
+const MARIO_QUOTES_JA = [
+  'イッツァミー！タスクマネージャー！',
+  'マンマミーア！タスクがいっぱいだ！',
+  'レッツァゴー！',
+  'ヤッフー！',
+  'スーパータスククリア！',
+  'コインをゲット！',
+  '1UPキノコ！',
+  'ファイアフラワー！',
+  'スターパワー！',
+];
+
+const MARIO_QUOTES_EN = [
+  "It's-a me! Task Manager!",
+  'Mamma mia! So many tasks!',
+  "Let's-a go!",
+  'Yahoo!',
+  'Super Task Clear!',
+  'Got a coin!',
+  '1-UP Mushroom!',
+  'Fire Flower!',
+  'Star Power!',
+];
+
 // Dragon Quest famous quotes for splash screen
 const DQ_QUOTES_JA = [
   'へんじがない。ただのしかばねのようだ。',
@@ -98,13 +135,18 @@ export function SplashScreen({ onComplete, duration = 1500, viewMode = 'gtd' }: 
   const i18n = t();
 
   const isDqStyle = theme.uiStyle === 'titled-box';
-  const isDosStyle = theme.name !== 'modern';
+  const isMarioStyle = theme.uiStyle === 'mario-block';
+  const isDosStyle = theme.name !== 'modern' && !isMarioStyle;
   const logo = isDosStyle ? LOGO_DOS : LOGO_MODERN;
   const [filled, empty] = theme.style.loadingChars;
 
   // Pick a random quote (stable across re-renders)
   const [randomQuote] = useState(() => {
     const isJapanese = i18n.splash?.welcome === 'ようこそ！';
+    if (isMarioStyle) {
+      const quotes = isJapanese ? MARIO_QUOTES_JA : MARIO_QUOTES_EN;
+      return quotes[Math.floor(Math.random() * quotes.length)];
+    }
     const quotes = isJapanese ? DQ_QUOTES_JA : DQ_QUOTES_EN;
     return quotes[Math.floor(Math.random() * quotes.length)];
   });
@@ -139,9 +181,9 @@ export function SplashScreen({ onComplete, duration = 1500, viewMode = 'gtd' }: 
       setShowTagline(true);
     }, 600);
 
-    // Blink effect for DQ style or wait-for-key mode
+    // Blink effect for DQ style, Mario style, or wait-for-key mode
     let blinkInterval: ReturnType<typeof setInterval> | null = null;
-    if (isDqStyle || waitForKeyPress) {
+    if (isDqStyle || isMarioStyle || waitForKeyPress) {
       blinkInterval = setInterval(() => {
         setBlinkVisible((prev) => !prev);
       }, 500);
@@ -161,7 +203,69 @@ export function SplashScreen({ onComplete, duration = 1500, viewMode = 'gtd' }: 
       if (completeTimer) clearTimeout(completeTimer);
       if (blinkInterval) clearInterval(blinkInterval);
     };
-  }, [onComplete, duration, isDqStyle, waitForKeyPress]);
+  }, [onComplete, duration, isDqStyle, isMarioStyle, waitForKeyPress]);
+
+  // Mario / Nintendo style splash (SFC boot screen inspired)
+  if (isMarioStyle) {
+    return (
+      <Box
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        padding={2}
+      >
+        {/* Top decoration */}
+        <Box marginBottom={1}>
+          <Text color={theme.colors.secondary}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text>
+        </Box>
+
+        {/* FLOQ Logo */}
+        <Box flexDirection="column" alignItems="center" marginBottom={1}>
+          {MARIO_LOGO.map((line, index) => (
+            <Text
+              key={index}
+              color={index === 0 || index === 8 ? theme.colors.secondary : theme.colors.primary}
+              bold
+            >
+              {line}
+            </Text>
+          ))}
+        </Box>
+
+        {/* Subtitle */}
+        <Box marginBottom={1}>
+          <Text color={theme.colors.text} bold>
+            ～ SUPER TASK MANAGER ～
+          </Text>
+        </Box>
+
+        {/* Random quote */}
+        <Box marginBottom={1}>
+          <Text color={theme.colors.accent}>
+            🍄 {randomQuote}
+          </Text>
+        </Box>
+
+        {/* Bottom decoration */}
+        <Box marginBottom={1}>
+          <Text color={theme.colors.secondary}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text>
+        </Box>
+
+        {/* Press key hint */}
+        <Box marginTop={1}>
+          <Text color={theme.colors.textMuted}>
+            {blinkVisible ? '- PRESS START -' : '               '}
+          </Text>
+        </Box>
+
+        {/* Version & Copyright */}
+        <Box marginTop={2} flexDirection="column" alignItems="center">
+          <Text color={theme.colors.textMuted}>VER {VERSION}</Text>
+          <Text color={theme.colors.textMuted}>© 2026 polidog/PartyHard Inc.</Text>
+        </Box>
+      </Box>
+    );
+  }
 
   // Dragon Quest style splash
   if (isDqStyle) {

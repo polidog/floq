@@ -1029,44 +1029,44 @@ export const pc98Theme: Theme = {
   },
 };
 
-// Mario - Nintendo's iconic plumber colors
+// Mario - Nintendo's iconic plumber colors (bright, fun, colorful)
 export const marioTheme: Theme = {
   name: 'mario',
   displayName: 'Mario',
-  uiStyle: 'titled-box',
+  uiStyle: 'mario-block',
   colors: {
-    primary: '#e52521',      // Mario's red cap and shirt
+    primary: '#e52521',      // Mario's red cap
     secondary: '#fbd000',    // Coins, stars
-    accent: '#049cd8',       // Mario's overalls
-    muted: '#888888',
-    border: '#e52521',
-    borderActive: '#fbd000',
-    background: '#049cd8',   // Sky blue
-    statusInbox: '#ffffff',
-    statusNext: '#43b047',   // Green pipe, 1UP
-    statusWaiting: '#fbd000', // ? block gold
-    statusSomeday: '#f5a623', // Fire flower orange
-    statusDone: '#888888',
+    accent: '#43b047',       // Green pipe, 1UP mushroom
+    muted: '#c9a36a',        // Brick block tan
+    border: '#fbd000',       // Gold border like coins
+    borderActive: '#e52521', // Red when active
+    background: '#5c94fc',   // NES sky blue
+    statusInbox: '#fbd000',  // Coin gold
+    statusNext: '#43b047',   // 1UP green
+    statusWaiting: '#f5a623', // Fire flower orange
+    statusSomeday: '#049cd8', // Blue overalls
+    statusDone: '#c9a36a',   // Brick tan
     text: '#ffffff',
-    textMuted: '#cccccc',
+    textMuted: '#c9a36a',
     textSelected: '#fbd000',
     textHighlight: '#e52521',
-    fnKeyLabel: '#049cd8',
+    fnKeyLabel: '#e52521',
     fnKeyText: '#ffffff',
   },
   borders: {
-    main: 'round',
-    modal: 'round',
-    list: 'round',
+    main: 'bold',
+    modal: 'bold',
+    list: 'single',
   },
   style: {
-    selectedPrefix: '★ ',
-    unselectedPrefix: '  ',
+    selectedPrefix: '🍄 ',   // Mushroom!
+    unselectedPrefix: '   ',
     tabActiveInverse: true,
-    tabBrackets: ['[', ']'],
-    headerUppercase: false,
-    showFunctionKeys: false,
-    loadingChars: ['●', '○'],
+    tabBrackets: ['《', '》'],
+    headerUppercase: true,
+    showFunctionKeys: true,
+    loadingChars: ['★', '☆'],
   },
 };
 
