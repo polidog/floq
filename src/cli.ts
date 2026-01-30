@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, syncCommand, resetDatabase } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, syncCommand, resetDatabase, setSplashCommand, showSplash } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
 import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
 import { runSetupWizard } from './commands/setup.js';
@@ -171,6 +171,17 @@ configCmd
       console.error('Usage: floq config turso --url <url> --token <token>');
       console.error('       floq config turso --disable');
       process.exit(1);
+    }
+  });
+
+configCmd
+  .command('splash [duration]')
+  .description('Set splash screen duration (ms, off=disable, key=wait for key)')
+  .action(async (duration?: string) => {
+    if (duration !== undefined) {
+      await setSplashCommand(duration);
+    } else {
+      await showSplash();
     }
   });
 

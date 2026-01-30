@@ -50,7 +50,7 @@ export function App(): React.ReactElement {
   const [viewMode, setViewModeState] = useState<ViewMode>(getViewMode);
   const [settingsMode, setSettingsMode] = useState<SettingsMode>('none');
   const splashDuration = getSplashDuration();
-  const [showSplash, setShowSplash] = useState(splashDuration > 0);
+  const [showSplash, setShowSplash] = useState(splashDuration !== 0);
   const [, forceUpdate] = useState({});
 
   const handleThemeSelect = (theme: ThemeName) => {

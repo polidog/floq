@@ -197,5 +197,6 @@ export function getSplashDuration(): number {
 }
 
 export function setSplashDuration(duration: number): void {
-  saveConfig({ splashDuration: Math.max(0, duration) });
+  // Allow -1 (wait for key), 0 (disabled), or positive values
+  saveConfig({ splashDuration: duration >= 0 ? duration : -1 });
 }

@@ -3,7 +3,7 @@ import React from 'react';
 import { createInterface } from 'readline';
 import { unlinkSync, existsSync, readdirSync } from 'fs';
 import { dirname, basename, join } from 'path';
-import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, type Locale, type ThemeName, type ViewMode } from '../config.js';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, getSplashDuration, setSplashDuration, type Locale, type ThemeName, type ViewMode } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
 import { ModeSelector } from '../ui/ModeSelector.js';
@@ -15,6 +15,7 @@ const VALID_VIEW_MODES: ViewMode[] = ['gtd', 'kanban'];
 
 export async function showConfig(): Promise<void> {
   const config = loadConfig();
+  const splashDuration = getSplashDuration();
 
   console.log('GTD CLI Configuration');
   console.log('─'.repeat(40));
@@ -23,6 +24,7 @@ export async function showConfig(): Promise<void> {
   console.log(`Database: ${getDbPath()}`);
   console.log(`Theme: ${config.theme || 'modern'}`);
   console.log(`View Mode: ${config.viewMode || 'gtd'}`);
+  console.log(`Splash: ${splashDuration === 0 ? 'disabled' : splashDuration === -1 ? 'wait for key' : `${splashDuration}ms`}`);
   console.log(`Turso: ${isTursoEnabled() ? 'enabled' : 'disabled'}`);
 
   if (config.db_path) {
@@ -144,6 +146,55 @@ export async function setTurso(url: string, token: string): Promise<void> {
 export async function disableTurso(): Promise<void> {
   setTursoConfig(undefined);
   console.log('Turso sync disabled');
+}
+
+export async function setSplashCommand(duration: string): Promise<void> {
+  let value: number;
+
+  // Handle special keywords
+  if (duration === 'key' || duration === 'wait') {
+    value = -1;
+  } else if (duration === 'off' || duration === 'disable') {
+    value = 0;
+  } else {
+    value = parseInt(duration, 10);
+
+    if (isNaN(value)) {
+      console.error(`Invalid duration: ${duration}`);
+      console.error('Usage: floq config splash <milliseconds|key|off>');
+      console.error('  off/0 = disable splash screen');
+      console.error('  key = wait for key press');
+      console.error('  positive number = duration in milliseconds');
+      process.exit(1);
+    }
+
+    if (value < 0) {
+      console.error('Duration must be 0 (disabled) or positive number');
+      console.error('Use "key" for wait-for-keypress mode');
+      process.exit(1);
+    }
+  }
+
+  setSplashDuration(value);
+
+  if (value === 0) {
+    console.log('Splash screen disabled');
+  } else if (value === -1) {
+    console.log('Splash screen set to wait for key press');
+  } else {
+    console.log(`Splash screen duration set to ${value}ms`);
+  }
+}
+
+export async function showSplash(): Promise<void> {
+  const duration = getSplashDuration();
+  if (duration === 0) {
+    console.log('Splash screen: disabled');
+  } else if (duration === -1) {
+    console.log('Splash screen: wait for key press');
+  } else {
+    console.log(`Splash screen: ${duration}ms`);
+  }
 }
 
 export async function syncCommand(): Promise<void> {
