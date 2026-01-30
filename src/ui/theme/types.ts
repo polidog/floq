@@ -25,7 +25,8 @@ export type ThemeName =
   | 'sakura'
   | 'msx'
   | 'pc-98'
-  | 'dragon-quest';
+  | 'dragon-quest'
+  | 'mario';
 
 export type BorderStyleType = 'single' | 'double' | 'round' | 'bold' | 'singleDouble' | 'doubleSingle' | 'classic';
 

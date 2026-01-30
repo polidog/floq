@@ -1029,6 +1029,47 @@ export const pc98Theme: Theme = {
   },
 };
 
+// Mario - Nintendo's iconic plumber colors
+export const marioTheme: Theme = {
+  name: 'mario',
+  displayName: 'Mario',
+  uiStyle: 'titled-box',
+  colors: {
+    primary: '#e52521',      // Mario's red cap and shirt
+    secondary: '#fbd000',    // Coins, stars
+    accent: '#049cd8',       // Mario's overalls
+    muted: '#888888',
+    border: '#e52521',
+    borderActive: '#fbd000',
+    background: '#049cd8',   // Sky blue
+    statusInbox: '#ffffff',
+    statusNext: '#43b047',   // Green pipe, 1UP
+    statusWaiting: '#fbd000', // ? block gold
+    statusSomeday: '#f5a623', // Fire flower orange
+    statusDone: '#888888',
+    text: '#ffffff',
+    textMuted: '#cccccc',
+    textSelected: '#fbd000',
+    textHighlight: '#e52521',
+    fnKeyLabel: '#049cd8',
+    fnKeyText: '#ffffff',
+  },
+  borders: {
+    main: 'round',
+    modal: 'round',
+    list: 'round',
+  },
+  style: {
+    selectedPrefix: '★ ',
+    unselectedPrefix: '  ',
+    tabActiveInverse: true,
+    tabBrackets: ['[', ']'],
+    headerUppercase: false,
+    showFunctionKeys: false,
+    loadingChars: ['●', '○'],
+  },
+};
+
 // Dragon Quest - Classic JRPG style with titled boxes
 export const dragonQuestTheme: Theme = {
   name: 'dragon-quest',
@@ -1098,6 +1139,7 @@ export const themes: Record<ThemeName, Theme> = {
   'msx': msxTheme,
   'pc-98': pc98Theme,
   'dragon-quest': dragonQuestTheme,
+  'mario': marioTheme,
 };
 
 export const VALID_THEMES: ThemeName[] = [
@@ -1128,6 +1170,7 @@ export const VALID_THEMES: ThemeName[] = [
   'msx',
   'pc-98',
   'dragon-quest',
+  'mario',
 ];
 
 export function getTheme(name: ThemeName): Theme {
