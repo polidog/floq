@@ -13,8 +13,16 @@ interface HelpModalProps {
 }
 
 type TabType = 'keybindings' | 'info' | 'whatsNew';
+type LineType = 'header' | 'key' | 'text' | 'version' | 'section' | 'item';
 
-const VISIBLE_LINES = 12;
+interface ContentLine {
+  type: LineType;
+  key?: string;
+  value: string;
+  date?: string;
+}
+
+const VISIBLE_LINES = 14;
 
 export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.ReactElement {
   const [activeTab, setActiveTab] = useState<TabType>('keybindings');
@@ -23,29 +31,146 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
   const theme = useTheme();
   const help = i18n.tui.help;
 
-  // Get changelog items for scroll calculation
-  const changelogItems = useMemo(() => {
+  const formatTitle = (title: string) =>
+    theme.style.headerUppercase ? title.toUpperCase() : title;
+
+  // Build keybindings content
+  const keybindingsContent = useMemo((): ContentLine[] => {
+    if (isKanban) {
+      const kHelp = i18n.tui.kanbanHelp;
+      return [
+        { type: 'header', value: kHelp.navigation },
+        { type: 'key', key: 'h/l ←/→', value: kHelp.columnSwitch },
+        { type: 'key', key: '1-3', value: kHelp.columnDirect },
+        { type: 'key', key: 'j/k ↑/↓', value: kHelp.taskSelect },
+        { type: 'header', value: kHelp.actions },
+        { type: 'key', key: 'a', value: kHelp.addTask },
+        { type: 'key', key: 'd', value: kHelp.completeTask },
+        { type: 'key', key: 'm', value: kHelp.moveRight },
+        { type: 'key', key: 'BS', value: kHelp.moveLeft },
+        { type: 'key', key: 'u', value: 'Undo' },
+        { type: 'key', key: 'Ctrl+r', value: 'Redo' },
+        { type: 'header', value: kHelp.settings },
+        { type: 'key', key: 'T', value: kHelp.changeTheme },
+        { type: 'key', key: 'V', value: kHelp.changeViewMode },
+        { type: 'key', key: 'L', value: kHelp.changeLanguage },
+        { type: 'header', value: kHelp.other },
+        { type: 'key', key: '/', value: kHelp.searchTasks },
+        { type: 'key', key: '?', value: kHelp.showHelp },
+        { type: 'key', key: 'q', value: kHelp.quit },
+      ];
+    }
+
+    return [
+      { type: 'header', value: help.navigation },
+      { type: 'key', key: '1-6', value: help.tabSwitch },
+      { type: 'key', key: 'h/l ←/→', value: help.prevNextTab },
+      { type: 'key', key: 'j/k ↑/↓', value: help.taskSelect },
+      { type: 'header', value: help.actions },
+      { type: 'key', key: 'a', value: help.addTask },
+      { type: 'key', key: 'd', value: help.completeTask },
+      { type: 'key', key: 'n', value: help.moveToNext },
+      { type: 'key', key: 's', value: help.moveToSomeday },
+      { type: 'key', key: 'w', value: help.moveToWaiting },
+      { type: 'key', key: 'i', value: help.moveToInbox },
+      { type: 'key', key: 'r', value: help.refresh },
+      { type: 'key', key: 'u', value: help.undo },
+      { type: 'key', key: 'Ctrl+r', value: help.redo },
+      { type: 'header', value: help.projects },
+      { type: 'key', key: 'p', value: help.makeProject },
+      { type: 'key', key: 'P', value: help.linkToProject },
+      { type: 'key', key: 'Enter', value: help.openProject },
+      { type: 'key', key: 'Esc/b', value: help.backFromProject },
+      { type: 'header', value: help.settings },
+      { type: 'key', key: 'T', value: help.changeTheme },
+      { type: 'key', key: 'V', value: help.changeViewMode },
+      { type: 'key', key: 'L', value: help.changeLanguage },
+      { type: 'header', value: help.other },
+      { type: 'key', key: '/', value: help.searchTasks },
+      { type: 'key', key: '?', value: help.showHelp },
+      { type: 'key', key: 'q', value: help.quit },
+    ];
+  }, [isKanban, help, i18n.tui.kanbanHelp]);
+
+  // Build info content
+  const infoContent = useMemo((): ContentLine[] => {
+    const info = i18n.tui.info;
+    const config = loadConfig();
+    const tursoEnabled = isTursoEnabled();
+    const tursoConfig = tursoEnabled ? getTursoConfig() : undefined;
+    const dbPath = getDbPath();
+
+    const tursoUrl = tursoConfig ? (() => {
+      try {
+        return new URL(tursoConfig.url).host;
+      } catch {
+        return tursoConfig.url;
+      }
+    })() : '';
+
+    const lines: ContentLine[] = [
+      { type: 'header', value: info.settings },
+      { type: 'key', key: info.theme, value: config.theme },
+      { type: 'key', key: info.language, value: config.locale },
+      { type: 'key', key: info.viewMode, value: config.viewMode },
+      { type: 'header', value: info.database },
+      { type: 'key', key: info.dbType, value: tursoEnabled ? info.turso : info.local },
+      { type: 'key', key: info.dbPath, value: dbPath },
+    ];
+
+    if (tursoEnabled && tursoUrl) {
+      lines.push({ type: 'key', key: info.tursoUrl, value: tursoUrl });
+    }
+
+    lines.push(
+      { type: 'header', value: info.paths },
+      { type: 'key', key: info.configFile, value: CONFIG_FILE },
+      { type: 'key', key: info.dataDir, value: DATA_DIR }
+    );
+
+    return lines;
+  }, [i18n.tui.info]);
+
+  // Build changelog content
+  const changelogContent = useMemo((): ContentLine[] => {
     const changelog = parseChangelog();
-    const items: { type: 'version' | 'section' | 'item'; content: string; date?: string }[] = [];
+    const whatsNew = i18n.tui.whatsNew;
+    const items: ContentLine[] = [];
+
+    const getSectionLabel = (type: string): string => {
+      const labels: Record<string, string> = {
+        Added: whatsNew.added,
+        Changed: whatsNew.changed,
+        Deprecated: whatsNew.deprecated,
+        Removed: whatsNew.removed,
+        Fixed: whatsNew.fixed,
+        Security: whatsNew.security,
+      };
+      return labels[type] || type;
+    };
 
     for (const entry of changelog.entries.slice(0, 5)) {
-      items.push({ type: 'version', content: entry.version, date: entry.date });
+      items.push({ type: 'version', value: entry.version, date: entry.date });
       for (const section of entry.sections) {
-        items.push({ type: 'section', content: section.type });
+        items.push({ type: 'section', value: getSectionLabel(section.type) });
         for (const item of section.items) {
-          items.push({ type: 'item', content: item });
+          items.push({ type: 'item', value: item });
         }
       }
     }
     return items;
-  }, []);
+  }, [i18n.tui.whatsNew]);
 
-  const maxScroll = Math.max(0, changelogItems.length - VISIBLE_LINES);
+  // Get current content and max scroll
+  const currentContent = activeTab === 'keybindings' ? keybindingsContent
+    : activeTab === 'info' ? infoContent
+    : changelogContent;
+  const maxScroll = Math.max(0, currentContent.length - VISIBLE_LINES);
 
   const tabs: TabType[] = ['keybindings', 'info', 'whatsNew'];
 
   useInput((input, key) => {
-    // Tab key detection (key.tab or raw tab character)
+    // Tab key detection
     if (key.tab || input === '\t') {
       setActiveTab(prev => {
         const currentIndex = tabs.indexOf(prev);
@@ -70,33 +195,14 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
       setScrollOffset(0);
       return;
     }
-    // Arrow keys and h/l for tab switching
-    if (input === 'h' || key.leftArrow) {
-      setActiveTab(prev => {
-        const currentIndex = tabs.indexOf(prev);
-        return tabs[(currentIndex - 1 + tabs.length) % tabs.length];
-      });
-      setScrollOffset(0);
+    // Scroll with j/k or arrows
+    if (input === 'j' || key.downArrow) {
+      setScrollOffset(prev => Math.min(prev + 1, maxScroll));
       return;
     }
-    if (input === 'l' || key.rightArrow) {
-      setActiveTab(prev => {
-        const currentIndex = tabs.indexOf(prev);
-        return tabs[(currentIndex + 1) % tabs.length];
-      });
-      setScrollOffset(0);
+    if (input === 'k' || key.upArrow) {
+      setScrollOffset(prev => Math.max(prev - 1, 0));
       return;
-    }
-    // Scroll in What's New tab
-    if (activeTab === 'whatsNew') {
-      if (input === 'j' || key.downArrow) {
-        setScrollOffset(prev => Math.min(prev + 1, maxScroll));
-        return;
-      }
-      if (input === 'k' || key.upArrow) {
-        setScrollOffset(prev => Math.max(prev - 1, 0));
-        return;
-      }
     }
     // Close modal
     if (key.escape || key.return || input === 'q' || input === ' ') {
@@ -105,8 +211,50 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
     }
   });
 
-  const formatTitle = (title: string) =>
-    theme.style.headerUppercase ? title.toUpperCase() : title;
+  const visibleContent = currentContent.slice(scrollOffset, scrollOffset + VISIBLE_LINES);
+  const showScrollUp = scrollOffset > 0;
+  const showScrollDown = scrollOffset < maxScroll;
+
+  const renderLine = (line: ContentLine, index: number) => {
+    switch (line.type) {
+      case 'header':
+        return (
+          <Text key={index} bold color={theme.colors.accent}>
+            {formatTitle(line.value)}
+          </Text>
+        );
+      case 'key':
+        return (
+          <Text key={index} color={theme.colors.text}>
+            {'  '}<Text color={theme.colors.textHighlight}>{(line.key || '').padEnd(10)}</Text> {line.value}
+          </Text>
+        );
+      case 'version':
+        return (
+          <Text key={index} bold color={theme.colors.accent}>
+            v{line.value} {line.date && <Text color={theme.colors.textMuted}>({line.date})</Text>}
+          </Text>
+        );
+      case 'section':
+        return (
+          <Text key={index} color={theme.colors.secondary}>
+            {'  '}{formatTitle(line.value)}:
+          </Text>
+        );
+      case 'item':
+        return (
+          <Text key={index} color={theme.colors.text}>
+            {'    '}• {line.value}
+          </Text>
+        );
+      default:
+        return (
+          <Text key={index} color={theme.colors.text}>
+            {line.value}
+          </Text>
+        );
+    }
+  };
 
   return (
     <Box
@@ -145,390 +293,27 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
         </Box>
       </Box>
 
-      {/* Content */}
-      {activeTab === 'keybindings' ? (
-        isKanban ? (
-          <KanbanKeybindingsContent />
-        ) : (
-          <GTDKeybindingsContent />
-        )
-      ) : activeTab === 'info' ? (
-        <InfoContent />
-      ) : (
-        <WhatsNewContent
-          items={changelogItems}
-          scrollOffset={scrollOffset}
-          visibleLines={VISIBLE_LINES}
-          maxScroll={maxScroll}
-        />
-      )}
+      {/* Content with scroll */}
+      <Box flexDirection="column" height={VISIBLE_LINES + 2}>
+        {showScrollUp && (
+          <Text color={theme.colors.textMuted}>  ▲ scroll up (k)</Text>
+        )}
+        {!showScrollUp && <Text> </Text>}
+
+        {visibleContent.map((line, index) => renderLine(line, index))}
+
+        {showScrollDown && (
+          <Text color={theme.colors.textMuted}>  ▼ scroll down (j)</Text>
+        )}
+        {!showScrollDown && <Text> </Text>}
+      </Box>
 
       {/* Footer */}
       <Box justifyContent="center" marginTop={1}>
         <Text color={theme.colors.textMuted}>
-          {activeTab === 'whatsNew' && maxScroll > 0
-            ? `j/k: scroll | ${help.tabHint} | ${help.closeHint}`
-            : `${help.tabHint} | ${help.closeHint}`}
+          {maxScroll > 0 ? `j/k: scroll | ` : ''}{help.tabHint} | {help.closeHint}
         </Text>
       </Box>
-    </Box>
-  );
-}
-
-function GTDKeybindingsContent(): React.ReactElement {
-  const i18n = t();
-  const help = i18n.tui.help;
-  const theme = useTheme();
-
-  const formatTitle = (title: string) =>
-    theme.style.headerUppercase ? title.toUpperCase() : title;
-
-  return (
-    <>
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.navigation)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>1-6</Text>      {help.tabSwitch}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>h/l ←/→</Text>  {help.prevNextTab}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>j/k ↑/↓</Text>  {help.taskSelect}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.actions)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>a</Text>        {help.addTask}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>d</Text>        {help.completeTask}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>n</Text>        {help.moveToNext}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>s</Text>        {help.moveToSomeday}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>w</Text>        {help.moveToWaiting}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>i</Text>        {help.moveToInbox}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>r</Text>        {help.refresh}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>u</Text>        {help.undo}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>Ctrl+r</Text>   {help.redo}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.projects)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>p</Text>        {help.makeProject}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>P</Text>        {help.linkToProject}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>Enter</Text>    {help.openProject}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>Esc/b</Text>    {help.backFromProject}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.settings)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>T</Text>        {help.changeTheme}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>V</Text>        {help.changeViewMode}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>L</Text>        {help.changeLanguage}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.other)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>/</Text>        {help.searchTasks}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>?</Text>        {help.showHelp}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>q</Text>        {help.quit}
-          </Text>
-        </Box>
-      </Box>
-    </>
-  );
-}
-
-function KanbanKeybindingsContent(): React.ReactElement {
-  const i18n = t();
-  const help = i18n.tui.kanbanHelp;
-  const theme = useTheme();
-
-  const formatTitle = (title: string) =>
-    theme.style.headerUppercase ? title.toUpperCase() : title;
-
-  return (
-    <>
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.navigation)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>h/l ←/→</Text>  {help.columnSwitch}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>1-3</Text>      {help.columnDirect}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>j/k ↑/↓</Text>  {help.taskSelect}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.actions)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>a</Text>        {help.addTask}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>d</Text>        {help.completeTask}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>Enter</Text>    {help.moveRight}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>BS</Text>       {help.moveLeft}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>u</Text>        Undo
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>Ctrl+r</Text>   Redo
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.settings)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>T</Text>        {help.changeTheme}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>V</Text>        {help.changeViewMode}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>L</Text>        {help.changeLanguage}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(help.other)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>/</Text>        {help.searchTasks}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>?</Text>        {help.showHelp}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>q</Text>        {help.quit}
-          </Text>
-        </Box>
-      </Box>
-    </>
-  );
-}
-
-function InfoContent(): React.ReactElement {
-  const i18n = t();
-  const info = i18n.tui.info;
-  const theme = useTheme();
-
-  const formatTitle = (title: string) =>
-    theme.style.headerUppercase ? title.toUpperCase() : title;
-
-  const config = loadConfig();
-  const tursoEnabled = isTursoEnabled();
-  const tursoConfig = tursoEnabled ? getTursoConfig() : undefined;
-  const dbPath = getDbPath();
-
-  // Get Turso host for display
-  const tursoUrl = tursoConfig ? (() => {
-    try {
-      return new URL(tursoConfig.url).host;
-    } catch {
-      return tursoConfig.url;
-    }
-  })() : '';
-
-  return (
-    <>
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(info.settings)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.theme}:</Text> {config.theme}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.language}:</Text> {config.locale}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.viewMode}:</Text> {config.viewMode}
-          </Text>
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(info.database)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.dbType}:</Text> {tursoEnabled ? info.turso : info.local}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.dbPath}:</Text> {dbPath}
-          </Text>
-          {tursoEnabled && tursoUrl && (
-            <Text color={theme.colors.text}>
-              <Text color={theme.colors.textHighlight}>{info.tursoUrl}:</Text> {tursoUrl}
-            </Text>
-          )}
-        </Box>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color={theme.colors.accent}>
-          {formatTitle(info.paths)}
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.configFile}:</Text> {CONFIG_FILE}
-          </Text>
-          <Text color={theme.colors.text}>
-            <Text color={theme.colors.textHighlight}>{info.dataDir}:</Text> {DATA_DIR}
-          </Text>
-        </Box>
-      </Box>
-    </>
-  );
-}
-
-interface WhatsNewContentProps {
-  items: { type: 'version' | 'section' | 'item'; content: string; date?: string }[];
-  scrollOffset: number;
-  visibleLines: number;
-  maxScroll: number;
-}
-
-function WhatsNewContent({ items, scrollOffset, visibleLines, maxScroll }: WhatsNewContentProps): React.ReactElement {
-  const i18n = t();
-  const whatsNew = i18n.tui.whatsNew;
-  const theme = useTheme();
-
-  const formatTitle = (title: string) =>
-    theme.style.headerUppercase ? title.toUpperCase() : title;
-
-  const getSectionLabel = (type: string): string => {
-    const labels: Record<string, string> = {
-      Added: whatsNew.added,
-      Changed: whatsNew.changed,
-      Deprecated: whatsNew.deprecated,
-      Removed: whatsNew.removed,
-      Fixed: whatsNew.fixed,
-      Security: whatsNew.security,
-    };
-    return labels[type] || type;
-  };
-
-  if (items.length === 0) {
-    return (
-      <Box justifyContent="center" paddingY={2}>
-        <Text color={theme.colors.textMuted}>{whatsNew.noChanges}</Text>
-      </Box>
-    );
-  }
-
-  const visibleItems = items.slice(scrollOffset, scrollOffset + visibleLines);
-  const showScrollUp = scrollOffset > 0;
-  const showScrollDown = scrollOffset < maxScroll;
-
-  return (
-    <Box flexDirection="column">
-      {showScrollUp && (
-        <Text color={theme.colors.textMuted}>  ▲ scroll up</Text>
-      )}
-      {visibleItems.map((item, index) => {
-        if (item.type === 'version') {
-          return (
-            <Text key={`${item.content}-${index}`} bold color={theme.colors.accent}>
-              v{item.content} {item.date && <Text color={theme.colors.textMuted}>({item.date})</Text>}
-            </Text>
-          );
-        }
-        if (item.type === 'section') {
-          return (
-            <Text key={`${item.content}-${index}`} color={theme.colors.secondary}>
-              {'  '}{formatTitle(getSectionLabel(item.content))}:
-            </Text>
-          );
-        }
-        return (
-          <Text key={`${item.content}-${index}`} color={theme.colors.text}>
-            {'    '}• {item.content}
-          </Text>
-        );
-      })}
-      {showScrollDown && (
-        <Text color={theme.colors.textMuted}>  ▼ scroll down</Text>
-      )}
     </Box>
   );
 }
