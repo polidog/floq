@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getLocale } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import {
@@ -35,6 +35,37 @@ interface GtdDQProps {
 }
 
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
+
+// Dragon Quest job classes
+const DQ_JOBS_JA = [
+  'ゆうしゃ',
+  'せんし',
+  'まほうつかい',
+  'そうりょ',
+  'ぶとうか',
+  'とうぞく',
+  'あそびにん',
+  'けんじゃ',
+  'バトルマスター',
+  'パラディン',
+  'レンジャー',
+  'スーパースター',
+];
+
+const DQ_JOBS_EN = [
+  'Hero',
+  'Warrior',
+  'Mage',
+  'Priest',
+  'Martial Artist',
+  'Thief',
+  'Gadabout',
+  'Sage',
+  'Battle Master',
+  'Paladin',
+  'Ranger',
+  'Superstar',
+];
 
 // Round border characters
 const BORDER = {
@@ -189,6 +220,13 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   const { stdout } = useStdout();
   const history = useHistory();
   const i18n = t();
+
+  // Random job class (stable across re-renders)
+  const [jobClass] = useState(() => {
+    const isJapanese = getLocale() === 'ja';
+    const jobs = isJapanese ? DQ_JOBS_JA : DQ_JOBS_EN;
+    return jobs[Math.floor(Math.random() * jobs.length)];
+  });
 
   const [mode, setMode] = useState<Mode>('normal');
   const [paneFocus, setPaneFocus] = useState<PaneFocus>('tabs');
@@ -1033,13 +1071,19 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
 
   return (
     <Box flexDirection="column" padding={1}>
-      {/* Header */}
+      {/* Header - Dragon Quest style status */}
       <Box marginBottom={1} justifyContent="space-between">
         <Box>
-          <Text bold color={theme.colors.primary}>FLOQ</Text>
-          <Text color={theme.colors.textMuted}> v{VERSION}</Text>
+          <Text bold color={theme.colors.accent}>{jobClass}</Text>
+          <Text color={theme.colors.text}> Lv.</Text>
+          <Text bold color={theme.colors.secondary}>{Math.floor(tasks.done.length / 5) + 1}</Text>
+          <Text color={theme.colors.text}>  HP </Text>
+          <Text bold color={theme.colors.statusNext}>{tasks.inbox.length + tasks.next.length}</Text>
+          <Text color={theme.colors.textMuted}>/{tasks.inbox.length + tasks.next.length + tasks.waiting.length + tasks.someday.length}</Text>
+          <Text color={theme.colors.text}>  MP </Text>
+          <Text bold color={theme.colors.statusWaiting}>{tasks.projects.length}</Text>
           <Text color={tursoEnabled ? theme.colors.accent : theme.colors.textMuted}>
-            {tursoEnabled ? ' [TURSO]' : ' [LOCAL]'}
+            {tursoEnabled ? ' [TURSO]' : ''}
           </Text>
           {contextFilter !== null && (
             <Text color={theme.colors.accent}>
