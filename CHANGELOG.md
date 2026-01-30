@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-01-31
+
+### Added
+- Dragon Quest RPG style UI with TitledBox component
+- DQ-style 2-column layouts for GTD and Kanban modes
+- Dragon Quest style splash screen with configurable duration
+- Splash subcommand to configure splash screen (`floq config splash`)
+- Search functionality to DQ-style components
+- Scroll support to all HelpModal tabs
+- Demo GIFs to README (English and Japanese versions)
+
+### Fixed
+- HelpModal input handling in DQ-style components
+- Modern theme textMuted visibility improved
+
 ## [0.5.0] - 2025-01-30
 
 ### Added
