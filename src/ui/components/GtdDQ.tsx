@@ -541,6 +541,23 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     }
   }, [i18n.tui.commentDeleted, loadTaskComments, selectedTask, history]);
 
+  const setTaskContext = useCallback(async (task: Task, context: string | null) => {
+    const description = context
+      ? fmt(i18n.tui.context?.contextSet || 'Set context @{context} for "{title}"', { context, title: task.title })
+      : fmt(i18n.tui.context?.contextCleared || 'Cleared context for "{title}"', { title: task.title });
+
+    const command = new SetContextCommand({
+      taskId: task.id,
+      fromContext: task.context,
+      toContext: context,
+      description,
+    });
+
+    await history.execute(command);
+    setMessage(description);
+    await loadTasks();
+  }, [i18n.tui.context, loadTasks, history]);
+
   const handleInputSubmit = async (value: string) => {
     // Handle search mode submit
     if (mode === 'search') {
@@ -778,7 +795,12 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           setInputValue('');
           return;
         }
-        // TODO: implement setTaskContext
+        const task = currentTasks[selectedTaskIndex];
+        if (selected === 'clear') {
+          setTaskContext(task, null);
+        } else {
+          setTaskContext(task, selected);
+        }
         setContextSelectIndex(0);
         setMode('normal');
         return;
@@ -1026,6 +1048,13 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         if (input === 'D' && currentTab !== 'projects') {
           setTaskToDelete(task);
           setMode('confirm-delete');
+          return;
+        }
+
+        // Set context
+        if (input === 'c' && currentTab !== 'projects') {
+          setContextSelectIndex(0);
+          setMode('set-context');
           return;
         }
       }
