@@ -1387,12 +1387,12 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted}>
           {mode === 'task-detail'
-            ? 'j/k=select c/i=add comment P=link D=delete comment Esc/b=back'
+            ? i18n.tui.dqFooter.taskDetail
             : mode === 'project-detail'
-              ? 'j/k=select a=add d=done Esc/b=back /=search'
+              ? i18n.tui.dqFooter.projectDetail
               : paneFocus === 'tabs'
-                ? 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search'
-                : 'j/k=select Enter=detail h/Esc=back d=done n=next s=someday w=wait i=inbox p=project P=link D=delete u=undo /=search'}
+                ? i18n.tui.dqFooter.tabs
+                : i18n.tui.dqFooter.tasks}
         </Text>
       </Box>
     </Box>

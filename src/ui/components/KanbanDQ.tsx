@@ -799,8 +799,8 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted}>
           {paneFocus === 'category'
-            ? 'j/k=select l/Enter=tasks a=add @=filter /=search'
-            : 'j/k=select h/Esc=back d=done m=move a=add u=undo /=search'}
+            ? i18n.tui.kanbanFooter.category
+            : i18n.tui.kanbanFooter.tasks}
         </Text>
       </Box>
     </Box>

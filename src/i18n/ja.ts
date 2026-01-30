@@ -96,6 +96,17 @@ export const ja: Translations = {
     waitingFor: '待機相手: ',
     refreshed: '更新しました',
     footer: 'a=追加 d=完了 D=削除 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ',
+    // DQ/Mario style footers
+    dqFooter: {
+      tabs: 'j/k=選択 l/Enter=タスク 1-6=タブ a=追加 @=フィルター /=検索',
+      tasks: 'j/k=選択 Enter=詳細 h/Esc=戻る d=完了 n=次 s=いつか w=待ち i=inbox c=コンテキスト p=プロジェクト化 P=紐づけ D=削除 u=戻す /=検索',
+      projectDetail: 'j/k=選択 a=追加 d=完了 Esc/b=戻る /=検索',
+      taskDetail: 'j/k=選択 c/i=コメント追加 P=紐づけ D=コメント削除 Esc/b=戻る',
+    },
+    kanbanFooter: {
+      category: 'j/k=選択 l/Enter=タスク a=追加 @=フィルター /=検索',
+      tasks: 'j/k=選択 h/Esc=戻る d=完了 m=移動 a=追加 u=戻す /=検索',
+    },
     noTasks: 'タスクなし',
     // Tab labels
     tabInbox: 'Inbox',

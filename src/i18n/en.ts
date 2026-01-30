@@ -94,6 +94,17 @@ export const en = {
     waitingFor: 'Waiting for: ',
     refreshed: 'Refreshed',
     footer: 'a=add d=done D=delete n=next s=someday w=waiting i=inbox p=project P=link',
+    // DQ/Mario style footers
+    dqFooter: {
+      tabs: 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search',
+      tasks: 'j/k=select Enter=detail h/Esc=back d=done n=next s=someday w=wait i=inbox c=context p=project P=link D=delete u=undo /=search',
+      projectDetail: 'j/k=select a=add d=done Esc/b=back /=search',
+      taskDetail: 'j/k=select c/i=add comment P=link D=delete comment Esc/b=back',
+    },
+    kanbanFooter: {
+      category: 'j/k=select l/Enter=tasks a=add @=filter /=search',
+      tasks: 'j/k=select h/Esc=back d=done m=move a=add u=undo /=search',
+    },
     noTasks: 'No tasks',
     // Tab labels
     tabInbox: 'Inbox',
@@ -467,6 +478,16 @@ export type TuiTranslations = {
   waitingFor: string;
   refreshed: string;
   footer: string;
+  dqFooter: {
+    tabs: string;
+    tasks: string;
+    projectDetail: string;
+    taskDetail: string;
+  };
+  kanbanFooter: {
+    category: string;
+    tasks: string;
+  };
   noTasks: string;
   tabInbox: string;
   tabNext: string;
