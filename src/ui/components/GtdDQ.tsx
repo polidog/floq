@@ -22,6 +22,7 @@ import {
 } from '../history/index.js';
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
+import { HelpModal } from './HelpModal.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
@@ -528,6 +529,12 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   };
 
   useInput((input, key) => {
+    // Handle help mode - any key closes
+    if (mode === 'help') {
+      setMode('normal');
+      return;
+    }
+
     // Handle input modes
     if (mode === 'add' || mode === 'add-to-project' || mode === 'add-comment' || mode === 'move-to-waiting' || mode === 'add-context') {
       if (key.escape) {
@@ -914,6 +921,15 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     if (!parentId) return undefined;
     return tasks.projects.find(p => p.id === parentId);
   };
+
+  // Help modal overlay
+  if (mode === 'help') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <HelpModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" padding={1}>

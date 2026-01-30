@@ -19,6 +19,7 @@ import {
 } from '../history/index.js';
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
+import { HelpModal } from './HelpModal.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
@@ -404,6 +405,12 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
   };
 
   useInput((input, key) => {
+    // Handle help mode - any key closes
+    if (mode === 'help') {
+      setMode('normal');
+      return;
+    }
+
     if (mode === 'add' || mode === 'add-comment' || mode === 'add-context') {
       if (key.escape) {
         setInputValue('');
@@ -599,6 +606,15 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
   });
 
   const tursoEnabled = isTursoEnabled();
+
+  // Help modal overlay
+  if (mode === 'help') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <HelpModal onClose={() => setMode('normal')} isKanban={true} />
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" padding={1}>
