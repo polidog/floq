@@ -529,9 +529,8 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   };
 
   useInput((input, key) => {
-    // Handle help mode - any key closes
+    // Handle help mode - let HelpModal handle its own input
     if (mode === 'help') {
-      setMode('normal');
       return;
     }
 
