@@ -9,9 +9,21 @@ interface SearchResultsProps {
   results: Task[];
   selectedIndex: number;
   query: string;
+  viewMode?: 'gtd' | 'kanban';
 }
 
-export function SearchResults({ results, selectedIndex, query }: SearchResultsProps): React.ReactElement {
+// Map GTD status to Kanban column
+function getKanbanColumn(status: string): 'todo' | 'doing' | 'done' {
+  if (status === 'inbox' || status === 'someday') {
+    return 'todo';
+  }
+  if (status === 'next' || status === 'waiting') {
+    return 'doing';
+  }
+  return 'done';
+}
+
+export function SearchResults({ results, selectedIndex, query, viewMode = 'gtd' }: SearchResultsProps): React.ReactElement {
   const i18n = t();
   const theme = useTheme();
   const search = i18n.tui.search;
@@ -43,7 +55,15 @@ export function SearchResults({ results, selectedIndex, query }: SearchResultsPr
         results.slice(0, 10).map((task, index) => {
           const isSelected = index === selectedIndex;
           const shortId = task.id.slice(0, 8);
-          const displayLabel = task.isProject ? i18n.tui.keyBar.project : i18n.status[task.status];
+          let displayLabel: string;
+          if (task.isProject) {
+            displayLabel = i18n.tui.keyBar.project;
+          } else if (viewMode === 'kanban') {
+            const kanbanColumn = getKanbanColumn(task.status);
+            displayLabel = i18n.kanban[kanbanColumn];
+          } else {
+            displayLabel = i18n.status[task.status];
+          }
 
           return (
             <Box key={task.id}>

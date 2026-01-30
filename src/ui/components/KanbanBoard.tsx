@@ -246,7 +246,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     }
   }, [tasks]);
 
-  const addTask = useCallback(async (title: string) => {
+  const addTask = useCallback(async (title: string, context?: string | null) => {
     if (!title.trim()) return;
 
     const now = new Date();
@@ -256,6 +256,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
         id: taskId,
         title: title.trim(),
         status: 'inbox', // New tasks go to inbox (which maps to TODO)
+        context: context || null,
         createdAt: now,
         updatedAt: now,
       },
@@ -310,7 +311,8 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     }
 
     if (value.trim()) {
-      await addTask(value);
+      // Pass contextFilter when adding a task, so it inherits the current filter context
+      await addTask(value, contextFilter && contextFilter !== '' ? contextFilter : null);
     }
     setInputValue('');
     setMode('normal');
@@ -979,6 +981,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
               results={searchResults}
               selectedIndex={searchResultIndex}
               query={searchQuery}
+              viewMode="kanban"
             />
           )}
         </>

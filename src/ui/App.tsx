@@ -296,7 +296,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     }
   }, [tasks]);
 
-  const addTask = useCallback(async (title: string, parentId?: string) => {
+  const addTask = useCallback(async (title: string, parentId?: string, context?: string | null) => {
     if (!title.trim()) return;
 
     const now = new Date();
@@ -307,6 +307,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         title: title.trim(),
         status: parentId ? 'next' : 'inbox',
         parentId: parentId || null,
+        context: context || null,
         createdAt: now,
         updatedAt: now,
       },
@@ -396,11 +397,12 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         await addCommentToTask(selectedTask, value);
         setMode('task-detail');
       } else if (mode === 'add-to-project' && selectedProject) {
-        await addTask(value, selectedProject.id);
+        await addTask(value, selectedProject.id, contextFilter && contextFilter !== '' ? contextFilter : null);
         await loadProjectTasks(selectedProject.id);
         setMode('project-detail');
       } else {
-        await addTask(value);
+        // Pass contextFilter when adding a task, so it inherits the current filter context
+        await addTask(value, undefined, contextFilter && contextFilter !== '' ? contextFilter : null);
         setMode('normal');
       }
     } else {
