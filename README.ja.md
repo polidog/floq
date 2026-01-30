@@ -7,10 +7,10 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 ## 特徴
 
 - **TUIインターフェース**: Ink（CLI用React）で構築されたインタラクティブなターミナルUI
-- **GTDワークフロー**: Inbox、Next Actions、Waiting For、Someday/Maybe、Done
+- **GTDワークフロー**: Inbox、Next Actions、Waiting For、Someday/Maybe、Done（過去7日間表示）
 - **カンバンモード**: 3カラムのカンバンボード表示（TODO、Doing、Done）
 - **プロジェクト**: タスクをプロジェクトに整理（進捗バー表示付き）
-- **コンテキスト**: タスクにコンテキスト（@work、@homeなど）を設定してフィルタリング
+- **コンテキスト**: タスクにコンテキスト（@work、@homeなど）を設定してフィルタリング。タスク追加時は現在のフィルターを自動継承
 - **タスク検索**: `/` キーで全タスクを素早く検索
 - **コメント**: タスクにメモやコメントを追加
 - **クラウド同期**: [Turso](https://turso.tech/)のembedded replicasによるオプションの同期機能

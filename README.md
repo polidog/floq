@@ -7,10 +7,10 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 ## Features
 
 - **TUI Interface**: Interactive terminal UI built with Ink (React for CLI)
-- **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe, Done
+- **GTD Workflow**: Inbox, Next Actions, Waiting For, Someday/Maybe, Done (shows last 7 days)
 - **Kanban Mode**: 3-column kanban board view (TODO, Doing, Done)
 - **Projects**: Organize tasks into projects with progress tracking
-- **Contexts**: Tag tasks with contexts (@work, @home, etc.) and filter by context
+- **Contexts**: Tag tasks with contexts (@work, @home, etc.) and filter by context. New tasks inherit the active context filter
 - **Task Search**: Quick search across all tasks with `/`
 - **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
