@@ -8,6 +8,7 @@ import { HelpModal } from './components/HelpModal.js';
 import { FunctionKeyBar } from './components/FunctionKeyBar.js';
 import { SearchBar } from './components/SearchBar.js';
 import { SearchResults } from './components/SearchResults.js';
+import { TitledBox } from './components/TitledBox.js';
 import { SplashScreen } from './SplashScreen.js';
 import { ThemeSelector } from './ThemeSelector.js';
 import { ModeSelector } from './ModeSelector.js';
@@ -1324,34 +1325,62 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
 
       {/* Task list */}
       {mode !== 'task-detail' && mode !== 'add-comment' && mode !== 'search' && (
-        <Box
-          flexDirection="column"
-          borderStyle={theme.borders.list as BorderStyleType}
-          borderColor={theme.colors.border}
-          paddingX={1}
-          paddingY={1}
-          minHeight={10}
-        >
-          {currentTasks.length === 0 ? (
-            <Text color={theme.colors.textMuted} italic>
-              {i18n.tui.noTasks}
-            </Text>
-          ) : (
-            currentTasks.map((task, index) => {
-              const parentProject = getParentProject(task.parentId);
-              const progress = currentTab === 'projects' ? projectProgress[task.id] : undefined;
-              return (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  isSelected={index === selectedTaskIndex}
-                  projectName={parentProject?.title}
-                  progress={progress}
-                />
-              );
-            })
-          )}
-        </Box>
+        theme.uiStyle === 'titled-box' ? (
+          <TitledBox
+            title={mode === 'project-detail' && selectedProject ? selectedProject.title : getTabLabel(currentTab)}
+            borderColor={theme.colors.border}
+            minHeight={10}
+          >
+            {currentTasks.length === 0 ? (
+              <Text color={theme.colors.textMuted} italic>
+                {i18n.tui.noTasks}
+              </Text>
+            ) : (
+              currentTasks.map((task, index) => {
+                const parentProject = getParentProject(task.parentId);
+                const progress = currentTab === 'projects' ? projectProgress[task.id] : undefined;
+                return (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    isSelected={index === selectedTaskIndex}
+                    projectName={parentProject?.title}
+                    progress={progress}
+                  />
+                );
+              })
+            )}
+          </TitledBox>
+        ) : (
+          <Box
+            flexDirection="column"
+            borderStyle={theme.borders.list as BorderStyleType}
+            borderColor={theme.colors.border}
+            paddingX={1}
+            paddingY={1}
+            minHeight={10}
+          >
+            {currentTasks.length === 0 ? (
+              <Text color={theme.colors.textMuted} italic>
+                {i18n.tui.noTasks}
+              </Text>
+            ) : (
+              currentTasks.map((task, index) => {
+                const parentProject = getParentProject(task.parentId);
+                const progress = currentTab === 'projects' ? projectProgress[task.id] : undefined;
+                return (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    isSelected={index === selectedTaskIndex}
+                    projectName={parentProject?.title}
+                    progress={progress}
+                  />
+                );
+              })
+            )}
+          </Box>
+        )
       )}
 
       {/* Add task input */}

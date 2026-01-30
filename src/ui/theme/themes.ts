@@ -1029,6 +1029,47 @@ export const pc98Theme: Theme = {
   },
 };
 
+// Dragon Quest - Classic JRPG style with titled boxes
+export const dragonQuestTheme: Theme = {
+  name: 'dragon-quest',
+  displayName: 'Dragon Quest',
+  uiStyle: 'titled-box',
+  colors: {
+    primary: '#ffffff',
+    secondary: '#ffcc00',
+    accent: '#ffcc00',
+    muted: '#666666',
+    border: '#ffffff',
+    borderActive: '#ffcc00',
+    background: '#000080',
+    statusInbox: '#ffffff',
+    statusNext: '#00ff00',
+    statusWaiting: '#ffcc00',
+    statusSomeday: '#00ccff',
+    statusDone: '#888888',
+    text: '#ffffff',
+    textMuted: '#aaaaaa',
+    textSelected: '#ffcc00',
+    textHighlight: '#ffcc00',
+    fnKeyLabel: '#000080',
+    fnKeyText: '#ffffff',
+  },
+  borders: {
+    main: 'round',
+    modal: 'round',
+    list: 'round',
+  },
+  style: {
+    selectedPrefix: '▶ ',
+    unselectedPrefix: '  ',
+    tabActiveInverse: true,
+    tabBrackets: ['「', '」'],
+    headerUppercase: false,
+    showFunctionKeys: false,
+    loadingChars: ['●', '○'],
+  },
+};
+
 export const themes: Record<ThemeName, Theme> = {
   'modern': modernTheme,
   'norton-commander': nortonCommanderTheme,
@@ -1056,6 +1097,7 @@ export const themes: Record<ThemeName, Theme> = {
   'sakura': sakuraTheme,
   'msx': msxTheme,
   'pc-98': pc98Theme,
+  'dragon-quest': dragonQuestTheme,
 };
 
 export const VALID_THEMES: ThemeName[] = [
@@ -1085,6 +1127,7 @@ export const VALID_THEMES: ThemeName[] = [
   'sakura',
   'msx',
   'pc-98',
+  'dragon-quest',
 ];
 
 export function getTheme(name: ThemeName): Theme {

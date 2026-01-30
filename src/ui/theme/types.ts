@@ -24,9 +24,15 @@ export type ThemeName =
   | 'ocean'
   | 'sakura'
   | 'msx'
-  | 'pc-98';
+  | 'pc-98'
+  | 'dragon-quest';
 
 export type BorderStyleType = 'single' | 'double' | 'round' | 'bold' | 'singleDouble' | 'doubleSingle' | 'classic';
+
+// UI style determines how boxes are rendered
+// - 'default': Standard Ink Box with borderStyle
+// - 'titled-box': Custom TitledBox component with title embedded in top border (RPG style)
+export type UIStyleType = 'default' | 'titled-box';
 
 export interface ThemeColors {
   // Primary colors
@@ -89,4 +95,5 @@ export interface Theme {
   colors: ThemeColors;
   borders: ThemeBorders;
   style: ThemeStyle;
+  uiStyle?: UIStyleType; // Optional, defaults to 'default'
 }
