@@ -628,6 +628,14 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         return;
       }
 
+      // Link to project (P key)
+      if (input === 'P' && tasks.projects.length > 0) {
+        setTaskToLink(selectedTask);
+        setProjectSelectIndex(0);
+        setMode('select-project');
+        return;
+      }
+
       return;
     }
 
@@ -743,9 +751,10 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     // Handle select-project mode
     if (mode === 'select-project') {
       if (key.escape) {
+        const wasFromTaskDetail = selectedTask !== null;
         setTaskToLink(null);
         setProjectSelectIndex(0);
-        setMode('normal');
+        setMode(wasFromTaskDetail ? 'task-detail' : 'normal');
         return;
       }
 
@@ -760,10 +769,11 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
 
       if (key.return && taskToLink && tasks.projects.length > 0) {
         const project = tasks.projects[projectSelectIndex];
+        const wasFromTaskDetail = selectedTask !== null;
         linkTaskToProject(taskToLink, project);
         setTaskToLink(null);
         setProjectSelectIndex(0);
-        setMode('normal');
+        setMode(wasFromTaskDetail ? 'task-detail' : 'normal');
         return;
       }
       return;
@@ -1304,7 +1314,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted}>
           {mode === 'task-detail'
-            ? 'j/k=select c/i=add comment D=delete comment Esc/b=back'
+            ? 'j/k=select c/i=add comment P=link D=delete comment Esc/b=back'
             : mode === 'project-detail'
               ? 'j/k=select a=add d=done Esc/b=back /=search'
               : paneFocus === 'tabs'
