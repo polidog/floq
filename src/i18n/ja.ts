@@ -262,6 +262,14 @@ export const ja: Translations = {
     },
   },
 
+  // Splash screen (Dragon Quest style)
+  splash: {
+    welcome: 'ようこそ！',
+    subtitle: 'GTDの冒険がはじまる',
+    subtitleKanban: 'Kanbanの冒険がはじまる',
+    pressKey: '▼ なにかキーをおしてください',
+  },
+
   // Setup wizard
   setup: {
     welcome: {

@@ -16,7 +16,7 @@ import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
-import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
@@ -41,7 +41,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'splash' | 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -49,6 +49,8 @@ export function App(): React.ReactElement {
   const [themeName, setThemeNameState] = useState<ThemeName>(getThemeName);
   const [viewMode, setViewModeState] = useState<ViewMode>(getViewMode);
   const [settingsMode, setSettingsMode] = useState<SettingsMode>('none');
+  const splashDuration = getSplashDuration();
+  const [showSplash, setShowSplash] = useState(splashDuration > 0);
   const [, forceUpdate] = useState({});
 
   const handleThemeSelect = (theme: ThemeName) => {
@@ -72,6 +74,18 @@ export function App(): React.ReactElement {
   const handleSettingsCancel = () => {
     setSettingsMode('none');
   };
+
+  const currentTheme = getTheme(themeName);
+  const useDQStyle = currentTheme.uiStyle === 'titled-box';
+
+  // Show splash screen (all themes, configurable duration)
+  if (showSplash) {
+    return (
+      <ThemeProvider themeName={themeName}>
+        <SplashScreen onComplete={() => setShowSplash(false)} duration={splashDuration} viewMode={viewMode} />
+      </ThemeProvider>
+    );
+  }
 
   // Settings selector screens
   if (settingsMode === 'theme-select') {
@@ -97,9 +111,6 @@ export function App(): React.ReactElement {
       </ThemeProvider>
     );
   }
-
-  const currentTheme = getTheme(themeName);
-  const useDQStyle = currentTheme.uiStyle === 'titled-box';
 
   return (
     <ThemeProvider themeName={themeName}>
@@ -130,7 +141,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const theme = useTheme();
   const { exit } = useApp();
   const history = useHistory();
-  const [mode, setMode] = useState<Mode>('splash');
+  const [mode, setMode] = useState<Mode>('normal');
   const [inputValue, setInputValue] = useState('');
   const [currentListIndex, setCurrentListIndex] = useState(0);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
@@ -545,12 +556,6 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   };
 
   useInput((input, key) => {
-    // Skip splash screen on any key
-    if (mode === 'splash') {
-      setMode('normal');
-      return;
-    }
-
     // Handle search mode
     if (mode === 'search') {
       if (key.escape) {
@@ -1141,11 +1146,6 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
   }, { isActive: mode !== 'help' });
-
-  // Splash screen
-  if (mode === 'splash') {
-    return <SplashScreen onComplete={() => setMode('normal')} />;
-  }
 
   // Help modal overlay
   if (mode === 'help') {

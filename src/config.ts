@@ -49,6 +49,7 @@ export interface Config {
   viewMode: ViewMode; // GTD or Kanban view mode
   turso?: TursoConfig; // Turso sync config
   contexts?: string[]; // Available contexts for tasks
+  splashDuration?: number; // Splash screen duration in ms (0=disable, -1=wait for key)
 }
 
 const DEFAULT_CONTEXTS = ['work', 'home'];
@@ -182,4 +183,19 @@ export function removeContext(context: string): boolean {
   const newContexts = contexts.filter(c => c !== normalized);
   saveConfig({ contexts: newContexts });
   return true;
+}
+
+const DEFAULT_SPLASH_DURATION = 2500; // 2.5 seconds
+
+export function getSplashDuration(): number {
+  const duration = loadConfig().splashDuration;
+  // undefined means use default, 0 means disabled
+  if (duration === undefined) {
+    return DEFAULT_SPLASH_DURATION;
+  }
+  return duration;
+}
+
+export function setSplashDuration(duration: number): void {
+  saveConfig({ splashDuration: Math.max(0, duration) });
 }

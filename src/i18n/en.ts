@@ -260,6 +260,14 @@ export const en = {
     },
   },
 
+  // Splash screen (Dragon Quest style)
+  splash: {
+    welcome: 'Welcome!',
+    subtitle: 'Your GTD adventure begins',
+    subtitleKanban: 'Your Kanban adventure begins',
+    pressKey: '▼ Press any key',
+  },
+
   // Setup wizard
   setup: {
     welcome: {
@@ -549,6 +557,13 @@ export type SetupTranslations = {
   };
 };
 
+export type SplashTranslations = {
+  welcome: string;
+  subtitle: string;
+  subtitleKanban: string;
+  pressKey: string;
+};
+
 export type Translations = {
   status: Record<string, string>;
   kanban: KanbanTranslations;
@@ -563,5 +578,6 @@ export type Translations = {
     context: Record<string, string>;
   };
   tui: TuiTranslations;
+  splash?: SplashTranslations;
   setup: SetupTranslations;
 };
