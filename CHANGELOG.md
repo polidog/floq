@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-01-30
+
+### Added
+- Show Kanban labels in search results for Kanban mode
+
+### Changed
+- Filter done tasks to show only last 7 days by default
+- Update README with recent features
+
 ## [0.4.0] - 2025-01-30
 
 ### Added
