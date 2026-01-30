@@ -14,7 +14,8 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **Task Search**: Quick search across all tasks with `/`
 - **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
-- **Themes**: Multiple themes including MS-DOS nostalgic styles
+- **Themes**: Multiple themes including MS-DOS nostalgic styles and Dragon Quest RPG style
+- **Splash Screen**: Configurable startup splash with Dragon Quest style for retro themes
 - **i18n**: English and Japanese support
 - **Vim-style Navigation**: Use hjkl or arrow keys
 - **Setup Wizard**: First-run wizard for easy configuration
@@ -209,6 +210,12 @@ floq config mode kanban            # Kanban board
 floq config db /path/to/custom.db
 floq config db                     # Reset to default
 
+# Splash screen settings
+floq config splash                 # Show current setting
+floq config splash 3000            # Set to 3 seconds
+floq config splash off             # Disable splash screen
+floq config splash key             # Wait for key press
+
 # Reset database (delete all data)
 floq db reset                      # With confirmation
 floq db reset --force              # Skip confirmation
@@ -253,6 +260,8 @@ floq config turso --disable
 ## Themes
 
 26 themes available. Use `floq config theme` for interactive selection (j/k to navigate).
+
+Some themes feature a **Dragon Quest RPG style UI** with titled message boxes, 2-column layouts, and retro splash screens. Themes with DQ-style: `turbo-pascal`, `msx`, `pc-98`.
 
 | Theme | Description |
 |-------|-------------|

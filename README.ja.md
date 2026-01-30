@@ -14,7 +14,8 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 - **タスク検索**: `/` キーで全タスクを素早く検索
 - **コメント**: タスクにメモやコメントを追加
 - **クラウド同期**: [Turso](https://turso.tech/)のembedded replicasによるオプションの同期機能
-- **テーマ**: MS-DOSノスタルジックスタイルを含む複数テーマ
+- **テーマ**: MS-DOSノスタルジックスタイルやドラクエRPG風を含む複数テーマ
+- **スプラッシュ画面**: 起動時のスプラッシュ画面（レトロテーマではドラクエ風）
 - **多言語対応**: 英語・日本語サポート
 - **Vimスタイルナビゲーション**: hjklまたは矢印キーで操作
 - **セットアップウィザード**: 初回起動時の簡単設定
@@ -209,6 +210,12 @@ floq config mode kanban            # カンバンボード
 floq config db /path/to/custom.db
 floq config db                     # デフォルトに戻す
 
+# スプラッシュ画面設定
+floq config splash                 # 現在の設定を表示
+floq config splash 3000            # 3秒に設定
+floq config splash off             # スプラッシュ無効化
+floq config splash key             # キー入力待ちモード
+
 # データベースリセット（全データ削除）
 floq db reset                      # 確認あり
 floq db reset --force              # 確認なし
@@ -253,6 +260,8 @@ floq config turso --disable
 ## テーマ
 
 26種類のテーマが利用可能。`floq config theme` でインタラクティブに選択（j/kで移動）。
+
+一部のテーマは**ドラクエRPG風UI**を採用しており、タイトル付きメッセージボックス、2カラムレイアウト、レトロなスプラッシュ画面が表示されます。DQ風テーマ: `turbo-pascal`、`msx`、`pc-98`
 
 | テーマ | 説明 |
 |--------|------|
