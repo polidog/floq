@@ -4,6 +4,8 @@
 
 A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes.
 
+![Floq Demo](./assets/demo.gif)
+
 ## Features
 
 - **TUI Interface**: Interactive terminal UI built with Ink (React for CLI)
@@ -262,6 +264,8 @@ floq config turso --disable
 26 themes available. Use `floq config theme` for interactive selection (j/k to navigate).
 
 Some themes feature a **Dragon Quest RPG style UI** with titled message boxes, 2-column layouts, and retro splash screens. Themes with DQ-style: `turbo-pascal`, `msx`, `pc-98`.
+
+![Dragon Quest Style UI](./assets/demo_dq.gif)
 
 | Theme | Description |
 |-------|-------------|

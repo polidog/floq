@@ -4,6 +4,8 @@
 
 MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getting Things Done）タスクマネージャー。
 
+![Floq Demo](./assets/demo.gif)
+
 ## 特徴
 
 - **TUIインターフェース**: Ink（CLI用React）で構築されたインタラクティブなターミナルUI
@@ -262,6 +264,8 @@ floq config turso --disable
 26種類のテーマが利用可能。`floq config theme` でインタラクティブに選択（j/kで移動）。
 
 一部のテーマは**ドラクエRPG風UI**を採用しており、タイトル付きメッセージボックス、2カラムレイアウト、レトロなスプラッシュ画面が表示されます。DQ風テーマ: `turbo-pascal`、`msx`、`pc-98`
+
+![ドラクエ風UI](./assets/demo_dq.gif)
 
 | テーマ | 説明 |
 |--------|------|
