@@ -4,7 +4,7 @@
 
 MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getting Things Done）タスクマネージャー。
 
-![Floq Demo](./assets/demo.gif)
+![Floq Demo](./assets/demo_ja.gif)
 
 ## 特徴
 
