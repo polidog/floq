@@ -52,7 +52,11 @@ export function App(): React.ReactElement {
   const [viewMode, setViewModeState] = useState<ViewMode>(getViewMode);
   const [settingsMode, setSettingsMode] = useState<SettingsMode>('none');
   const splashDuration = getSplashDuration();
-  const [showSplash, setShowSplash] = useState(splashDuration !== 0);
+
+  // Check if theme requires splash screen (Mario/DQ themes always show splash)
+  const currentTheme = getTheme(themeName);
+  const isThemedSplash = currentTheme.uiStyle === 'mario-block' || currentTheme.uiStyle === 'titled-box';
+  const [showSplash, setShowSplash] = useState(splashDuration !== 0 || isThemedSplash);
   const [, forceUpdate] = useState({});
 
   const handleThemeSelect = (theme: ThemeName) => {
@@ -77,15 +81,16 @@ export function App(): React.ReactElement {
     setSettingsMode('none');
   };
 
-  const currentTheme = getTheme(themeName);
   const useDQStyle = currentTheme.uiStyle === 'titled-box';
   const useMarioStyle = currentTheme.uiStyle === 'mario-block';
 
-  // Show splash screen (all themes, configurable duration)
+  // Show splash screen (Mario/DQ themes always wait for key press)
   if (showSplash) {
+    // For Mario/DQ themes, always use -1 (wait for key press) for game-like experience
+    const effectiveSplashDuration = isThemedSplash ? -1 : splashDuration;
     return (
       <ThemeProvider themeName={themeName}>
-        <SplashScreen onComplete={() => setShowSplash(false)} duration={splashDuration} viewMode={viewMode} />
+        <SplashScreen onComplete={() => setShowSplash(false)} duration={effectiveSplashDuration} viewMode={viewMode} />
       </ThemeProvider>
     );
   }
