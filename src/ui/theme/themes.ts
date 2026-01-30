@@ -16,7 +16,7 @@ export const modernTheme: Theme = {
     statusSomeday: 'magenta',
     statusDone: 'gray',
     text: 'white',
-    textMuted: 'gray',
+    textMuted: '#999999',
     textSelected: 'cyan',
     textHighlight: 'green',
     fnKeyLabel: 'black',
