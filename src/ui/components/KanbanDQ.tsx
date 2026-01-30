@@ -17,10 +17,12 @@ import {
   DeleteCommentCommand,
   SetContextCommand,
 } from '../history/index.js';
+import { SearchBar } from './SearchBar.js';
+import { SearchResults } from './SearchResults.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
-type Mode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context';
+type Mode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -181,6 +183,9 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
   const [contextFilter, setContextFilter] = useState<string | null>(null);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Task[]>([]);
+  const [searchResultIndex, setSearchResultIndex] = useState(0);
 
   const terminalWidth = stdout?.columns || 80;
   const leftPaneWidth = 20;
@@ -239,6 +244,55 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
       .where(eq(schema.comments.taskId, taskId));
     setTaskComments(comments);
   }, []);
+
+  // Get all tasks for search (across all categories)
+  const getAllTasks = useCallback((): Task[] => {
+    const allTasks: Task[] = [];
+    for (const cat of CATEGORIES) {
+      allTasks.push(...tasks[cat]);
+    }
+    return allTasks;
+  }, [tasks]);
+
+  // Search tasks by query
+  const searchTasks = useCallback((query: string): Task[] => {
+    if (!query.trim()) return [];
+    const lowerQuery = query.toLowerCase();
+    const allTasks = getAllTasks();
+    return allTasks.filter(task =>
+      task.title.toLowerCase().includes(lowerQuery) ||
+      (task.description && task.description.toLowerCase().includes(lowerQuery))
+    );
+  }, [getAllTasks]);
+
+  // Handle search query change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    const results = searchTasks(value);
+    setSearchResults(results);
+    setSearchResultIndex(0);
+  }, [searchTasks]);
+
+  // Get kanban category from task status
+  const getKanbanCategory = (status: string): KanbanCategory => {
+    if (status === 'inbox' || status === 'someday') return 'todo';
+    if (status === 'next' || status === 'waiting') return 'doing';
+    return 'done';
+  };
+
+  // Navigate to a task from search results
+  const navigateToTask = useCallback((task: Task) => {
+    const targetCategory = getKanbanCategory(task.status);
+    const categoryTasks = tasks[targetCategory];
+    const taskIndex = categoryTasks.findIndex(t => t.id === task.id);
+
+    if (taskIndex >= 0) {
+      setSelectedCategory(targetCategory);
+      setSelectedTaskIndex(taskIndex);
+      setPaneFocus('tasks');
+      setMode('normal');
+    }
+  }, [tasks]);
 
   useEffect(() => {
     loadTasks();
@@ -313,6 +367,20 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
   }, [i18n.tui.completed, loadTasks, history]);
 
   const handleInputSubmit = async (value: string) => {
+    // Handle search mode submit
+    if (mode === 'search') {
+      if (searchResults.length > 0) {
+        const task = searchResults[searchResultIndex];
+        navigateToTask(task);
+      } else {
+        setMode('normal');
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchResultIndex(0);
+      return;
+    }
+
     if (mode === 'add') {
       if (value.trim()) {
         await addTask(value, contextFilter && contextFilter !== '' ? contextFilter : null);
@@ -341,6 +409,32 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
         setInputValue('');
         setMode('normal');
       }
+      return;
+    }
+
+    // Handle search mode
+    if (mode === 'search') {
+      if (key.escape) {
+        setSearchQuery('');
+        setSearchResults([]);
+        setSearchResultIndex(0);
+        setMode('normal');
+        return;
+      }
+      // Navigate search results with arrow keys, Ctrl+j/k, or Ctrl+n/p
+      if (key.downArrow || (key.ctrl && (input === 'j' || input === 'n'))) {
+        setSearchResultIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (key.upArrow || (key.ctrl && (input === 'k' || input === 'p'))) {
+        setSearchResultIndex((prev) =>
+          prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)
+        );
+        return;
+      }
+      // Let TextInput handle other keys
       return;
     }
 
@@ -401,6 +495,12 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
     if (input === '@') {
       setContextSelectIndex(0);
       setMode('context-filter');
+      return;
+    }
+
+    // Search
+    if (input === '/') {
+      setMode('search');
       return;
     }
 
@@ -610,6 +710,25 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
         </Box>
       )}
 
+      {/* Search bar */}
+      {mode === 'search' && (
+        <SearchBar
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onSubmit={handleInputSubmit}
+        />
+      )}
+
+      {/* Search results */}
+      {mode === 'search' && searchQuery && (
+        <SearchResults
+          results={searchResults}
+          selectedIndex={searchResultIndex}
+          query={searchQuery}
+          viewMode="kanban"
+        />
+      )}
+
       {/* Message */}
       {message && mode === 'normal' && (
         <Box marginTop={1}>
@@ -621,8 +740,8 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted}>
           {paneFocus === 'category'
-            ? 'j/k=select l/Enter=tasks a=add @=filter'
-            : 'j/k=select h/Esc=back d=done m=move a=add u=undo'}
+            ? 'j/k=select l/Enter=tasks a=add @=filter /=search'
+            : 'j/k=select h/Esc=back d=done m=move a=add u=undo /=search'}
         </Text>
       </Box>
     </Box>

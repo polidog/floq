@@ -20,10 +20,12 @@ import {
   DeleteCommentCommand,
   SetContextCommand,
 } from '../history/index.js';
+import { SearchBar } from './SearchBar.js';
+import { SearchResults } from './SearchResults.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -214,6 +216,9 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   const [contextFilter, setContextFilter] = useState<string | null>(null);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Task[]>([]);
+  const [searchResultIndex, setSearchResultIndex] = useState(0);
 
   const terminalWidth = stdout?.columns || 80;
   const leftPaneWidth = 28;
@@ -304,6 +309,49 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       .where(eq(schema.comments.taskId, taskId));
     setTaskComments(comments);
   }, []);
+
+  // Get all tasks for search (across all statuses)
+  const getAllTasks = useCallback((): Task[] => {
+    const allTasks: Task[] = [];
+    for (const tab of TABS) {
+      allTasks.push(...tasks[tab]);
+    }
+    return allTasks;
+  }, [tasks]);
+
+  // Search tasks by query
+  const searchTasks = useCallback((query: string): Task[] => {
+    if (!query.trim()) return [];
+    const lowerQuery = query.toLowerCase();
+    const allTasks = getAllTasks();
+    return allTasks.filter(task =>
+      task.title.toLowerCase().includes(lowerQuery) ||
+      (task.description && task.description.toLowerCase().includes(lowerQuery))
+    );
+  }, [getAllTasks]);
+
+  // Handle search query change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    const results = searchTasks(value);
+    setSearchResults(results);
+    setSearchResultIndex(0);
+  }, [searchTasks]);
+
+  // Navigate to a task from search results
+  const navigateToTask = useCallback((task: Task) => {
+    const targetTab = task.isProject ? 'projects' : task.status as TabType;
+    const tabIndex = TABS.indexOf(targetTab);
+    const tabTasks = tasks[targetTab];
+    const taskIndex = tabTasks.findIndex(t => t.id === task.id);
+
+    if (tabIndex >= 0 && taskIndex >= 0) {
+      setCurrentTabIndex(tabIndex);
+      setSelectedTaskIndex(taskIndex);
+      setPaneFocus('tasks');
+      setMode('normal');
+    }
+  }, [tasks]);
 
   useEffect(() => {
     loadTasks();
@@ -425,6 +473,20 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   }, [i18n.tui.linkedToProject, loadTasks, history]);
 
   const handleInputSubmit = async (value: string) => {
+    // Handle search mode submit
+    if (mode === 'search') {
+      if (searchResults.length > 0) {
+        const task = searchResults[searchResultIndex];
+        navigateToTask(task);
+      } else {
+        setMode('normal');
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchResultIndex(0);
+      return;
+    }
+
     if (mode === 'move-to-waiting' && taskToWaiting) {
       if (value.trim()) {
         await moveTaskToWaiting(taskToWaiting, value);
@@ -478,6 +540,32 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           setMode('normal');
         }
       }
+      return;
+    }
+
+    // Handle search mode
+    if (mode === 'search') {
+      if (key.escape) {
+        setSearchQuery('');
+        setSearchResults([]);
+        setSearchResultIndex(0);
+        setMode('normal');
+        return;
+      }
+      // Navigate search results with arrow keys, Ctrl+j/k, or Ctrl+n/p
+      if (key.downArrow || (key.ctrl && (input === 'j' || input === 'n'))) {
+        setSearchResultIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (key.upArrow || (key.ctrl && (input === 'k' || input === 'p'))) {
+        setSearchResultIndex((prev) =>
+          prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)
+        );
+        return;
+      }
+      // Let TextInput handle other keys
       return;
     }
 
@@ -650,6 +738,11 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     if (input === '@') {
       setContextSelectIndex(0);
       setMode('context-filter');
+      return;
+    }
+
+    if (input === '/') {
+      setMode('search');
       return;
     }
 
@@ -1005,6 +1098,24 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         </Box>
       )}
 
+      {/* Search bar */}
+      {mode === 'search' && (
+        <SearchBar
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onSubmit={handleInputSubmit}
+        />
+      )}
+
+      {/* Search results */}
+      {mode === 'search' && searchQuery && (
+        <SearchResults
+          results={searchResults}
+          selectedIndex={searchResultIndex}
+          query={searchQuery}
+        />
+      )}
+
       {/* Message */}
       {message && mode === 'normal' && (
         <Box marginTop={1}>
@@ -1016,10 +1127,10 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       <Box marginTop={1}>
         <Text color={theme.colors.textMuted}>
           {mode === 'project-detail'
-            ? 'j/k=select a=add d=done Esc/b=back'
+            ? 'j/k=select a=add d=done Esc/b=back /=search'
             : paneFocus === 'tabs'
-              ? 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter'
-              : 'j/k=select h/Esc=back d=done n=next s=someday w=wait i=inbox p=project P=link D=delete u=undo'}
+              ? 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search'
+              : 'j/k=select h/Esc=back d=done n=next s=someday w=wait i=inbox p=project P=link D=delete u=undo /=search'}
         </Text>
       </Box>
     </Box>
