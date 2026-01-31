@@ -11,7 +11,7 @@ import { SearchResults } from './SearchResults.js';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getContextFilter, setContextFilter as saveContextFilter } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import type { BorderStyleType } from '../theme/types.js';
@@ -63,8 +63,12 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
-  // Context filter state
-  const [contextFilter, setContextFilter] = useState<string | null>(null);
+  // Context filter state - load from config for persistence across sessions/terminals
+  const [contextFilter, setContextFilterState] = useState<string | null>(() => getContextFilter());
+  const setContextFilter = useCallback((value: string | null) => {
+    setContextFilterState(value);
+    saveContextFilter(value);
+  }, []);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
 

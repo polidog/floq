@@ -16,7 +16,7 @@ import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
-import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
@@ -175,8 +175,12 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
-  // Context filter state
-  const [contextFilter, setContextFilter] = useState<string | null>(null); // null = all, '' = no context, string = specific context
+  // Context filter state - load from config for persistence across sessions/terminals
+  const [contextFilter, setContextFilterState] = useState<string | null>(() => getContextFilter());
+  const setContextFilter = useCallback((value: string | null) => {
+    setContextFilterState(value);
+    saveContextFilter(value);
+  }, []);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
 

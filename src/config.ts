@@ -50,6 +50,7 @@ export interface Config {
   turso?: TursoConfig; // Turso sync config
   contexts?: string[]; // Available contexts for tasks
   splashDuration?: number; // Splash screen duration in ms (0=disable, -1=wait for key)
+  contextFilter?: string | null; // Current context filter (null = all, '' = no context, string = specific context)
 }
 
 const DEFAULT_CONTEXTS = ['work', 'home'];
@@ -199,4 +200,14 @@ export function getSplashDuration(): number {
 export function setSplashDuration(duration: number): void {
   // Allow -1 (wait for key), 0 (disabled), or positive values
   saveConfig({ splashDuration: duration >= 0 ? duration : -1 });
+}
+
+export function getContextFilter(): string | null {
+  const config = loadConfig();
+  // undefined means not set (default to null = all)
+  return config.contextFilter === undefined ? null : config.contextFilter;
+}
+
+export function setContextFilter(contextFilter: string | null): void {
+  saveConfig({ contextFilter });
 }

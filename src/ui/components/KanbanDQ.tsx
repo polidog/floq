@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext, getLocale } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import {
@@ -219,7 +219,12 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskComments, setTaskComments] = useState<Comment[]>([]);
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
-  const [contextFilter, setContextFilter] = useState<string | null>(null);
+  // Context filter state - load from config for persistence across sessions/terminals
+  const [contextFilter, setContextFilterState] = useState<string | null>(() => getContextFilter());
+  const setContextFilter = useCallback((value: string | null) => {
+    setContextFilterState(value);
+    saveContextFilter(value);
+  }, []);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
