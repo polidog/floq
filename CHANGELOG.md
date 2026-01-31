@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-01-31
+
+### Added
+- Persist context filter across sessions
+- Use alternate screen buffer for fullscreen TUI
+- Japanese changelog support (i18n)
+
+### Fixed
+- Missing set-context mode UI for DQ/Mario themes
+
+### Changed
+- npm publish via GitHub Actions with OIDC trusted publishing
+
 ## [0.7.0] - 2025-01-31
 
 ### Added

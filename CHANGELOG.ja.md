@@ -7,6 +7,19 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-01-31
+
+### Added
+- コンテキストフィルターをセッション間で保持するように改善
+- フルスクリーンTUIで代替画面バッファを使用
+- 日本語版変更履歴（CHANGELOG.ja.md）のサポートを追加
+
+### Fixed
+- DQ/マリオテーマでset-contextモードUIが表示されない問題を修正
+
+### Changed
+- npm publishをGitHub Actions + OIDC trusted publishingで自動化
+
 ## [0.7.0] - 2025-01-31
 
 ### Added
