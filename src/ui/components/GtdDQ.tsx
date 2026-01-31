@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext, getLocale } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import {
@@ -252,7 +252,12 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   const [taskToWaiting, setTaskToWaiting] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>({});
-  const [contextFilter, setContextFilter] = useState<string | null>(null);
+  // Context filter state - load from config for persistence across sessions/terminals
+  const [contextFilter, setContextFilterState] = useState<string | null>(() => getContextFilter());
+  const setContextFilter = useCallback((value: string | null) => {
+    setContextFilterState(value);
+    saveContextFilter(value);
+  }, []);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1130,6 +1135,26 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           <Box flexDirection="column" marginTop={1}>
             {['all', 'none', ...availableContexts].map((ctx, index) => {
               const label = ctx === 'all' ? 'All' : ctx === 'none' ? 'No context' : `@${ctx}`;
+              return (
+                <Text
+                  key={ctx}
+                  color={index === contextSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                  bold={index === contextSelectIndex}
+                >
+                  {index === contextSelectIndex ? '▶ ' : '  '}{label}
+                </Text>
+              );
+            })}
+          </Box>
+        </Box>
+      ) : mode === 'set-context' && currentTasks.length > 0 ? (
+        <Box flexDirection="column">
+          <Text color={theme.colors.secondary} bold>
+            {i18n.tui.context?.setContext || 'Set context for'}: {currentTasks[selectedTaskIndex]?.title}
+          </Text>
+          <Box flexDirection="column" marginTop={1}>
+            {['clear', ...availableContexts, 'new'].map((ctx, index) => {
+              const label = ctx === 'clear' ? (i18n.tui.context?.none || 'Clear context') : ctx === 'new' ? (i18n.tui.context?.addNew || 'New context...') : `@${ctx}`;
               return (
                 <Text
                   key={ctx}
