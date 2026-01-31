@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { getLocale } from './config.js';
 
 export interface ChangelogEntry {
   version: string;
@@ -20,24 +21,41 @@ function findChangelogPath(): string {
   const currentFile = fileURLToPath(import.meta.url);
   const currentDir = dirname(currentFile);
 
-  // Try to find CHANGELOG.md relative to the package root
+  const locale = getLocale();
+  const filename = locale === 'ja' ? 'CHANGELOG.ja.md' : 'CHANGELOG.md';
+  const fallbackFilename = 'CHANGELOG.md';
+
+  // Try to find localized CHANGELOG relative to the package root
   // From dist/ or src/, go up one level
-  const possiblePaths = [
-    join(currentDir, '..', 'CHANGELOG.md'),
-    join(currentDir, '..', '..', 'CHANGELOG.md'),
-    join(process.cwd(), 'CHANGELOG.md'),
+  const basePaths = [
+    join(currentDir, '..'),
+    join(currentDir, '..', '..'),
+    process.cwd(),
   ];
 
-  for (const path of possiblePaths) {
+  // First, try to find the localized version
+  for (const basePath of basePaths) {
+    const localizedPath = join(basePath, filename);
     try {
-      readFileSync(path, 'utf-8');
-      return path;
+      readFileSync(localizedPath, 'utf-8');
+      return localizedPath;
     } catch {
       // continue to next path
     }
   }
 
-  return possiblePaths[0]; // Return first path as fallback
+  // Fall back to default CHANGELOG.md
+  for (const basePath of basePaths) {
+    const fallbackPath = join(basePath, fallbackFilename);
+    try {
+      readFileSync(fallbackPath, 'utf-8');
+      return fallbackPath;
+    } catch {
+      // continue to next path
+    }
+  }
+
+  return join(basePaths[0], fallbackFilename); // Return first path as fallback
 }
 
 export function parseChangelog(): Changelog {
