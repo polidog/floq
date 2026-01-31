@@ -105,17 +105,7 @@ git push origin main
 git push origin v<新バージョン>
 ```
 
-### 7. npm publish
-
-```bash
-# ビルド
-npm run build
-
-# npmに公開
-npm publish
-```
-
-### 8. GitHub Release 作成
+### 7. GitHub Release 作成
 
 ```bash
 # GitHub CLIでリリースを作成
@@ -135,3 +125,4 @@ EOF
 - 各ステップの実行前にユーザーに確認を取ってください
 - エラーが発生した場合は、ロールバック方法を提示してください
 - `--dry-run` オプションが指定された場合は、実際の操作を行わず、実行される内容を表示するだけにしてください
+- npm publish は GitHub Actions で自動実行されます（GitHub Release 作成時にトリガー）
