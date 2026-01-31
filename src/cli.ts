@@ -28,7 +28,16 @@ program
 // Default command - launch TUI
 program
   .action(() => {
-    render(React.createElement(App));
+    // Enter alternate screen buffer (like btop/vim)
+    process.stdout.write('\x1b[?1049h');
+    process.stdout.write('\x1b[H'); // Move cursor to top-left
+
+    const { waitUntilExit } = render(React.createElement(App));
+
+    waitUntilExit().then(() => {
+      // Leave alternate screen buffer
+      process.stdout.write('\x1b[?1049l');
+    });
   });
 
 // Add task
