@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PomodoroState, PomodoroType, PomodoroConfig } from './types.js';
 import { DEFAULT_POMODORO_CONFIG } from './types.js';
+import { loadPomodoroState, savePomodoroState, clearPomodoroState } from './repository.js';
 
 export interface UsePomodoroTimerResult {
   state: PomodoroState | null;
@@ -20,8 +21,46 @@ export function usePomodoroTimer(
 ): UsePomodoroTimerResult {
   const [state, setState] = useState<PomodoroState | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [initialized, setInitialized] = useState(false);
   const onPhaseCompleteRef = useRef(onPhaseComplete);
   onPhaseCompleteRef.current = onPhaseComplete;
+
+  // Load state from DB on mount
+  useEffect(() => {
+    loadPomodoroState().then((savedState) => {
+      if (savedState) {
+        // Check if the timer has already expired
+        const now = Date.now();
+        if (savedState.pausedAt === null && savedState.endTime <= now) {
+          // Timer expired while app was closed, clear it
+          clearPomodoroState();
+        } else {
+          setState(savedState);
+          // Calculate remaining seconds
+          if (savedState.pausedAt !== null) {
+            // If paused, remaining = endTime - pausedAt
+            const remaining = Math.max(0, Math.ceil((savedState.endTime - savedState.pausedAt) / 1000));
+            setRemainingSeconds(remaining);
+          } else {
+            const remaining = Math.max(0, Math.ceil((savedState.endTime - now) / 1000));
+            setRemainingSeconds(remaining);
+          }
+        }
+      }
+      setInitialized(true);
+    });
+  }, []);
+
+  // Save state to DB whenever it changes
+  useEffect(() => {
+    if (!initialized) return;
+
+    if (state) {
+      savePomodoroState(state);
+    } else {
+      clearPomodoroState();
+    }
+  }, [state, initialized]);
 
   const getDuration = useCallback((type: PomodoroType): number => {
     switch (type) {

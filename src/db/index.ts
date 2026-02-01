@@ -69,6 +69,20 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
       )
     `);
     await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_comments_task_id ON comments(task_id)");
+
+    // Create pomodoro_sessions table for cross-device sync
+    await remoteClient.execute(`
+      CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+        id TEXT PRIMARY KEY,
+        task_id TEXT NOT NULL,
+        task_title TEXT NOT NULL,
+        type TEXT NOT NULL CHECK(type IN ('work', 'short_break', 'long_break')),
+        end_time INTEGER NOT NULL,
+        paused_at INTEGER,
+        completed_count INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL
+      )
+    `);
   } finally {
     remoteClient.close();
   }
@@ -148,6 +162,20 @@ async function initializeLocalSchema(): Promise<void> {
     )
   `);
   await client.execute("CREATE INDEX IF NOT EXISTS idx_comments_task_id ON comments(task_id)");
+
+  // Create pomodoro_sessions table for cross-device sync
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      task_title TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('work', 'short_break', 'long_break')),
+      end_time INTEGER NOT NULL,
+      paused_at INTEGER,
+      completed_count INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    )
+  `);
 }
 
 // DB 初期化

@@ -27,3 +27,19 @@ export const comments = sqliteTable('comments', {
 
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+
+// Pomodoro session table - stores the current active pomodoro state
+// Only one row should exist (id = 'current')
+export const pomodoroSessions = sqliteTable('pomodoro_sessions', {
+  id: text('id').primaryKey(), // Always 'current' for active session
+  taskId: text('task_id').notNull(),
+  taskTitle: text('task_title').notNull(),
+  type: text('type', { enum: ['work', 'short_break', 'long_break'] }).notNull(),
+  endTime: integer('end_time').notNull(), // Unix timestamp in milliseconds
+  pausedAt: integer('paused_at'), // Unix timestamp in milliseconds, null if not paused
+  completedCount: integer('completed_count').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type PomodoroSession = typeof pomodoroSessions.$inferSelect;
+export type NewPomodoroSession = typeof pomodoroSessions.$inferInsert;
