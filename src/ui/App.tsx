@@ -19,7 +19,7 @@ import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
-import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
@@ -1214,6 +1214,84 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     );
   }
 
+  // Pomodoro focus mode - show only current task
+  if (pomodoro.isRunning && getPomodoroFocusMode() && mode !== 'add') {
+    // Find the current task from all tasks
+    const allTasks = [...tasks.inbox, ...tasks.next, ...tasks.waiting, ...tasks.someday, ...tasks.done];
+    const focusTask = allTasks.find(t => t.id === pomodoro.state?.taskId);
+
+    return (
+      <Box flexDirection="column" padding={1}>
+        {/* Header */}
+        <Box marginBottom={1}>
+          <Text color={theme.colors.accent} bold>
+            {theme.name === 'modern' ? '🍅 ' : '>> '}{i18n.tui.pomodoro?.work || 'Focus'}
+          </Text>
+        </Box>
+
+        {/* Timer */}
+        <Box marginBottom={1}>
+          <PomodoroTimer
+            state={pomodoro.state}
+            remainingSeconds={pomodoro.remainingSeconds}
+            isPaused={pomodoro.isPaused}
+          />
+        </Box>
+
+        {/* Task info - same style as task-detail */}
+        <Box
+          flexDirection="column"
+          borderStyle={theme.borders.list as BorderStyleType}
+          borderColor={theme.colors.border}
+          paddingX={1}
+          paddingY={1}
+          marginBottom={1}
+        >
+          <Text color={theme.colors.text} bold>{focusTask?.title || pomodoro.state?.taskTitle}</Text>
+          {focusTask?.description && (
+            <Text color={theme.colors.textMuted}>{focusTask.description}</Text>
+          )}
+          {focusTask && (
+            <>
+              <Box marginTop={1}>
+                <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailStatus}: </Text>
+                <Text color={theme.colors.accent}>
+                  {i18n.status[focusTask.status]}
+                  {focusTask.waitingFor && ` (${focusTask.waitingFor})`}
+                </Text>
+              </Box>
+              <Box>
+                <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
+                <Text color={theme.colors.accent}>
+                  {focusTask.context ? `@${focusTask.context}` : (i18n.tui.context?.none || 'No context')}
+                </Text>
+              </Box>
+            </>
+          )}
+        </Box>
+
+        {/* Message */}
+        {message && (
+          <Box marginTop={1}>
+            <Text color={theme.colors.textHighlight}>{message}</Text>
+          </Box>
+        )}
+
+        {/* Footer */}
+        <Box marginTop={1} flexDirection="column">
+          <Box>
+            <Text color={theme.colors.accent}>⌨️ </Text>
+            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add}</Text>
+          </Box>
+          <Box>
+            <Text color={theme.colors.accent}>🍅 </Text>
+            <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter}</Text>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   const formatTitle = (title: string) =>
     theme.style.headerUppercase ? title.toUpperCase() : title;
 
@@ -1643,7 +1721,10 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         ) : theme.style.showFunctionKeys ? (
           <FunctionKeyBar />
         ) : (
-          <Text color={theme.colors.textMuted}>{i18n.tui.footer}</Text>
+          <Box>
+            <Text color={theme.colors.accent}>⌨️ </Text>
+            <Text color={theme.colors.textMuted}>{i18n.tui.footer}</Text>
+          </Box>
         )}
         {/* Pomodoro shortcuts when timer is running */}
         {pomodoro.isRunning && (

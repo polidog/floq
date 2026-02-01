@@ -202,6 +202,22 @@ configCmd
     }
   });
 
+configCmd
+  .command('pomodoro')
+  .description('Configure pomodoro settings')
+  .option('--focus <on|off>', 'Enable/disable focus mode (hide other tasks during pomodoro)')
+  .action(async (options: { focus?: string }) => {
+    const { getPomodoroFocusMode, setPomodoroFocusMode } = await import('./config.js');
+    if (options.focus) {
+      const enabled = options.focus === 'on' || options.focus === 'true';
+      setPomodoroFocusMode(enabled);
+      console.log(`Pomodoro focus mode ${enabled ? 'enabled' : 'disabled'}`);
+    } else {
+      const enabled = getPomodoroFocusMode();
+      console.log(`Pomodoro focus mode: ${enabled ? 'on' : 'off'}`);
+    }
+  });
+
 // Sync command
 program
   .command('sync')

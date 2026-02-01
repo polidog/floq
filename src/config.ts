@@ -52,6 +52,7 @@ export interface Config {
   contexts?: string[]; // Available contexts for tasks
   splashDuration?: number; // Splash screen duration in ms (0=disable, -1=wait for key)
   contextFilter?: string | null; // Current context filter (null = all, '' = no context, string = specific context)
+  pomodoroFocusMode?: boolean; // Hide other tasks during pomodoro (default: false)
 }
 
 const DEFAULT_CONTEXTS = ['work', 'home'];
@@ -218,4 +219,12 @@ export function getContextFilter(): string | null {
 
 export function setContextFilter(contextFilter: string | null): void {
   saveConfig({ contextFilter });
+}
+
+export function getPomodoroFocusMode(): boolean {
+  return loadConfig().pomodoroFocusMode ?? true;
+}
+
+export function setPomodoroFocusMode(enabled: boolean): void {
+  saveConfig({ pomodoroFocusMode: enabled });
 }

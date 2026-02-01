@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import {
@@ -23,6 +23,9 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { PomodoroTimer } from './PomodoroTimer.js';
+import { usePomodoroTimer } from '../../pomodoro/index.js';
+import type { PomodoroType } from '../../pomodoro/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
@@ -263,6 +266,17 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
+
+  // Pomodoro timer
+  const handlePomodoroPhaseComplete = useCallback((type: PomodoroType) => {
+    if (type === 'work') {
+      setMessage(i18n.tui.pomodoro?.completed || 'Work session complete! Take a break.');
+    } else {
+      setMessage(i18n.tui.pomodoro?.breakComplete || 'Break over! Ready to work?');
+    }
+  }, [i18n.tui.pomodoro]);
+
+  const pomodoro = usePomodoroTimer(undefined, handlePomodoroPhaseComplete);
 
   const terminalWidth = stdout?.columns || 80;
   const leftPaneWidth = 28;
@@ -1084,6 +1098,39 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       setMessage(i18n.tui.refreshed);
       return;
     }
+
+    // Pomodoro: Start (F key) - when task is selected and timer not running
+    if (input === 'F' && currentTasks.length > 0 && !pomodoro.isRunning && currentTab !== 'projects') {
+      const task = currentTasks[selectedTaskIndex];
+      pomodoro.startPomodoro(task.id, task.title);
+      setMessage(i18n.tui.pomodoro?.started || 'Pomodoro started');
+      return;
+    }
+
+    // Pomodoro: Pause/Resume (Space key) - when timer is running
+    if (input === ' ' && pomodoro.isRunning) {
+      if (pomodoro.isPaused) {
+        pomodoro.resumePomodoro();
+        setMessage(i18n.tui.pomodoro?.started || 'Pomodoro resumed');
+      } else {
+        pomodoro.pausePomodoro();
+        setMessage(i18n.tui.pomodoro?.paused || 'Paused');
+      }
+      return;
+    }
+
+    // Pomodoro: Skip phase (S key - uppercase) - when timer is running
+    if (input === 'S' && pomodoro.isRunning) {
+      pomodoro.skipPhase();
+      return;
+    }
+
+    // Pomodoro: Stop (X key) - when timer is running
+    if (input === 'X' && pomodoro.isRunning) {
+      pomodoro.stopPomodoro();
+      setMessage(i18n.tui.pomodoro?.stopped || 'Pomodoro stopped');
+      return;
+    }
   });
 
   const tursoEnabled = isTursoEnabled();
@@ -1099,6 +1146,84 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     return (
       <Box flexDirection="column" padding={1}>
         <HelpModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
+  // Pomodoro focus mode - show only current task
+  if (pomodoro.isRunning && getPomodoroFocusMode() && mode !== 'add') {
+    // Find the current task from all tasks
+    const allTasks = [...tasks.inbox, ...tasks.next, ...tasks.waiting, ...tasks.someday, ...tasks.done];
+    const focusTask = allTasks.find(t => t.id === pomodoro.state?.taskId);
+
+    return (
+      <Box flexDirection="column" padding={1}>
+        {/* Header */}
+        <Box marginBottom={1}>
+          <Text color={theme.colors.accent} bold>
+            🍅 {i18n.tui.pomodoro?.work || 'Focus'}
+          </Text>
+        </Box>
+
+        {/* Timer */}
+        <Box marginBottom={1}>
+          <PomodoroTimer
+            state={pomodoro.state}
+            remainingSeconds={pomodoro.remainingSeconds}
+            isPaused={pomodoro.isPaused}
+          />
+        </Box>
+
+        {/* Task info - same style as task-detail */}
+        <Box
+          flexDirection="column"
+          borderStyle="round"
+          borderColor={theme.colors.border}
+          paddingX={1}
+          paddingY={1}
+          marginBottom={1}
+        >
+          <Text color={theme.colors.text} bold>{focusTask?.title || pomodoro.state?.taskTitle}</Text>
+          {focusTask?.description && (
+            <Text color={theme.colors.textMuted}>{focusTask.description}</Text>
+          )}
+          {focusTask && (
+            <>
+              <Box marginTop={1}>
+                <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailStatus}: </Text>
+                <Text color={theme.colors.accent}>
+                  {i18n.status[focusTask.status]}
+                  {focusTask.waitingFor && ` (${focusTask.waitingFor})`}
+                </Text>
+              </Box>
+              <Box>
+                <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
+                <Text color={theme.colors.accent}>
+                  {focusTask.context ? `@${focusTask.context}` : (i18n.tui.context?.none || 'No context')}
+                </Text>
+              </Box>
+            </>
+          )}
+        </Box>
+
+        {/* Message */}
+        {message && (
+          <Box marginTop={1}>
+            <Text color={theme.colors.textHighlight}>{message}</Text>
+          </Box>
+        )}
+
+        {/* Footer */}
+        <Box marginTop={1} flexDirection="column">
+          <Box>
+            <Text color={theme.colors.accent}>⌨️ </Text>
+            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add}</Text>
+          </Box>
+          <Box>
+            <Text color={theme.colors.accent}>🍅 </Text>
+            <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter}</Text>
+          </Box>
+        </Box>
       </Box>
     );
   }
@@ -1127,6 +1252,17 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         </Box>
         <Text color={theme.colors.textMuted}>?=help q=quit</Text>
       </Box>
+
+      {/* Pomodoro Timer */}
+      {pomodoro.isRunning && (
+        <Box marginBottom={1}>
+          <PomodoroTimer
+            state={pomodoro.state}
+            remainingSeconds={pomodoro.remainingSeconds}
+            isPaused={pomodoro.isPaused}
+          />
+        </Box>
+      )}
 
       {/* Main content */}
       {mode === 'context-filter' ? (
@@ -1409,16 +1545,25 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       )}
 
       {/* Footer */}
-      <Box marginTop={1}>
-        <Text color={theme.colors.textMuted}>
-          {mode === 'task-detail'
-            ? i18n.tui.dqFooter.taskDetail
-            : mode === 'project-detail'
-              ? i18n.tui.dqFooter.projectDetail
-              : paneFocus === 'tabs'
-                ? i18n.tui.dqFooter.tabs
-                : i18n.tui.dqFooter.tasks}
-        </Text>
+      <Box marginTop={1} flexDirection="column">
+        <Box>
+          <Text color={theme.colors.accent}>⌨️ </Text>
+          <Text color={theme.colors.textMuted}>
+            {mode === 'task-detail'
+              ? i18n.tui.dqFooter.taskDetail
+              : mode === 'project-detail'
+                ? i18n.tui.dqFooter.projectDetail
+                : paneFocus === 'tabs'
+                  ? i18n.tui.dqFooter.tabs
+                  : i18n.tui.dqFooter.tasks}
+          </Text>
+        </Box>
+        {pomodoro.isRunning && (
+          <Box>
+            <Text color={theme.colors.accent}>🍅 </Text>
+            <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter}</Text>
+          </Box>
+        )}
       </Box>
     </Box>
   );
