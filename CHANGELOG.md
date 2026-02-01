@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-02-02
+
+### Added
+- Pomodoro timer state persistence to database for cross-device sync
+- Focus mode toggle during pomodoro execution (f key)
+- Focus mode support for DQ/Mario themes
+- Pomodoro shortcuts display in footer when timer is running
+- `--enable` and `--clear` options for Turso config management
+
 ## [0.9.0] - 2025-02-01
 
 ### Added
