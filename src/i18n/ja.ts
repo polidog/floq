@@ -135,7 +135,13 @@ export const ja: Translations = {
       comment: 'コメント',
       back: '戻る',
       delete: '削除',
+      // Pomodoro keys
+      pause: '一時停止',
+      resume: '再開',
+      skip: 'スキップ',
+      stop: '停止',
     },
+    pomodoroFooter: 'Space=一時停止/再開 S=スキップ X=停止',
     // Help modal
     help: {
       title: 'キーボードショートカット',

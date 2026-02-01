@@ -133,7 +133,13 @@ export const en = {
       comment: 'Comment',
       back: 'Back',
       delete: 'Delete',
+      // Pomodoro keys
+      pause: 'Pause',
+      resume: 'Resume',
+      skip: 'Skip',
+      stop: 'Stop',
     },
+    pomodoroFooter: 'Space=pause/resume S=skip X=stop',
     // Help modal
     help: {
       title: 'Keyboard Shortcuts',
@@ -444,6 +450,11 @@ export type KeyBarTranslations = {
   comment: string;
   back: string;
   delete: string;
+  // Pomodoro keys
+  pause: string;
+  resume: string;
+  skip: string;
+  stop: string;
 };
 
 export type SearchTranslations = {
@@ -512,6 +523,7 @@ export type TuiTranslations = {
   waitingFor: string;
   refreshed: string;
   footer: string;
+  pomodoroFooter: string;
   dqFooter: {
     tabs: string;
     tasks: string;

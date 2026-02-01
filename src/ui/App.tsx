@@ -1628,7 +1628,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       )}
 
       {/* Footer / Function key bar */}
-      <Box marginTop={1}>
+      <Box marginTop={1} flexDirection="column">
         {(mode === 'task-detail' || mode === 'add-comment') ? (
           theme.style.showFunctionKeys ? (
             <FunctionKeyBar keys={[
@@ -1644,6 +1644,23 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
           <FunctionKeyBar />
         ) : (
           <Text color={theme.colors.textMuted}>{i18n.tui.footer}</Text>
+        )}
+        {/* Pomodoro shortcuts when timer is running */}
+        {pomodoro.isRunning && (
+          <Box>
+            <Text color={theme.colors.accent}>
+              {theme.name === 'modern' ? '🍅 ' : '[Pomodoro] '}
+            </Text>
+            {theme.style.showFunctionKeys ? (
+              <FunctionKeyBar keys={[
+                { key: 'Space', label: pomodoro.isPaused ? i18n.tui.keyBar.resume : i18n.tui.keyBar.pause },
+                { key: 'S', label: i18n.tui.keyBar.skip },
+                { key: 'X', label: i18n.tui.keyBar.stop },
+              ]} />
+            ) : (
+              <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter}</Text>
+            )}
+          </Box>
         )}
       </Box>
     </Box>
