@@ -163,6 +163,11 @@ export const en = {
       searchTasks: 'Search tasks',
       filterByContext: 'Filter by context',
       setContext: 'Set context',
+      pomodoro: 'Pomodoro',
+      startPomodoro: 'Start Pomodoro',
+      pauseResume: 'Pause/Resume',
+      skipPhase: 'Skip phase',
+      stopPomodoro: 'Stop Pomodoro',
       settings: 'Settings',
       changeTheme: 'Change theme',
       changeViewMode: 'Change view mode',
@@ -252,6 +257,18 @@ export const en = {
       addNew: '+ New context',
       newContext: 'New context: ',
       newContextPlaceholder: 'Enter context name...',
+    },
+    // Pomodoro
+    pomodoro: {
+      work: 'Work',
+      shortBreak: 'Short Break',
+      longBreak: 'Long Break',
+      started: 'Pomodoro started',
+      paused: 'Paused',
+      completed: 'Completed! Take a break',
+      breakComplete: 'Break over! Ready to work?',
+      stopped: 'Pomodoro stopped',
+      noTaskSelected: 'No task selected',
     },
     // Info tab
     info: {
@@ -358,6 +375,11 @@ export type HelpTranslations = {
   searchTasks: string;
   filterByContext: string;
   setContext: string;
+  pomodoro: string;
+  startPomodoro: string;
+  pauseResume: string;
+  skipPhase: string;
+  stopPomodoro: string;
   settings: string;
   changeTheme: string;
   changeViewMode: string;
@@ -449,6 +471,18 @@ export type ContextTranslations = {
   newContextPlaceholder: string;
 };
 
+export type PomodoroTranslations = {
+  work: string;
+  shortBreak: string;
+  longBreak: string;
+  started: string;
+  paused: string;
+  completed: string;
+  breakComplete: string;
+  stopped: string;
+  noTaskSelected: string;
+};
+
 export type InfoTranslations = {
   settings: string;
   database: string;
@@ -507,6 +541,7 @@ export type TuiTranslations = {
   search: SearchTranslations;
   context: ContextTranslations;
   info: InfoTranslations;
+  pomodoro?: PomodoroTranslations;
   addComment: string;
   noComments: string;
   commentHint: string;

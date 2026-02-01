@@ -165,6 +165,11 @@ export const ja: Translations = {
       searchTasks: 'タスク検索',
       filterByContext: 'コンテキストフィルター',
       setContext: 'コンテキスト設定',
+      pomodoro: 'ポモドーロ',
+      startPomodoro: 'ポモドーロ開始',
+      pauseResume: '一時停止/再開',
+      skipPhase: 'スキップ',
+      stopPomodoro: 'ポモドーロ停止',
       settings: '設定',
       changeTheme: 'テーマ変更',
       changeViewMode: '表示モード変更',
@@ -254,6 +259,18 @@ export const ja: Translations = {
       addNew: '+ 新規コンテキスト',
       newContext: '新規コンテキスト: ',
       newContextPlaceholder: 'コンテキスト名を入力...',
+    },
+    // Pomodoro
+    pomodoro: {
+      work: '作業中',
+      shortBreak: '小休憩',
+      longBreak: '大休憩',
+      started: 'ポモドーロ開始',
+      paused: '一時停止',
+      completed: '完了！休憩しましょう',
+      breakComplete: '休憩終了！',
+      stopped: 'ポモドーロ停止',
+      noTaskSelected: 'タスクが選択されていません',
     },
     // Info tab
     info: {

@@ -9,6 +9,9 @@ import { FunctionKeyBar } from './components/FunctionKeyBar.js';
 import { SearchBar } from './components/SearchBar.js';
 import { SearchResults } from './components/SearchResults.js';
 import { TitledBox } from './components/TitledBox.js';
+import { PomodoroTimer } from './components/PomodoroTimer.js';
+import { usePomodoroTimer } from '../pomodoro/index.js';
+import type { PomodoroType } from '../pomodoro/index.js';
 import { SplashScreen } from './SplashScreen.js';
 import { ThemeSelector } from './ThemeSelector.js';
 import { ModeSelector } from './ModeSelector.js';
@@ -185,6 +188,17 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
 
   const i18n = t();
+
+  // Pomodoro timer
+  const handlePomodoroPhaseComplete = useCallback((type: PomodoroType, completedCount: number) => {
+    if (type === 'work') {
+      setMessage(i18n.tui.pomodoro?.completed || 'Completed! Take a break');
+    } else {
+      setMessage(i18n.tui.pomodoro?.breakComplete || 'Break over! Ready to work?');
+    }
+  }, [i18n.tui.pomodoro]);
+
+  const pomodoro = usePomodoroTimer(undefined, handlePomodoroPhaseComplete);
 
   const loadTasks = useCallback(async () => {
     const db = getDb();
@@ -953,6 +967,39 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Pomodoro: Start (F key) - when task is selected and timer not running
+    if (input === 'F' && currentTasks.length > 0 && !pomodoro.isRunning && currentTab !== 'projects') {
+      const task = currentTasks[selectedTaskIndex];
+      pomodoro.startPomodoro(task.id, task.title);
+      setMessage(i18n.tui.pomodoro?.started || 'Pomodoro started');
+      return;
+    }
+
+    // Pomodoro: Pause/Resume (Space key) - when timer is running
+    if (input === ' ' && pomodoro.isRunning) {
+      if (pomodoro.isPaused) {
+        pomodoro.resumePomodoro();
+        setMessage(i18n.tui.pomodoro?.started || 'Pomodoro resumed');
+      } else {
+        pomodoro.pausePomodoro();
+        setMessage(i18n.tui.pomodoro?.paused || 'Paused');
+      }
+      return;
+    }
+
+    // Pomodoro: Skip phase (S key - uppercase) - when timer is running
+    if (input === 'S' && pomodoro.isRunning) {
+      pomodoro.skipPhase();
+      return;
+    }
+
+    // Pomodoro: Stop (X key) - when timer is running
+    if (input === 'X' && pomodoro.isRunning) {
+      pomodoro.stopPomodoro();
+      setMessage(i18n.tui.pomodoro?.stopped || 'Pomodoro stopped');
+      return;
+    }
+
     // Quit
     if (input === 'q' || (key.ctrl && input === 'c')) {
       exit();
@@ -1202,6 +1249,17 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         </Box>
         <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
       </Box>
+
+      {/* Pomodoro Timer */}
+      {pomodoro.isRunning && (
+        <Box marginBottom={1}>
+          <PomodoroTimer
+            state={pomodoro.state}
+            remainingSeconds={pomodoro.remainingSeconds}
+            isPaused={pomodoro.isPaused}
+          />
+        </Box>
+      )}
 
       {/* Tab bar */}
       <Box marginBottom={1}>
