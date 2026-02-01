@@ -3,7 +3,7 @@ import React from 'react';
 import { createInterface } from 'readline';
 import { unlinkSync, existsSync, readdirSync } from 'fs';
 import { dirname, basename, join } from 'path';
-import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, getSplashDuration, setSplashDuration, type Locale, type ThemeName, type ViewMode } from '../config.js';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, type Locale, type ThemeName, type ViewMode } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
 import { ModeSelector } from '../ui/ModeSelector.js';
@@ -137,15 +137,44 @@ export async function selectMode(): Promise<void> {
 }
 
 export async function setTurso(url: string, token: string): Promise<void> {
-  setTursoConfig({ url, authToken: token });
+  setTursoConfig({ url, authToken: token, enabled: true });
   console.log('Turso sync enabled');
   console.log(`  URL: ${url}`);
   console.log('Run "floq sync" to sync with Turso cloud');
 }
 
 export async function disableTurso(): Promise<void> {
+  const turso = getTursoConfig();
+  if (!turso || !turso.url || !turso.authToken) {
+    console.error('Turso is not configured.');
+    console.error('Use "floq config turso --url <url> --token <token>" to configure.');
+    process.exit(1);
+  }
+  setTursoEnabled(false);
+  console.log('Turso sync disabled (configuration preserved)');
+  console.log('Use "floq config turso --enable" to re-enable');
+}
+
+export async function enableTurso(): Promise<void> {
+  const turso = getTursoConfig();
+  if (!turso || !turso.url || !turso.authToken) {
+    console.error('Turso is not configured.');
+    console.error('Use "floq config turso --url <url> --token <token>" to configure.');
+    process.exit(1);
+  }
+  setTursoEnabled(true);
+  console.log('Turso sync enabled');
+  console.log(`  URL: ${turso.url}`);
+}
+
+export async function clearTurso(): Promise<void> {
+  const turso = getTursoConfig();
+  if (!turso) {
+    console.log('Turso is not configured.');
+    return;
+  }
   setTursoConfig(undefined);
-  console.log('Turso sync disabled');
+  console.log('Turso configuration cleared');
 }
 
 export async function setSplashCommand(duration: string): Promise<void> {

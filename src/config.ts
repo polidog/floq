@@ -40,6 +40,7 @@ export type { ThemeName };
 export interface TursoConfig {
   url: string;       // libsql://xxx.turso.io
   authToken: string; // Turso auth token
+  enabled?: boolean; // Whether Turso sync is enabled (default: true when url/token are set)
 }
 
 export interface Config {
@@ -110,7 +111,14 @@ export function setTursoConfig(config: TursoConfig | undefined): void {
 
 export function isTursoEnabled(): boolean {
   const turso = getTursoConfig();
-  return turso !== undefined && turso.url !== '' && turso.authToken !== '';
+  return turso !== undefined && turso.url !== '' && turso.authToken !== '' && turso.enabled !== false;
+}
+
+export function setTursoEnabled(enabled: boolean): void {
+  const turso = getTursoConfig();
+  if (turso) {
+    setTursoConfig({ ...turso, enabled });
+  }
 }
 
 export function getDbPath(): string {

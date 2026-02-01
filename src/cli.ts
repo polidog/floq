@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, syncCommand, resetDatabase, setSplashCommand, showSplash } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, enableTurso, clearTurso, syncCommand, resetDatabase, setSplashCommand, showSplash } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
 import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
 import { runSetupWizard } from './commands/setup.js';
@@ -170,15 +170,23 @@ configCmd
   .description('Configure Turso cloud sync')
   .option('--url <url>', 'Turso database URL (libsql://xxx.turso.io)')
   .option('--token <token>', 'Turso auth token')
-  .option('--disable', 'Disable Turso sync')
-  .action(async (options: { url?: string; token?: string; disable?: boolean }) => {
-    if (options.disable) {
+  .option('--disable', 'Temporarily disable Turso sync (preserves config)')
+  .option('--enable', 'Re-enable Turso sync')
+  .option('--clear', 'Remove Turso configuration completely')
+  .action(async (options: { url?: string; token?: string; disable?: boolean; enable?: boolean; clear?: boolean }) => {
+    if (options.clear) {
+      await clearTurso();
+    } else if (options.disable) {
       await disableTurso();
+    } else if (options.enable) {
+      await enableTurso();
     } else if (options.url && options.token) {
       await setTurso(options.url, options.token);
     } else {
       console.error('Usage: floq config turso --url <url> --token <token>');
-      console.error('       floq config turso --disable');
+      console.error('       floq config turso --disable  (temporarily disable, keeps config)');
+      console.error('       floq config turso --enable   (re-enable)');
+      console.error('       floq config turso --clear    (remove config completely)');
       process.exit(1);
     }
   });
