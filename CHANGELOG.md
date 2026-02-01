@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-02-01
+
+### Added
+- Pomodoro timer in TUI header (25min work / 5min short break / 15min long break)
+- Pomodoro keyboard shortcuts: F=start, Space=pause/resume, S=skip, X=stop
+- Terminal bell notification on Pomodoro phase complete
+- i18n support for Pomodoro (EN/JA)
+
 ## [0.8.0] - 2025-01-31
 
 ### Added
