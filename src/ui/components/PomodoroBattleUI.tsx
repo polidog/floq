@@ -166,7 +166,12 @@ interface PomodoroBattleUIProps {
   totalCompleted: number;
   width: number;
   compact?: boolean;
+  selectedCommand?: number; // 0: fight, 1: defend, 2: skip, 3: flee
 }
+
+// Command definitions
+export const BATTLE_COMMANDS = ['fight', 'defend', 'skip', 'flee'] as const;
+export type BattleCommand = typeof BATTLE_COMMANDS[number];
 
 export function PomodoroBattleUI({
   state,
@@ -178,6 +183,7 @@ export function PomodoroBattleUI({
   totalCompleted,
   width,
   compact = false,
+  selectedCommand = 0,
 }: PomodoroBattleUIProps): React.ReactElement {
   const theme = useTheme();
   const i18n = t();
@@ -227,7 +233,7 @@ export function PomodoroBattleUI({
     if (state.type === 'work') {
       return isJapanese ? 'まものが あらわれた!' : 'A monster appeared!';
     }
-    return isJapanese ? 'やすらぎの ほこら' : 'Sanctuary of Rest';
+    return isJapanese ? 'たびびとの やどや' : "Traveler's Inn";
   };
 
   const getPhaseMessage = (): string => {
@@ -237,7 +243,7 @@ export function PomodoroBattleUI({
     if (state.type === 'work') {
       return isJapanese ? 'たたかっている...' : 'Fighting...';
     }
-    return isJapanese ? 'HPが かいふくしていく...' : 'HP is recovering...';
+    return isJapanese ? 'ゆっくり やすんでいってね' : 'Rest well...';
   };
 
   // Dynamic box widths - split available width between command and status boxes
@@ -279,7 +285,7 @@ export function PomodoroBattleUI({
       <BattleBox title={getBattleTitle()} width={width} minHeight={3}>
         <Box justifyContent="center">
           <Text color={theme.colors.accent} bold>
-            {state.type === 'work' ? `${monsterIcon}  ${displayTitle}` : '☕  ' + (isJapanese ? 'きゅうけいちゅう' : 'Resting')}
+            {state.type === 'work' ? `${monsterIcon}  ${displayTitle}` : '🛏️  ' + (isJapanese ? 'ようこそ たびびとさん' : 'Welcome, traveler')}
           </Text>
         </Box>
         <Box justifyContent="center">
@@ -301,17 +307,17 @@ export function PomodoroBattleUI({
         {/* Command window */}
         <Box marginRight={2}>
           <BattleBox title={isJapanese ? 'コマンド' : 'Command'} width={commandBoxWidth} minHeight={4}>
-            <Text color={theme.colors.textSelected} bold>
-              ▶ {isJapanese ? 'たたかう' : 'Fight'}
+            <Text color={selectedCommand === 0 ? theme.colors.textSelected : theme.colors.text} bold={selectedCommand === 0}>
+              {selectedCommand === 0 ? '▶ ' : '  '}{isJapanese ? 'たたかう' : 'Fight'}
             </Text>
-            <Text color={theme.colors.text}>
-              {'  '}{isJapanese ? 'ぼうぎょ' : 'Defend'} <Text color={theme.colors.textMuted}>(Space)</Text>
+            <Text color={selectedCommand === 1 ? theme.colors.textSelected : theme.colors.text} bold={selectedCommand === 1}>
+              {selectedCommand === 1 ? '▶ ' : '  '}{isJapanese ? 'ぼうぎょ' : 'Defend'} <Text color={theme.colors.textMuted}>(Space)</Text>
             </Text>
-            <Text color={theme.colors.text}>
-              {'  '}{isJapanese ? 'スキップ' : 'Skip'} <Text color={theme.colors.textMuted}>(S)</Text>
+            <Text color={selectedCommand === 2 ? theme.colors.textSelected : theme.colors.text} bold={selectedCommand === 2}>
+              {selectedCommand === 2 ? '▶ ' : '  '}{isJapanese ? 'スキップ' : 'Skip'} <Text color={theme.colors.textMuted}>(S)</Text>
             </Text>
-            <Text color={theme.colors.text}>
-              {'  '}{isJapanese ? 'にげる' : 'Flee'} <Text color={theme.colors.textMuted}>(X)</Text>
+            <Text color={selectedCommand === 3 ? theme.colors.textSelected : theme.colors.text} bold={selectedCommand === 3}>
+              {selectedCommand === 3 ? '▶ ' : '  '}{isJapanese ? 'にげる' : 'Flee'} <Text color={theme.colors.textMuted}>(X)</Text>
             </Text>
           </BattleBox>
         </Box>
@@ -379,12 +385,12 @@ export function getBattleMessage(
         : 'Defeated the monster! Gained experience!';
     case 'break_start':
       return isJapanese
-        ? 'やすらぎの ほこらに たどりついた'
-        : 'Arrived at the Sanctuary of Rest';
+        ? 'たびびとの やどやに ようこそ!'
+        : "Welcome to the Traveler's Inn!";
     case 'break_end':
       return isJapanese
-        ? 'HPが かいふくした! たびを つづけよう!'
-        : 'HP recovered! Continue the journey!';
+        ? 'おきゃくさん あさですよ! いってらっしゃい!'
+        : "Good morning! Have a safe journey!";
     case 'flee':
       return isJapanese
         ? 'にげだした!'

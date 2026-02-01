@@ -24,7 +24,7 @@ import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
 import { PomodoroTimer } from './PomodoroTimer.js';
-import { PomodoroBattleUI, BattleMessage, getBattleMessage } from './PomodoroBattleUI.js';
+import { PomodoroBattleUI, BattleMessage, getBattleMessage, BATTLE_COMMANDS } from './PomodoroBattleUI.js';
 import { usePomodoroTimer } from '../../pomodoro/index.js';
 import type { PomodoroType } from '../../pomodoro/index.js';
 
@@ -277,6 +277,9 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       return newValue;
     });
   }, []);
+
+  // Battle command selection (for DQ theme focus mode)
+  const [selectedCommand, setSelectedCommand] = useState(0);
 
   // Pomodoro timer - Battle style messages
   const handlePomodoroPhaseComplete = useCallback((type: PomodoroType) => {
@@ -657,6 +660,67 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     // Handle help mode - let HelpModal handle its own input
     if (mode === 'help') {
       return;
+    }
+
+    // Battle command navigation (j/k) - when timer is running and in focus mode
+    // Must be before other handlers to capture j/k keys
+    if (pomodoro.isRunning && focusMode && mode === 'normal') {
+      if (input === 'j' || key.downArrow) {
+        setSelectedCommand(prev => (prev + 1) % BATTLE_COMMANDS.length);
+        return;
+      }
+      if (input === 'k' || key.upArrow) {
+        setSelectedCommand(prev => (prev - 1 + BATTLE_COMMANDS.length) % BATTLE_COMMANDS.length);
+        return;
+      }
+      // Execute selected command with Enter
+      if (key.return) {
+        const command = BATTLE_COMMANDS[selectedCommand];
+        if (command === 'fight') {
+          // Resume if paused, otherwise do nothing
+          if (pomodoro.isPaused) {
+            pomodoro.resumePomodoro();
+            setMessage(getBattleMessage('resume'));
+          }
+        } else if (command === 'defend') {
+          // Pause/Resume
+          if (pomodoro.isPaused) {
+            pomodoro.resumePomodoro();
+            setMessage(getBattleMessage('resume'));
+          } else {
+            pomodoro.pausePomodoro();
+            setMessage(getBattleMessage('pause'));
+          }
+        } else if (command === 'skip' && pomodoro.state) {
+          const wasWork = pomodoro.state.type === 'work';
+          pomodoro.skipPhase();
+          if (wasWork) {
+            setMessage(getBattleMessage('break_start'));
+          } else {
+            setMessage(getBattleMessage('start', pomodoro.state.taskTitle));
+          }
+        } else if (command === 'flee') {
+          pomodoro.stopPomodoro();
+          setMessage(getBattleMessage('flee'));
+        }
+        return;
+      }
+      // Toggle focus mode off
+      if (input === 'f') {
+        toggleFocusMode();
+        setMessage(focusMode ? 'Focus mode off' : 'Focus mode on');
+        return;
+      }
+      // Quit
+      if (input === 'q' || (key.ctrl && input === 'c')) {
+        exit();
+        return;
+      }
+      // Other keys in focus mode - ignore most of them
+      // Allow 'a' for add task
+      if (input !== 'a') {
+        return;
+      }
     }
 
     // Handle input modes
@@ -1115,6 +1179,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       const task = currentTasks[selectedTaskIndex];
       pomodoro.startPomodoro(task.id, task.title);
       setMessage(getBattleMessage('start', task.title));
+      setSelectedCommand(0);
       return;
     }
 
@@ -1190,6 +1255,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           level={playerLevel}
           totalCompleted={tasks.done.length}
           width={battleWidth}
+          selectedCommand={selectedCommand}
         />
 
         {/* Battle message */}
