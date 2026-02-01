@@ -19,7 +19,7 @@ import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
-import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
@@ -185,6 +185,15 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     saveContextFilter(value);
   }, []);
   const [contextSelectIndex, setContextSelectIndex] = useState(0);
+  // Pomodoro focus mode state
+  const [focusMode, setFocusModeState] = useState(() => getPomodoroFocusMode());
+  const toggleFocusMode = useCallback(() => {
+    setFocusModeState(prev => {
+      const newValue = !prev;
+      setPomodoroFocusMode(newValue);
+      return newValue;
+    });
+  }, []);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
 
   const i18n = t();
@@ -1000,6 +1009,13 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Pomodoro: Toggle focus mode (f key) - when timer is running
+    if (input === 'f' && pomodoro.isRunning) {
+      toggleFocusMode();
+      setMessage(focusMode ? 'Focus mode off' : 'Focus mode on');
+      return;
+    }
+
     // Quit
     if (input === 'q' || (key.ctrl && input === 'c')) {
       exit();
@@ -1215,7 +1231,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   }
 
   // Pomodoro focus mode - show only current task
-  if (pomodoro.isRunning && getPomodoroFocusMode() && mode !== 'add') {
+  if (pomodoro.isRunning && focusMode && mode !== 'add') {
     // Find the current task from all tasks
     const allTasks = [...tasks.inbox, ...tasks.next, ...tasks.waiting, ...tasks.someday, ...tasks.done];
     const focusTask = allTasks.find(t => t.id === pomodoro.state?.taskId);
@@ -1281,7 +1297,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         <Box marginTop={1} flexDirection="column">
           <Box>
             <Text color={theme.colors.accent}>⌨️ </Text>
-            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add}</Text>
+            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add} f=focus off</Text>
           </Box>
           <Box>
             <Text color={theme.colors.accent}>🍅 </Text>
@@ -1737,9 +1753,10 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
                 { key: 'Space', label: pomodoro.isPaused ? i18n.tui.keyBar.resume : i18n.tui.keyBar.pause },
                 { key: 'S', label: i18n.tui.keyBar.skip },
                 { key: 'X', label: i18n.tui.keyBar.stop },
+                { key: 'f', label: 'Focus' },
               ]} />
             ) : (
-              <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter}</Text>
+              <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter} f=focus</Text>
             )}
           </Box>
         )}

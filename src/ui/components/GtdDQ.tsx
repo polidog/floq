@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode } from '../../config.js';
 import { VERSION } from '../../version.js';
 import type { Task, Comment } from '../../db/schema.js';
 import {
@@ -266,6 +266,16 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
+
+  // Pomodoro focus mode state
+  const [focusMode, setFocusModeState] = useState(() => getPomodoroFocusMode());
+  const toggleFocusMode = useCallback(() => {
+    setFocusModeState(prev => {
+      const newValue = !prev;
+      setPomodoroFocusMode(newValue);
+      return newValue;
+    });
+  }, []);
 
   // Pomodoro timer
   const handlePomodoroPhaseComplete = useCallback((type: PomodoroType) => {
@@ -1131,6 +1141,13 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       setMessage(i18n.tui.pomodoro?.stopped || 'Pomodoro stopped');
       return;
     }
+
+    // Pomodoro: Toggle focus mode (f key) - when timer is running
+    if (input === 'f' && pomodoro.isRunning) {
+      toggleFocusMode();
+      setMessage(focusMode ? 'Focus mode off' : 'Focus mode on');
+      return;
+    }
   });
 
   const tursoEnabled = isTursoEnabled();
@@ -1151,7 +1168,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   }
 
   // Pomodoro focus mode - show only current task
-  if (pomodoro.isRunning && getPomodoroFocusMode() && mode !== 'add') {
+  if (pomodoro.isRunning && focusMode && mode !== 'add') {
     // Find the current task from all tasks
     const allTasks = [...tasks.inbox, ...tasks.next, ...tasks.waiting, ...tasks.someday, ...tasks.done];
     const focusTask = allTasks.find(t => t.id === pomodoro.state?.taskId);
@@ -1217,7 +1234,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         <Box marginTop={1} flexDirection="column">
           <Box>
             <Text color={theme.colors.accent}>⌨️ </Text>
-            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add}</Text>
+            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add} f=focus off</Text>
           </Box>
           <Box>
             <Text color={theme.colors.accent}>🍅 </Text>
@@ -1561,7 +1578,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         {pomodoro.isRunning && (
           <Box>
             <Text color={theme.colors.accent}>🍅 </Text>
-            <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter}</Text>
+            <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter} f=focus</Text>
           </Box>
         )}
       </Box>
