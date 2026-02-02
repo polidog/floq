@@ -101,9 +101,9 @@ export function PomodoroMarioUI({
   // Compact mode - single line
   if (compact) {
     const compactBarWidth = 12;
-    const marioPos = Math.floor(progress * compactBarWidth);
-    const trackBefore = '─'.repeat(marioPos);
-    const trackAfter = '─'.repeat(compactBarWidth - marioPos - 1);
+    const marioPos = Math.min(Math.floor(progress * compactBarWidth), compactBarWidth - 1);
+    const trackBefore = '─'.repeat(Math.max(0, marioPos));
+    const trackAfter = '─'.repeat(Math.max(0, compactBarWidth - marioPos - 1));
 
     return (
       <Box>
@@ -126,10 +126,9 @@ export function PomodoroMarioUI({
   const marioPosition = Math.floor(progress * (stageWidth - 4));
 
   // Build the stage track
-  const buildStageTrack = (): { sky: string; ground: string; underground: string } => {
+  const buildStageTrack = (): { sky: string; ground: string; undergroundBefore: string; undergroundAfter: string } => {
     const skyChars: string[] = [];
     const groundChars: string[] = [];
-    const undergroundChars: string[] = [];
 
     for (let i = 0; i < stageWidth; i++) {
       // Sky layer - clouds scattered
@@ -149,15 +148,17 @@ export function PomodoroMarioUI({
       } else {
         groundChars.push(' ');
       }
-
-      // Underground layer - ground blocks
-      undergroundChars.push('▓');
     }
+
+    // Underground layer - progress bar style
+    const progressWidth = Math.max(0, marioPosition);
+    const remainingWidth = Math.max(0, stageWidth - marioPosition);
 
     return {
       sky: skyChars.join(''),
       ground: groundChars.join(''),
-      underground: undergroundChars.join(''),
+      undergroundBefore: '█'.repeat(progressWidth),
+      undergroundAfter: '░'.repeat(remainingWidth),
     };
   };
 
@@ -295,9 +296,10 @@ export function PomodoroMarioUI({
           <Text color={theme.colors.primary}>{track.ground}</Text>
         </Box>
 
-        {/* Underground */}
+        {/* Underground - progress bar */}
         <Box>
-          <Text color="#8B4513">{track.underground}</Text>
+          <Text color="#D2691E">{track.undergroundBefore}</Text>
+          <Text color="#8B4513">{track.undergroundAfter}</Text>
         </Box>
       </Box>
 
