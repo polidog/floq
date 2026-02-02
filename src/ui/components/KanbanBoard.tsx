@@ -8,6 +8,7 @@ import { HelpModal } from './HelpModal.js';
 import { FunctionKeyBar } from './FunctionKeyBar.js';
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
+import { Clock } from './Clock.js';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
@@ -853,7 +854,10 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
             </Text>
           )}
         </Box>
-        <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
+        <Box>
+          <Clock />
+          <Text color={theme.colors.textMuted}> {i18n.tui.helpHint}</Text>
+        </Box>
       </Box>
 
       {/* Task detail view */}

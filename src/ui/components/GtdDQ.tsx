@@ -23,6 +23,7 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { Clock } from './Clock.js';
 import { PomodoroTimer } from './PomodoroTimer.js';
 import { PomodoroBattleUI, BattleMessage, getBattleMessage, BATTLE_COMMANDS } from './PomodoroBattleUI.js';
 import { usePomodoroTimer } from '../../pomodoro/index.js';
@@ -1296,7 +1297,10 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
             </Text>
           )}
         </Box>
-        <Text color={theme.colors.textMuted}>?=help q=quit</Text>
+        <Box>
+          <Clock />
+          <Text color={theme.colors.textMuted}> ?=help q=quit</Text>
+        </Box>
       </Box>
 
       {/* Pomodoro Timer - Battle style compact display */}

@@ -24,6 +24,7 @@ import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
 import { MarioBoxInline } from './MarioBox.js';
+import { Clock } from './Clock.js';
 import { PomodoroTimer } from './PomodoroTimer.js';
 import { PomodoroMarioUI, MarioMessage, getMarioMessage } from './PomodoroMarioUI.js';
 import { usePomodoroTimer } from '../../pomodoro/index.js';
@@ -1114,10 +1115,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
             </Text>
           )}
         </Box>
-        <Box>
-          <Text color={theme.colors.secondary}>TIME </Text>
-          <Text color={theme.colors.text}>{new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</Text>
-        </Box>
+        <Clock />
       </Box>
 
       {/* Pomodoro Timer - Mario style compact display */}

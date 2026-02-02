@@ -86,6 +86,7 @@ export const ja: Translations = {
   tui: {
     title: 'Floq',
     helpHint: '?=ヘルプ',
+    clock: '時刻',
     newTask: '新規タスク: ',
     placeholder: 'タスク名を入力...',
     inputHelp: '(Enterで保存, Escでキャンセル)',

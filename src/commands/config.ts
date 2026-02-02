@@ -3,7 +3,7 @@ import React from 'react';
 import { createInterface } from 'readline';
 import { unlinkSync, existsSync, readdirSync } from 'fs';
 import { dirname, basename, join } from 'path';
-import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, type Locale, type ThemeName, type ViewMode } from '../config.js';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, getDateFormat, setDateFormat, type Locale, type ThemeName, type ViewMode, type DateFormat } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
 import { ModeSelector } from '../ui/ModeSelector.js';
@@ -12,10 +12,12 @@ import { VALID_THEMES, themes } from '../ui/theme/themes.js';
 
 const VALID_LOCALES: Locale[] = ['en', 'ja'];
 const VALID_VIEW_MODES: ViewMode[] = ['gtd', 'kanban'];
+const VALID_DATE_FORMATS: DateFormat[] = ['auto', 'ddd, MMM D', 'MM/DD(ddd)', 'YYYY-MM-DD', 'MM-DD', 'DD/MM', 'none'];
 
 export async function showConfig(): Promise<void> {
   const config = loadConfig();
   const splashDuration = getSplashDuration();
+  const dateFormat = getDateFormat();
 
   console.log('GTD CLI Configuration');
   console.log('─'.repeat(40));
@@ -24,6 +26,7 @@ export async function showConfig(): Promise<void> {
   console.log(`Database: ${getDbPath()}`);
   console.log(`Theme: ${config.theme || 'modern'}`);
   console.log(`View Mode: ${config.viewMode || 'gtd'}`);
+  console.log(`Date Format: ${dateFormat}`);
   console.log(`Splash: ${splashDuration === 0 ? 'disabled' : splashDuration === -1 ? 'wait for key' : `${splashDuration}ms`}`);
   console.log(`Turso: ${isTursoEnabled() ? 'enabled' : 'disabled'}`);
 
@@ -224,6 +227,31 @@ export async function showSplash(): Promise<void> {
   } else {
     console.log(`Splash screen: ${duration}ms`);
   }
+}
+
+export async function showDateFormatCommand(): Promise<void> {
+  const format = getDateFormat();
+  console.log(`Date format: ${format}`);
+  console.log('');
+  console.log('Available formats:');
+  console.log('  auto        - Locale-based (en: "Sun, Feb 2", ja: "02/02(日)")');
+  console.log('  ddd, MMM D  - "Sun, Feb 2"');
+  console.log('  MM/DD(ddd)  - "02/02(Sun)"');
+  console.log('  YYYY-MM-DD  - "2026-02-02"');
+  console.log('  MM-DD       - "02-02"');
+  console.log('  DD/MM       - "02/02"');
+  console.log('  none        - Hide date');
+}
+
+export async function setDateFormatCommand(format: string): Promise<void> {
+  if (!VALID_DATE_FORMATS.includes(format as DateFormat)) {
+    console.error(`Invalid date format: ${format}`);
+    console.error(`Valid formats: ${VALID_DATE_FORMATS.join(', ')}`);
+    process.exit(1);
+  }
+
+  setDateFormat(format as DateFormat);
+  console.log(`Date format set to: ${format}`);
 }
 
 export async function syncCommand(): Promise<void> {

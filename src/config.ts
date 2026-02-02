@@ -43,6 +43,10 @@ export interface TursoConfig {
   enabled?: boolean; // Whether Turso sync is enabled (default: true when url/token are set)
 }
 
+// Date format options for clock display
+// auto = locale-based default (en: 'ddd, MMM D', ja: 'MM/DD(ddd)')
+export type DateFormat = 'auto' | 'ddd, MMM D' | 'MM/DD(ddd)' | 'YYYY-MM-DD' | 'MM-DD' | 'DD/MM' | 'none';
+
 export interface Config {
   locale: Locale;
   db_path?: string;  // カスタムDBパス（省略時はデフォルト）
@@ -53,6 +57,7 @@ export interface Config {
   splashDuration?: number; // Splash screen duration in ms (0=disable, -1=wait for key)
   contextFilter?: string | null; // Current context filter (null = all, '' = no context, string = specific context)
   pomodoroFocusMode?: boolean; // Hide other tasks during pomodoro (default: false)
+  dateFormat?: DateFormat; // Date format for clock display (default: 'MM/DD(ddd)')
 }
 
 const DEFAULT_CONTEXTS = ['work', 'home'];
@@ -227,4 +232,12 @@ export function getPomodoroFocusMode(): boolean {
 
 export function setPomodoroFocusMode(enabled: boolean): void {
   saveConfig({ pomodoroFocusMode: enabled });
+}
+
+export function getDateFormat(): DateFormat {
+  return loadConfig().dateFormat ?? 'auto';
+}
+
+export function setDateFormat(format: DateFormat): void {
+  saveConfig({ dateFormat: format });
 }

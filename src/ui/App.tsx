@@ -7,6 +7,7 @@ import { TaskItem, type ProjectProgress } from './components/TaskItem.js';
 import { HelpModal } from './components/HelpModal.js';
 import { FunctionKeyBar } from './components/FunctionKeyBar.js';
 import { SearchBar } from './components/SearchBar.js';
+import { Clock } from './components/Clock.js';
 import { SearchResults } from './components/SearchResults.js';
 import { TitledBox } from './components/TitledBox.js';
 import { PomodoroTimer } from './components/PomodoroTimer.js';
@@ -1341,7 +1342,10 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
             </Text>
           )}
         </Box>
-        <Text color={theme.colors.textMuted}>{i18n.tui.helpHint}</Text>
+        <Box>
+          <Clock />
+          <Text color={theme.colors.textMuted}> {i18n.tui.helpHint}</Text>
+        </Box>
       </Box>
 
       {/* Pomodoro Timer */}

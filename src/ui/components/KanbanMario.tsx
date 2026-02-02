@@ -21,6 +21,7 @@ import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
 import { MarioBoxInline } from './MarioBox.js';
+import { Clock } from './Clock.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
@@ -515,10 +516,7 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
             </Text>
           )}
         </Box>
-        <Box>
-          <Text color={theme.colors.secondary}>TIME </Text>
-          <Text color={theme.colors.text}>{new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</Text>
-        </Box>
+        <Clock />
       </Box>
 
       {/* Main content */}

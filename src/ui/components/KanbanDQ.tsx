@@ -20,6 +20,7 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { Clock } from './Clock.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
@@ -681,7 +682,10 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
             </Text>
           )}
         </Box>
-        <Text color={theme.colors.textMuted}>?=help q=quit</Text>
+        <Box>
+          <Clock />
+          <Text color={theme.colors.textMuted}> ?=help q=quit</Text>
+        </Box>
       </Box>
 
       {/* Main content */}

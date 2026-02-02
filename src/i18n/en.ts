@@ -84,6 +84,7 @@ export const en = {
   tui: {
     title: 'Floq',
     helpHint: '?=Help',
+    clock: '[TIME]',
     newTask: 'New task: ',
     placeholder: 'Enter task title...',
     inputHelp: '(Enter to save, Esc to cancel)',
@@ -513,6 +514,7 @@ export type InfoTranslations = {
 export type TuiTranslations = {
   title: string;
   helpHint: string;
+  clock: string;
   newTask: string;
   placeholder: string;
   inputHelp: string;
