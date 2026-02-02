@@ -25,6 +25,7 @@ import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
 import { MarioBoxInline } from './MarioBox.js';
 import { PomodoroTimer } from './PomodoroTimer.js';
+import { PomodoroMarioUI, MarioMessage, getMarioMessage } from './PomodoroMarioUI.js';
 import { usePomodoroTimer } from '../../pomodoro/index.js';
 import type { PomodoroType } from '../../pomodoro/index.js';
 
@@ -135,16 +136,28 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
     });
   }, []);
 
-  // Pomodoro timer
+  // Animation frame for Mario sprite
+  const [animationFrame, setAnimationFrame] = useState(0);
+
+  // Pomodoro timer - Mario style messages
   const handlePomodoroPhaseComplete = useCallback((type: PomodoroType) => {
     if (type === 'work') {
-      setMessage(i18n.tui.pomodoro?.completed || 'Work session complete! Take a break.');
+      setMessage(getMarioMessage('complete'));
     } else {
-      setMessage(i18n.tui.pomodoro?.breakComplete || 'Break over! Ready to work?');
+      setMessage(getMarioMessage('break_end'));
     }
-  }, [i18n.tui.pomodoro]);
+  }, []);
 
   const pomodoro = usePomodoroTimer(undefined, handlePomodoroPhaseComplete);
+
+  // Animation effect for Mario sprite (must be after pomodoro hook)
+  useEffect(() => {
+    if (!focusMode || !pomodoro.isRunning || pomodoro.isPaused) return;
+    const interval = setInterval(() => {
+      setAnimationFrame(prev => prev + 1);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [focusMode, pomodoro.isRunning, pomodoro.isPaused]);
 
   const terminalWidth = stdout?.columns || 80;
   const leftPaneWidth = 28;
@@ -507,6 +520,52 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
   useInput((input, key) => {
     if (mode === 'help') {
       return;
+    }
+
+    // Focus mode key handling - simplified controls
+    if (pomodoro.isRunning && focusMode && mode === 'normal') {
+      // Pause/Resume with Space
+      if (input === ' ') {
+        if (pomodoro.isPaused) {
+          pomodoro.resumePomodoro();
+          setMessage(getMarioMessage('resume'));
+        } else {
+          pomodoro.pausePomodoro();
+          setMessage(getMarioMessage('pause'));
+        }
+        return;
+      }
+      // Skip phase with S
+      if (input === 'S' && pomodoro.state) {
+        const wasWork = pomodoro.state.type === 'work';
+        pomodoro.skipPhase();
+        if (wasWork) {
+          setMessage(getMarioMessage('break_start'));
+        } else {
+          setMessage(getMarioMessage('start', pomodoro.state.taskTitle));
+        }
+        return;
+      }
+      // Stop with X
+      if (input === 'X') {
+        pomodoro.stopPomodoro();
+        setMessage(getMarioMessage('stop'));
+        return;
+      }
+      // Toggle focus mode off
+      if (input === 'f') {
+        toggleFocusMode();
+        return;
+      }
+      // Quit
+      if (input === 'q' || (key.ctrl && input === 'c')) {
+        exit();
+        return;
+      }
+      // Allow 'a' for add task even in focus mode
+      if (input !== 'a') {
+        return;
+      }
     }
 
     if (mode === 'add' || mode === 'add-to-project' || mode === 'add-comment' || mode === 'move-to-waiting' || mode === 'add-context') {
@@ -935,7 +994,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
     if (input === 'F' && currentTasks.length > 0 && !pomodoro.isRunning && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
       pomodoro.startPomodoro(task.id, task.title);
-      setMessage(i18n.tui.pomodoro?.started || 'Pomodoro started');
+      setMessage(getMarioMessage('start', task.title));
       return;
     }
 
@@ -943,24 +1002,30 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
     if (input === ' ' && pomodoro.isRunning) {
       if (pomodoro.isPaused) {
         pomodoro.resumePomodoro();
-        setMessage(i18n.tui.pomodoro?.started || 'Pomodoro resumed');
+        setMessage(getMarioMessage('resume'));
       } else {
         pomodoro.pausePomodoro();
-        setMessage(i18n.tui.pomodoro?.paused || 'Paused');
+        setMessage(getMarioMessage('pause'));
       }
       return;
     }
 
     // Pomodoro: Skip phase (S key - uppercase) - when timer is running
-    if (input === 'S' && pomodoro.isRunning) {
+    if (input === 'S' && pomodoro.isRunning && pomodoro.state) {
+      const wasWork = pomodoro.state.type === 'work';
       pomodoro.skipPhase();
+      if (wasWork) {
+        setMessage(getMarioMessage('break_start'));
+      } else {
+        setMessage(getMarioMessage('start', pomodoro.state.taskTitle));
+      }
       return;
     }
 
     // Pomodoro: Stop (X key) - when timer is running
     if (input === 'X' && pomodoro.isRunning) {
       pomodoro.stopPomodoro();
-      setMessage(i18n.tui.pomodoro?.stopped || 'Pomodoro stopped');
+      setMessage(getMarioMessage('stop'));
       return;
     }
 
@@ -986,78 +1051,43 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
     );
   }
 
-  // Pomodoro focus mode - show only current task
-  if (pomodoro.isRunning && focusMode && mode !== 'add') {
-    // Find the current task from all tasks
-    const allTasks = [...tasks.inbox, ...tasks.next, ...tasks.waiting, ...tasks.someday, ...tasks.done];
-    const focusTask = allTasks.find(t => t.id === pomodoro.state?.taskId);
+  // Pomodoro focus mode - Mario style UI
+  if (pomodoro.isRunning && focusMode && mode !== 'add' && pomodoro.state) {
+    // Calculate Mario game stats
+    const score = tasks.done.length * 100;
+    const coins = pomodoro.state.completedCount;
+    const lives = Math.floor(tasks.done.length / 10) + 3;
+    const today = new Date();
+    const world = `${today.getMonth() + 1}-${today.getDate()}`;
+    const marioWidth = terminalWidth - 4;
 
     return (
       <Box flexDirection="column" padding={1}>
-        {/* Header */}
-        <Box marginBottom={1}>
-          <Text color={theme.colors.accent} bold>
-            🍅 {i18n.tui.pomodoro?.work || 'Focus'}
-          </Text>
-        </Box>
+        {/* Mario UI */}
+        <PomodoroMarioUI
+          state={pomodoro.state}
+          remainingSeconds={pomodoro.remainingSeconds}
+          isPaused={pomodoro.isPaused}
+          score={score}
+          coins={coins}
+          lives={lives}
+          world={world}
+          width={marioWidth}
+          animationFrame={animationFrame}
+        />
 
-        {/* Timer */}
-        <Box marginBottom={1}>
-          <PomodoroTimer
-            state={pomodoro.state}
-            remainingSeconds={pomodoro.remainingSeconds}
-            isPaused={pomodoro.isPaused}
-          />
-        </Box>
-
-        {/* Task info - same style as task-detail */}
-        <Box
-          flexDirection="column"
-          borderStyle="round"
-          borderColor={theme.colors.border}
-          paddingX={1}
-          paddingY={1}
-          marginBottom={1}
-        >
-          <Text color={theme.colors.text} bold>{focusTask?.title || pomodoro.state?.taskTitle}</Text>
-          {focusTask?.description && (
-            <Text color={theme.colors.textMuted}>{focusTask.description}</Text>
-          )}
-          {focusTask && (
-            <>
-              <Box marginTop={1}>
-                <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailStatus}: </Text>
-                <Text color={theme.colors.accent}>
-                  {i18n.status[focusTask.status]}
-                  {focusTask.waitingFor && ` (${focusTask.waitingFor})`}
-                </Text>
-              </Box>
-              <Box>
-                <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
-                <Text color={theme.colors.accent}>
-                  {focusTask.context ? `@${focusTask.context}` : (i18n.tui.context?.none || 'No context')}
-                </Text>
-              </Box>
-            </>
-          )}
-        </Box>
-
-        {/* Message */}
+        {/* Mario message */}
         {message && (
-          <Box marginTop={1}>
-            <Text color={theme.colors.textHighlight}>{message}</Text>
-          </Box>
+          <MarioMessage message={message} isNew={true} />
         )}
 
         {/* Footer */}
         <Box marginTop={1} flexDirection="column">
           <Box>
             <Text color={theme.colors.accent}>⌨️ </Text>
-            <Text color={theme.colors.textMuted}>a={i18n.tui.keyBar.add}</Text>
-          </Box>
-          <Box>
-            <Text color={theme.colors.accent}>🍅 </Text>
-            <Text color={theme.colors.textMuted}>{i18n.tui.pomodoroFooter} f=focus off</Text>
+            <Text color={theme.colors.textMuted}>
+              a={i18n.tui.keyBar.add} Space={pomodoro.isPaused ? 'resume' : 'pause'} S=skip X=stop f=focus off
+            </Text>
           </Box>
         </Box>
       </Box>
@@ -1090,13 +1120,19 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
         </Box>
       </Box>
 
-      {/* Pomodoro Timer */}
-      {pomodoro.isRunning && (
+      {/* Pomodoro Timer - Mario style compact display */}
+      {pomodoro.isRunning && pomodoro.state && (
         <Box marginBottom={1}>
-          <PomodoroTimer
+          <PomodoroMarioUI
             state={pomodoro.state}
             remainingSeconds={pomodoro.remainingSeconds}
             isPaused={pomodoro.isPaused}
+            score={tasks.done.length * 100}
+            coins={pomodoro.state.completedCount}
+            lives={Math.floor(tasks.done.length / 10) + 3}
+            world={`${new Date().getMonth() + 1}-${new Date().getDate()}`}
+            width={terminalWidth - 4}
+            compact={true}
           />
         </Box>
       )}
