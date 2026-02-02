@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-02-02
+
+### Added
+- Dragon Quest battle UI for pomodoro timer
+- Super Mario World style UI for Mario theme
+- Command selection and inn theme for breaks
+
+### Fixed
+- Mario UI with progress bar ground improvement
+- drizzle-kit upgrade to fix esbuild security vulnerability
+
 ## [1.0.0] - 2025-02-02
 
 ### Added
