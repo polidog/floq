@@ -5,9 +5,11 @@ import { eq, and, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { TaskItem, type ProjectProgress } from './components/TaskItem.js';
 import { HelpModal } from './components/HelpModal.js';
+import { CalendarModal } from './components/CalendarModal.js';
 import { FunctionKeyBar } from './components/FunctionKeyBar.js';
 import { SearchBar } from './components/SearchBar.js';
 import { Clock } from './components/Clock.js';
+import { CalendarEvents } from './components/CalendarEvents.js';
 import { SearchResults } from './components/SearchResults.js';
 import { TitledBox } from './components/TitledBox.js';
 import { PomodoroTimer } from './components/PomodoroTimer.js';
@@ -47,7 +49,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -936,6 +938,12 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Show calendar
+    if (input === 'C') {
+      setMode('calendar');
+      return;
+    }
+
     // Search mode
     if (input === '/') {
       setMode('search');
@@ -1220,13 +1228,22 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       });
       return;
     }
-  }, { isActive: mode !== 'help' });
+  }, { isActive: mode !== 'help' && mode !== 'calendar' });
 
   // Help modal overlay
   if (mode === 'help') {
     return (
       <Box flexDirection="column" padding={1}>
         <HelpModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
+  // Calendar modal overlay
+  if (mode === 'calendar') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <CalendarModal onClose={() => setMode('normal')} />
       </Box>
     );
   }
@@ -1343,6 +1360,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
           )}
         </Box>
         <Box>
+          <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
           <Clock />
           <Text color={theme.colors.textMuted}> {i18n.tui.helpHint}</Text>
         </Box>

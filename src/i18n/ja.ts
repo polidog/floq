@@ -183,6 +183,7 @@ export const ja: Translations = {
       changeLanguage: '言語変更',
       other: 'その他',
       showHelp: 'このヘルプを表示',
+      showCalendar: 'カレンダーを表示',
       quit: '終了',
       undo: '元に戻す',
       redo: 'やり直し',
@@ -278,6 +279,25 @@ export const ja: Translations = {
       breakComplete: '休憩終了！',
       stopped: 'ポモドーロ停止',
       noTaskSelected: 'タスクが選択されていません',
+    },
+    // Calendar
+    calendar: {
+      label: '予定',
+      noEvents: '今日の予定はありません',
+      allDay: '終日',
+      upcoming: '次:',
+      more: '+{count}',
+      // Modal
+      modalTitle: '今日の予定',
+      notConfigured: 'カレンダーが設定されていません。',
+      setupHint: '"floq calendar --help" で設定方法を確認してください。',
+      // OAuth messages
+      oauthConfigured: 'OAuthクライアント設定済み',
+      oauthNotConfigured: 'OAuthクライアント未設定',
+      loginRequired: 'ログインが必要です。"floq calendar login" を実行してください',
+      selectRequired: 'カレンダー選択が必要です。"floq calendar select" を実行してください',
+      loggedIn: 'ログイン済み',
+      notLoggedIn: '未ログイン',
     },
     // Info tab
     info: {

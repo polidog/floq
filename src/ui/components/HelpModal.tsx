@@ -92,6 +92,7 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
       { type: 'key', key: 'X', value: help.stopPomodoro },
       { type: 'header', value: help.other },
       { type: 'key', key: '/', value: help.searchTasks },
+      { type: 'key', key: 'C', value: help.showCalendar || 'Show calendar' },
       { type: 'key', key: '?', value: help.showHelp },
       { type: 'key', key: 'q', value: help.quit },
     ];

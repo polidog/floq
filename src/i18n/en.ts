@@ -181,6 +181,7 @@ export const en = {
       changeLanguage: 'Change language',
       other: 'Other',
       showHelp: 'Show this help',
+      showCalendar: 'Show calendar',
       quit: 'Quit',
       undo: 'Undo',
       redo: 'Redo',
@@ -276,6 +277,25 @@ export const en = {
       breakComplete: 'Break over! Ready to work?',
       stopped: 'Pomodoro stopped',
       noTaskSelected: 'No task selected',
+    },
+    // Calendar
+    calendar: {
+      label: '[CAL]',
+      noEvents: 'No events today',
+      allDay: 'All day',
+      upcoming: 'Next:',
+      more: '+{count}',
+      // Modal
+      modalTitle: "Today's Events",
+      notConfigured: 'Calendar not configured.',
+      setupHint: 'Run "floq calendar --help" to set up.',
+      // OAuth messages
+      oauthConfigured: 'OAuth client configured',
+      oauthNotConfigured: 'OAuth client not configured',
+      loginRequired: 'Login required. Run "floq calendar login"',
+      selectRequired: 'Calendar selection required. Run "floq calendar select"',
+      loggedIn: 'Logged in',
+      notLoggedIn: 'Not logged in',
     },
     // Info tab
     info: {
@@ -393,6 +413,7 @@ export type HelpTranslations = {
   changeLanguage: string;
   other: string;
   showHelp: string;
+  showCalendar?: string;
   quit: string;
   undo: string;
   redo: string;
@@ -495,6 +516,25 @@ export type PomodoroTranslations = {
   noTaskSelected: string;
 };
 
+export type CalendarTranslations = {
+  label: string;
+  noEvents: string;
+  allDay: string;
+  upcoming: string;
+  more: string;
+  // Modal
+  modalTitle?: string;
+  notConfigured?: string;
+  setupHint?: string;
+  // OAuth messages
+  oauthConfigured?: string;
+  oauthNotConfigured?: string;
+  loginRequired?: string;
+  selectRequired?: string;
+  loggedIn?: string;
+  notLoggedIn?: string;
+};
+
 export type InfoTranslations = {
   settings: string;
   database: string;
@@ -556,6 +596,7 @@ export type TuiTranslations = {
   context: ContextTranslations;
   info: InfoTranslations;
   pomodoro?: PomodoroTranslations;
+  calendar?: CalendarTranslations;
   addComment: string;
   noComments: string;
   commentHint: string;

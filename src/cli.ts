@@ -16,6 +16,7 @@ import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme,
 import { addComment, listComments } from './commands/comment.js';
 import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
 import { runSetupWizard } from './commands/setup.js';
+import { addCalendar, removeCalendar, showCalendar, syncCalendar, enableCalendar, disableCalendar, configOAuthClient, loginCalendar, logoutCalendar, selectCalendar } from './commands/calendar.js';
 import { VERSION } from './version.js';
 
 const program = new Command();
@@ -294,6 +295,94 @@ program
   .description('Run the setup wizard')
   .action(async () => {
     await runSetupWizard();
+  });
+
+// Calendar commands
+const calendarCmd = program
+  .command('calendar')
+  .description('Google Calendar (iCal) integration');
+
+calendarCmd
+  .command('add <url>')
+  .description('Add or update calendar URL')
+  .option('-n, --name <name>', 'Display name for the calendar')
+  .action(async (url: string, options: { name?: string }) => {
+    await addCalendar(url, options);
+  });
+
+calendarCmd
+  .command('remove')
+  .description('Remove calendar configuration')
+  .action(async () => {
+    await removeCalendar();
+  });
+
+calendarCmd
+  .command('show')
+  .description("Show calendar config and today's events")
+  .action(async () => {
+    await showCalendar();
+  });
+
+calendarCmd
+  .command('sync')
+  .description('Refresh calendar cache')
+  .action(async () => {
+    await syncCalendar();
+  });
+
+calendarCmd
+  .command('enable')
+  .description('Enable calendar display')
+  .action(async () => {
+    await enableCalendar();
+  });
+
+calendarCmd
+  .command('disable')
+  .description('Disable calendar display')
+  .action(async () => {
+    await disableCalendar();
+  });
+
+// OAuth commands
+calendarCmd
+  .command('config')
+  .description('Configure OAuth client credentials')
+  .option('--client-id <id>', 'Google OAuth Client ID')
+  .option('--client-secret <secret>', 'Google OAuth Client Secret')
+  .action(async (options: { clientId?: string; clientSecret?: string }) => {
+    if (options.clientId && options.clientSecret) {
+      await configOAuthClient(options.clientId, options.clientSecret);
+    } else {
+      console.log('Usage: floq calendar config --client-id <id> --client-secret <secret>');
+      console.log('');
+      console.log('Or set environment variables:');
+      console.log('  export GOOGLE_CLIENT_ID="your-client-id"');
+      console.log('  export GOOGLE_CLIENT_SECRET="your-client-secret"');
+      process.exit(1);
+    }
+  });
+
+calendarCmd
+  .command('login')
+  .description('Login with Google OAuth')
+  .action(async () => {
+    await loginCalendar();
+  });
+
+calendarCmd
+  .command('logout')
+  .description('Logout from Google OAuth')
+  .action(async () => {
+    await logoutCalendar();
+  });
+
+calendarCmd
+  .command('select')
+  .description('Select a calendar to display')
+  .action(async () => {
+    await selectCalendar();
   });
 
 export { program };

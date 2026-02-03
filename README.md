@@ -16,6 +16,7 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **Task Search**: Quick search across all tasks with `/`
 - **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
+- **Google Calendar**: Display today's events via iCal URL or OAuth integration
 - **Themes**: Multiple themes including MS-DOS nostalgic styles and Dragon Quest RPG style
 - **Splash Screen**: Configurable startup splash with Dragon Quest style for retro themes
 - **i18n**: English and Japanese support
@@ -258,6 +259,95 @@ floq config turso --disable
 
 - TUI header shows connection status (cloud icon for Turso, local icon for local mode)
 - CLI commands display `🔄 Turso sync: hostname` when Turso is enabled
+
+## Google Calendar Integration
+
+Floq can display your Google Calendar events in the TUI. Two methods are available:
+
+### Option 1: iCal URL (Simple, No Authentication)
+
+Use Google Calendar's secret iCal URL for read-only access without OAuth setup.
+
+```bash
+# Get your iCal URL from Google Calendar:
+# Settings > (Your Calendar) > Integrate calendar > "Secret address in iCal format"
+
+floq calendar add "https://calendar.google.com/calendar/ical/..." -n "My Calendar"
+floq calendar show
+```
+
+### Option 2: Google OAuth (Full API Access)
+
+Use OAuth for better reliability and access to all your calendars.
+
+#### Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select an existing one)
+3. **Enable Google Calendar API**:
+   - Go to **APIs & Services > Library**
+   - Search for "Google Calendar API"
+   - Click **Enable**
+4. **Configure OAuth consent screen**:
+   - Go to **APIs & Services > OAuth consent screen**
+   - Select **External** and click Create
+   - Fill in app name and required fields
+   - Add your email to **Test users**
+5. **Create OAuth credentials**:
+   - Go to **APIs & Services > Credentials**
+   - Click **Create Credentials > OAuth client ID**
+   - Application type: **TV and Limited Input devices** (not "Desktop app")
+   - Copy the Client ID and Client Secret
+
+#### Configuration
+
+```bash
+# Set OAuth credentials (or use environment variables)
+floq calendar config --client-id "your-client-id.apps.googleusercontent.com" --client-secret "your-secret"
+
+# Or use environment variables
+export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+export GOOGLE_CLIENT_SECRET="your-secret"
+
+# Login with Google
+floq calendar login
+# → Opens browser for authentication
+# → Enter the displayed code when prompted
+
+# Select a calendar
+floq calendar select
+# → Shows list of your calendars
+# → Enter the number to select
+
+# View configuration and today's events
+floq calendar show
+
+# Refresh calendar cache
+floq calendar sync
+
+# Logout
+floq calendar logout
+```
+
+### Calendar Commands
+
+```bash
+# iCal mode
+floq calendar add <url> [-n name]   # Add iCal URL
+floq calendar remove                 # Remove calendar
+
+# OAuth mode
+floq calendar config --client-id <id> --client-secret <secret>
+floq calendar login                  # Google OAuth login
+floq calendar logout                 # Clear OAuth tokens
+floq calendar select                 # Select calendar (interactive)
+
+# Common commands
+floq calendar show                   # Show config and today's events
+floq calendar sync                   # Refresh cache
+floq calendar enable                 # Enable display
+floq calendar disable                # Disable display
+```
 
 ## Themes
 

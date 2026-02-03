@@ -43,6 +43,35 @@ export interface TursoConfig {
   enabled?: boolean; // Whether Turso sync is enabled (default: true when url/token are set)
 }
 
+export interface CalendarOAuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number; // Unix timestamp (ms)
+}
+
+export interface GoogleOAuthClient {
+  clientId: string;
+  clientSecret: string;
+}
+
+export interface CalendarOAuthConfig {
+  tokens: CalendarOAuthTokens;
+  calendarId: string;
+  calendarName: string;
+}
+
+export interface CalendarConfig {
+  // iCal mode
+  url?: string;        // iCal URL (webcal:// or https://)
+  name?: string;       // Display name
+  enabled?: boolean;   // Display ON/OFF
+
+  // OAuth mode
+  type?: 'ical' | 'oauth';
+  googleOAuth?: GoogleOAuthClient; // OAuth client credentials
+  oauth?: CalendarOAuthConfig;     // OAuth tokens and selected calendar
+}
+
 // Date format options for clock display
 // auto = locale-based default (en: 'ddd, MMM D', ja: 'MM/DD(ddd)')
 export type DateFormat = 'auto' | 'ddd, MMM D' | 'MM/DD(ddd)' | 'YYYY-MM-DD' | 'MM-DD' | 'DD/MM' | 'none';
@@ -58,6 +87,7 @@ export interface Config {
   contextFilter?: string | null; // Current context filter (null = all, '' = no context, string = specific context)
   pomodoroFocusMode?: boolean; // Hide other tasks during pomodoro (default: false)
   dateFormat?: DateFormat; // Date format for clock display (default: 'MM/DD(ddd)')
+  calendar?: CalendarConfig; // Google Calendar (iCal) config
 }
 
 const DEFAULT_CONTEXTS = ['work', 'home'];
@@ -240,4 +270,74 @@ export function getDateFormat(): DateFormat {
 
 export function setDateFormat(format: DateFormat): void {
   saveConfig({ dateFormat: format });
+}
+
+export function getCalendarConfig(): CalendarConfig | undefined {
+  return loadConfig().calendar;
+}
+
+export function setCalendarConfig(config: CalendarConfig | undefined): void {
+  saveConfig({ calendar: config });
+}
+
+export function isCalendarEnabled(): boolean {
+  const calendar = getCalendarConfig();
+  if (!calendar || calendar.enabled === false) return false;
+
+  // OAuth mode
+  if (calendar.type === 'oauth' && calendar.oauth) {
+    return true;
+  }
+
+  // iCal mode
+  if (calendar.url && calendar.url !== '') {
+    return true;
+  }
+
+  return false;
+}
+
+export function setCalendarEnabled(enabled: boolean): void {
+  const calendar = getCalendarConfig();
+  if (calendar) {
+    setCalendarConfig({ ...calendar, enabled });
+  }
+}
+
+export function getGoogleOAuthClient(): GoogleOAuthClient | undefined {
+  // Environment variables take priority
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    return {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+  // Fallback to config file
+  return getCalendarConfig()?.googleOAuth;
+}
+
+export function setGoogleOAuthClient(client: GoogleOAuthClient): void {
+  const calendar = getCalendarConfig() || {};
+  setCalendarConfig({ ...calendar, googleOAuth: client });
+}
+
+export function getCalendarOAuthConfig(): CalendarOAuthConfig | undefined {
+  return getCalendarConfig()?.oauth;
+}
+
+export function setCalendarOAuthConfig(oauth: CalendarOAuthConfig | undefined): void {
+  const calendar = getCalendarConfig() || {};
+  if (oauth) {
+    setCalendarConfig({ ...calendar, type: 'oauth', oauth, enabled: true });
+  } else {
+    // Clear OAuth config
+    const { oauth: _removed, ...rest } = calendar;
+    setCalendarConfig(rest);
+  }
+}
+
+export function getCalendarType(): 'ical' | 'oauth' | undefined {
+  const calendar = getCalendarConfig();
+  if (!calendar) return undefined;
+  return calendar.type || (calendar.url ? 'ical' : undefined);
 }

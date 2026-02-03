@@ -16,6 +16,7 @@ MS-DOSスタイルのテーマを備えたターミナルベースのGTD（Getti
 - **タスク検索**: `/` キーで全タスクを素早く検索
 - **コメント**: タスクにメモやコメントを追加
 - **クラウド同期**: [Turso](https://turso.tech/)のembedded replicasによるオプションの同期機能
+- **Googleカレンダー**: iCal URLまたはOAuth連携で今日の予定を表示
 - **テーマ**: MS-DOSノスタルジックスタイルやドラクエRPG風を含む複数テーマ
 - **スプラッシュ画面**: 起動時のスプラッシュ画面（レトロテーマではドラクエ風）
 - **多言語対応**: 英語・日本語サポート
@@ -258,6 +259,95 @@ floq config turso --disable
 
 - TUIヘッダーに接続状態を表示（Tursoはクラウドアイコン、ローカルはローカルアイコン）
 - CLIコマンド実行時、Turso有効時は`🔄 Turso sync: hostname`を表示
+
+## Googleカレンダー連携
+
+FloqはGoogleカレンダーの予定をTUIに表示できます。2つの方法があります:
+
+### 方法1: iCal URL（シンプル、認証不要）
+
+GoogleカレンダーのシークレットiCal URLを使用して、OAuth設定なしで読み取り専用アクセスができます。
+
+```bash
+# GoogleカレンダーからiCal URLを取得:
+# 設定 > (カレンダー名) > カレンダーの統合 > "iCal形式の非公開URL"
+
+floq calendar add "https://calendar.google.com/calendar/ical/..." -n "マイカレンダー"
+floq calendar show
+```
+
+### 方法2: Google OAuth（フルAPIアクセス）
+
+OAuthを使用すると、より信頼性が高く、すべてのカレンダーにアクセスできます。
+
+#### セットアップ
+
+1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
+2. プロジェクトを作成（または既存のものを選択）
+3. **Google Calendar API を有効化**:
+   - **APIとサービス > ライブラリ**に移動
+   - 「Google Calendar API」を検索
+   - **有効にする**をクリック
+4. **OAuth 同意画面を設定**:
+   - **APIとサービス > OAuth 同意画面**に移動
+   - **外部**を選択して作成
+   - アプリ名と必須フィールドを入力
+   - **テストユーザー**に自分のメールアドレスを追加
+5. **OAuth 認証情報を作成**:
+   - **APIとサービス > 認証情報**に移動
+   - **認証情報を作成 > OAuth クライアント ID**をクリック
+   - アプリケーションの種類: **テレビと制限付き入力デバイス**（「デスクトップアプリ」ではない）
+   - クライアント ID とクライアントシークレットをコピー
+
+#### 設定
+
+```bash
+# OAuth認証情報を設定（または環境変数を使用）
+floq calendar config --client-id "your-client-id.apps.googleusercontent.com" --client-secret "your-secret"
+
+# または環境変数を使用
+export GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+export GOOGLE_CLIENT_SECRET="your-secret"
+
+# Googleでログイン
+floq calendar login
+# → ブラウザが開いて認証画面へ
+# → 表示されたコードを入力
+
+# カレンダーを選択
+floq calendar select
+# → カレンダー一覧が表示される
+# → 番号を入力して選択
+
+# 設定と今日の予定を表示
+floq calendar show
+
+# カレンダーキャッシュを更新
+floq calendar sync
+
+# ログアウト
+floq calendar logout
+```
+
+### カレンダーコマンド
+
+```bash
+# iCalモード
+floq calendar add <url> [-n name]   # iCal URLを追加
+floq calendar remove                 # カレンダーを削除
+
+# OAuthモード
+floq calendar config --client-id <id> --client-secret <secret>
+floq calendar login                  # Google OAuthログイン
+floq calendar logout                 # OAuthトークンをクリア
+floq calendar select                 # カレンダー選択（対話式）
+
+# 共通コマンド
+floq calendar show                   # 設定と今日の予定を表示
+floq calendar sync                   # キャッシュを更新
+floq calendar enable                 # 表示を有効化
+floq calendar disable                # 表示を無効化
+```
 
 ## テーマ
 
