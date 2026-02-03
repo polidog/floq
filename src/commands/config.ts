@@ -3,7 +3,7 @@ import React from 'react';
 import { createInterface } from 'readline';
 import { unlinkSync, existsSync, readdirSync } from 'fs';
 import { dirname, basename, join } from 'path';
-import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, getDateFormat, setDateFormat, type Locale, type ThemeName, type ViewMode, type DateFormat } from '../config.js';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, getDateFormat, setDateFormat, getCalendarConfig, isCalendarEnabled, type Locale, type ThemeName, type ViewMode, type DateFormat } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
 import { ModeSelector } from '../ui/ModeSelector.js';
@@ -36,6 +36,23 @@ export async function showConfig(): Promise<void> {
 
   if (config.turso) {
     console.log(`  URL: ${config.turso.url}`);
+  }
+
+  // Calendar configuration
+  const calendarConfig = getCalendarConfig();
+  console.log(`Calendar: ${isCalendarEnabled() ? 'enabled' : calendarConfig ? 'disabled' : 'not configured'}`);
+  if (calendarConfig) {
+    const calendarType = calendarConfig.type || (calendarConfig.url ? 'ical' : 'unknown');
+    console.log(`  Type: ${calendarType}`);
+    if (calendarConfig.name) {
+      console.log(`  Name: ${calendarConfig.name}`);
+    }
+    if (calendarConfig.url) {
+      console.log(`  URL: ${calendarConfig.url.substring(0, 50)}...`);
+    }
+    if (calendarConfig.oauth) {
+      console.log(`  Calendar: ${calendarConfig.oauth.calendarName}`);
+    }
   }
 }
 
