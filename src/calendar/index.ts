@@ -35,11 +35,10 @@ function parseICalData(icalData: string): CalendarEvent[] {
     for (const vevent of vevents) {
       const event = new ICAL.Event(vevent);
 
-      // Handle recurring events - get occurrences for today and next 7 days
+      // Handle recurring events - get occurrences for current month and next month
       const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfWeek = new Date(startOfToday);
-      endOfWeek.setDate(endOfWeek.getDate() + 7);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0); // Last day of next month
 
       if (event.isRecurring()) {
         try {
@@ -53,7 +52,7 @@ function parseICalData(icalData: string): CalendarEvent[] {
             const occurrenceEnd = new Date(occurrenceStart.getTime() + event.duration.toSeconds() * 1000);
 
             // Only include occurrences within our time window
-            if (occurrenceStart >= startOfToday && occurrenceStart < endOfWeek) {
+            if (occurrenceStart >= startOfMonth && occurrenceStart <= endOfNextMonth) {
               events.push({
                 id: `${event.uid}-${occurrenceStart.getTime()}`,
                 title: event.summary || 'Untitled',
@@ -65,7 +64,7 @@ function parseICalData(icalData: string): CalendarEvent[] {
             }
 
             // Stop if we're past our window
-            if (occurrenceStart >= endOfWeek) break;
+            if (occurrenceStart > endOfNextMonth) break;
 
             next = iter.next();
             count++;
@@ -132,12 +131,11 @@ async function fetchEventsViaOAuth(): Promise<CalendarEvent[]> {
   }
 
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfWeek = new Date(startOfToday);
-  endOfWeek.setDate(endOfWeek.getDate() + 7);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0); // Last day of next month
 
   try {
-    return await listGoogleEvents(accessToken, oauthConfig.calendarId, startOfToday, endOfWeek);
+    return await listGoogleEvents(accessToken, oauthConfig.calendarId, startOfMonth, endOfNextMonth);
   } catch (error) {
     console.error('Failed to fetch Google Calendar events:', error);
     return [];
@@ -219,23 +217,25 @@ export async function getCalendarEvents(): Promise<CalendarEvent[]> {
 }
 
 /**
- * Get today's events from cache (synchronous)
+ * Get events for a specific date from cache (synchronous)
+ * @param dayOffset - Number of days from today (0 = today, -1 = yesterday, 1 = tomorrow)
  */
-export function getTodayEvents(): CalendarEvent[] {
+export function getEventsForDate(dayOffset: number = 0): CalendarEvent[] {
   if (!eventsCache) {
     return [];
   }
 
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfToday = new Date(startOfToday);
-  endOfToday.setDate(endOfToday.getDate() + 1);
+  const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  targetDate.setDate(targetDate.getDate() + dayOffset);
+  const endOfTarget = new Date(targetDate);
+  endOfTarget.setDate(endOfTarget.getDate() + 1);
 
   return eventsCache.events
     .filter(event => {
-      // Event starts today or spans today
-      return (event.start >= startOfToday && event.start < endOfToday) ||
-             (event.start < startOfToday && event.end >= startOfToday);
+      // Event starts on target date or spans target date
+      return (event.start >= targetDate && event.start < endOfTarget) ||
+             (event.start < targetDate && event.end >= targetDate);
     })
     .sort((a, b) => {
       // All-day events first, then by start time
@@ -243,6 +243,13 @@ export function getTodayEvents(): CalendarEvent[] {
       if (!a.allDay && b.allDay) return 1;
       return a.start.getTime() - b.start.getTime();
     });
+}
+
+/**
+ * Get today's events from cache (synchronous)
+ */
+export function getTodayEvents(): CalendarEvent[] {
+  return getEventsForDate(0);
 }
 
 /**

@@ -822,7 +822,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       });
       return;
     }
-  });
+  }, { isActive: mode !== 'calendar' });
 
   // Help modal overlay
   if (mode === 'help') {

@@ -282,13 +282,27 @@ export const en = {
     calendar: {
       label: '[CAL]',
       noEvents: 'No events today',
+      noUpcoming: 'No more events. Good work today!',
       allDay: 'All day',
       upcoming: 'Next:',
       more: '+{count}',
       // Modal
       modalTitle: "Today's Events",
+      yesterday: 'Yesterday',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      noEventsForDay: 'No events',
       notConfigured: 'Calendar not configured.',
       setupHint: 'Run "floq calendar --help" to set up.',
+      // Add event
+      addEvent: 'Add Event',
+      eventTitle: 'Title',
+      eventStart: 'Start',
+      eventEnd: 'End',
+      eventAllDay: 'All day',
+      eventCreated: 'Event created',
+      eventCreateError: 'Failed to create event',
+      addNotSupported: 'Event creation requires OAuth login',
       // OAuth messages
       oauthConfigured: 'OAuth client configured',
       oauthNotConfigured: 'OAuth client not configured',
@@ -519,13 +533,27 @@ export type PomodoroTranslations = {
 export type CalendarTranslations = {
   label: string;
   noEvents: string;
+  noUpcoming?: string;
   allDay: string;
   upcoming: string;
   more: string;
   // Modal
   modalTitle?: string;
+  yesterday?: string;
+  today?: string;
+  tomorrow?: string;
+  noEventsForDay?: string;
   notConfigured?: string;
   setupHint?: string;
+  // Add event
+  addEvent?: string;
+  eventTitle?: string;
+  eventStart?: string;
+  eventEnd?: string;
+  eventAllDay?: string;
+  eventCreated?: string;
+  eventCreateError?: string;
+  addNotSupported?: string;
   // OAuth messages
   oauthConfigured?: string;
   oauthNotConfigured?: string;

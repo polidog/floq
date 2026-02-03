@@ -654,7 +654,7 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
       setMessage(i18n.tui.refreshed);
       return;
     }
-  });
+  }, { isActive: mode !== 'calendar' });
 
   const tursoEnabled = isTursoEnabled();
 

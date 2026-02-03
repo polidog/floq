@@ -284,13 +284,27 @@ export const ja: Translations = {
     calendar: {
       label: '予定',
       noEvents: '今日の予定はありません',
+      noUpcoming: '次の予定はありません。おつかれさまでした！',
       allDay: '終日',
       upcoming: '次:',
       more: '+{count}',
       // Modal
       modalTitle: '今日の予定',
+      yesterday: '昨日',
+      today: '今日',
+      tomorrow: '明日',
+      noEventsForDay: '予定なし',
       notConfigured: 'カレンダーが設定されていません。',
       setupHint: '"floq calendar --help" で設定方法を確認してください。',
+      // Add event
+      addEvent: '予定を追加',
+      eventTitle: 'タイトル',
+      eventStart: '開始',
+      eventEnd: '終了',
+      eventAllDay: '終日',
+      eventCreated: '予定を作成しました',
+      eventCreateError: '予定の作成に失敗しました',
+      addNotSupported: '予定の追加にはOAuthログインが必要です',
       // OAuth messages
       oauthConfigured: 'OAuthクライアント設定済み',
       oauthNotConfigured: 'OAuthクライアント未設定',

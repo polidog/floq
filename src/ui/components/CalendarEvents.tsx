@@ -95,8 +95,25 @@ export function CalendarEvents({
   const upcomingEvents = events.filter(e => !e.allDay && e.end > now);
   const nextEvent = upcomingEvents[0];
 
-  if (compact && nextEvent) {
+  if (compact) {
     // Compact mode: show only the next event with start-end time
+    // If no upcoming events, show a friendly message
+    if (!nextEvent) {
+      return (
+        <Box>
+          {showLabel && (
+            <Text color={theme.colors.secondary}>
+              {i18n.tui.calendar?.label || '[CAL]'}{' '}
+            </Text>
+          )}
+          <Text color={theme.colors.textMuted}>
+            {i18n.tui.calendar?.noUpcoming || 'No more events. Good work today!'}
+          </Text>
+          {withSeparator && <Text color={theme.colors.textMuted}> | </Text>}
+        </Box>
+      );
+    }
+
     const isOngoing = isEventOngoing(nextEvent);
     const timeDisplay = `${formatEventTime(nextEvent.start)}-${formatEventTime(nextEvent.end)}`;
 

@@ -490,7 +490,7 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
       setMessage(i18n.tui.refreshed);
       return;
     }
-  });
+  }, { isActive: mode !== 'calendar' });
 
   const tursoEnabled = isTursoEnabled();
 

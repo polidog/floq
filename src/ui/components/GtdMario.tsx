@@ -1042,7 +1042,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
       toggleFocusMode();
       return;
     }
-  });
+  }, { isActive: mode !== 'calendar' });
 
   const tursoEnabled = isTursoEnabled();
 

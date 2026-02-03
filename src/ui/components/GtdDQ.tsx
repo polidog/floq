@@ -1228,7 +1228,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       setMessage(focusMode ? 'Focus mode off' : 'Focus mode on');
       return;
     }
-  });
+  }, { isActive: mode !== 'calendar' });
 
   const tursoEnabled = isTursoEnabled();
 
