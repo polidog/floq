@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-02-03
+
+### Added
+- Google Calendar integration with two authentication methods:
+  - iCal URL support for simple, auth-free read-only access
+  - Google OAuth with device flow for full API access
+- Calendar events display in TUI sidebar showing today's schedule
+- Calendar modal (Shift+C) for detailed event view in all UI themes
+- Calendar CLI commands: add, remove, list, show, login, logout, select, config
+- Bilingual support (EN/JA) for all calendar features
+- Calendar configuration display in `floq config show` command
+
 ## [1.2.0] - 2025-02-02
 
 ### Added
