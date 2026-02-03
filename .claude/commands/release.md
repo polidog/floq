@@ -53,7 +53,7 @@ npm version <type> --no-git-tag-version
 
 ### 4. CHANGELOG 生成
 
-前回のタグから現在までのコミット履歴を取得し、CHANGELOG.md を更新：
+前回のタグから現在までのコミット履歴を取得し、**CHANGELOG.md（英語）と CHANGELOG.ja.md（日本語）の両方**を更新：
 
 ```bash
 # 最新のタグを取得
@@ -63,7 +63,7 @@ git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"
 git log <前回タグ>..HEAD --pretty=format:"- %s" --no-merges
 ```
 
-CHANGELOG.md の形式：
+#### CHANGELOG.md（英語版）の形式：
 
 ```markdown
 # Changelog
@@ -71,26 +71,54 @@ CHANGELOG.md の形式：
 ## [x.x.x] - YYYY-MM-DD
 
 ### Added
-- 新機能のコミット
+- New feature commit message
 
 ### Changed
-- 変更のコミット
+- Change commit message
 
 ### Fixed
-- バグ修正のコミット
+- Bug fix commit message
 ```
+
+#### CHANGELOG.ja.md（日本語版）の形式：
+
+```markdown
+# 変更履歴
+
+## [x.x.x] - YYYY-MM-DD
+
+### Added
+- 新機能の説明（日本語）
+
+### Changed
+- 変更の説明（日本語）
+
+### Fixed
+- バグ修正の説明（日本語）
+```
+
+#### 分類ルール
 
 コミットメッセージのプレフィックスで分類：
 - `feat:`, `add:` → Added
 - `fix:` → Fixed
 - `change:`, `update:`, `refactor:` → Changed
+- `chore:` → 通常は除外（リリースコミット等）
 - その他 → Changed
+
+#### 翻訳ルール
+
+- **CHANGELOG.md**: コミットメッセージをそのまま使用（英語）
+- **CHANGELOG.ja.md**: コミットメッセージを日本語に翻訳して記載
+  - 技術用語（API, OAuth, CLI等）はそのまま使用可
+  - 機能名や固有名詞もそのまま使用可
+  - 動詞は「〜を追加」「〜を修正」「〜を改善」などの形式で統一
 
 ### 5. コミットとタグ作成
 
 ```bash
 # 変更をコミット
-git add package.json CHANGELOG.md
+git add package.json CHANGELOG.md CHANGELOG.ja.md
 git commit -m "chore: release v<新バージョン>"
 
 # タグを作成
