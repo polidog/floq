@@ -20,12 +20,14 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { CalendarModal } from './CalendarModal.js';
 import { MarioBoxInline } from './MarioBox.js';
 import { Clock } from './Clock.js';
+import { CalendarEvents } from './CalendarEvents.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
-type Mode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search';
+type Mode = 'normal' | 'add' | 'help' | 'calendar' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -371,6 +373,12 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
       return;
     }
 
+    // Calendar
+    if (input === 'C') {
+      setMode('calendar');
+      return;
+    }
+
     // Add task
     if (input === 'a') {
       setMode('add');
@@ -495,6 +503,15 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
     );
   }
 
+  // Calendar modal overlay
+  if (mode === 'calendar') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <CalendarModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" padding={1}>
       {/* Mario-style Header */}
@@ -516,7 +533,10 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
             </Text>
           )}
         </Box>
-        <Clock />
+        <Box>
+          <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
+          <Clock />
+        </Box>
       </Box>
 
       {/* Main content */}

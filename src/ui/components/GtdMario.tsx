@@ -23,8 +23,10 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { CalendarModal } from './CalendarModal.js';
 import { MarioBoxInline } from './MarioBox.js';
 import { Clock } from './Clock.js';
+import { CalendarEvents } from './CalendarEvents.js';
 import { PomodoroTimer } from './PomodoroTimer.js';
 import { PomodoroMarioUI, MarioMessage, getMarioMessage } from './PomodoroMarioUI.js';
 import { usePomodoroTimer } from '../../pomodoro/index.js';
@@ -32,7 +34,7 @@ import type { PomodoroType } from '../../pomodoro/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -813,6 +815,11 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
       return;
     }
 
+    if (input === 'C') {
+      setMode('calendar');
+      return;
+    }
+
     if (input === 'a') {
       setMode('add');
       return;
@@ -1052,6 +1059,14 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
     );
   }
 
+  if (mode === 'calendar') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <CalendarModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
   // Pomodoro focus mode - Mario style UI
   if (pomodoro.isRunning && focusMode && mode !== 'add' && pomodoro.state) {
     // Calculate Mario game stats
@@ -1115,7 +1130,10 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
             </Text>
           )}
         </Box>
-        <Clock />
+        <Box>
+          <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
+          <Clock />
+        </Box>
       </Box>
 
       {/* Pomodoro Timer - Mario style compact display */}

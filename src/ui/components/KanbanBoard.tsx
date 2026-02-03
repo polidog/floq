@@ -5,10 +5,12 @@ import { eq, and, inArray, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { KanbanColumn, type KanbanColumnType } from './KanbanColumn.js';
 import { HelpModal } from './HelpModal.js';
+import { CalendarModal } from './CalendarModal.js';
 import { FunctionKeyBar } from './FunctionKeyBar.js';
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { Clock } from './Clock.js';
+import { CalendarEvents } from './CalendarEvents.js';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
@@ -28,7 +30,7 @@ import {
 
 const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
-type KanbanMode = 'normal' | 'add' | 'help' | 'task-detail' | 'add-comment' | 'select-project' | 'search' | 'context-filter' | 'set-context' | 'add-context';
+type KanbanMode = 'normal' | 'add' | 'help' | 'calendar' | 'task-detail' | 'add-comment' | 'select-project' | 'search' | 'context-filter' | 'set-context' | 'add-context';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -630,6 +632,12 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       return;
     }
 
+    // Show calendar
+    if (input === 'C') {
+      setMode('calendar');
+      return;
+    }
+
     // Search mode
     if (input === '/') {
       setMode('search');
@@ -825,6 +833,15 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     );
   }
 
+  // Calendar modal overlay
+  if (mode === 'calendar') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <CalendarModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
   const formatTitle = (title: string) =>
     theme.style.headerUppercase ? title.toUpperCase() : title;
 
@@ -855,6 +872,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
           )}
         </Box>
         <Box>
+          <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
           <Clock />
           <Text color={theme.colors.textMuted}> {i18n.tui.helpHint}</Text>
         </Box>

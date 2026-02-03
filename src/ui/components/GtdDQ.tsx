@@ -23,7 +23,9 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { CalendarModal } from './CalendarModal.js';
 import { Clock } from './Clock.js';
+import { CalendarEvents } from './CalendarEvents.js';
 import { PomodoroTimer } from './PomodoroTimer.js';
 import { PomodoroBattleUI, BattleMessage, getBattleMessage, BATTLE_COMMANDS } from './PomodoroBattleUI.js';
 import { usePomodoroTimer } from '../../pomodoro/index.js';
@@ -31,7 +33,7 @@ import type { PomodoroType } from '../../pomodoro/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -983,6 +985,11 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       return;
     }
 
+    if (input === 'C') {
+      setMode('calendar');
+      return;
+    }
+
     if (input === 'a') {
       setMode('add');
       return;
@@ -1240,6 +1247,15 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     );
   }
 
+  // Calendar modal overlay
+  if (mode === 'calendar') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <CalendarModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
   // Pomodoro focus mode - Dragon Quest battle UI
   if (pomodoro.isRunning && focusMode && mode !== 'add' && pomodoro.state) {
     const playerLevel = Math.floor(tasks.done.length / 5) + 1;
@@ -1298,6 +1314,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           )}
         </Box>
         <Box>
+          <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
           <Clock />
           <Text color={theme.colors.textMuted}> ?=help q=quit</Text>
         </Box>
