@@ -7,6 +7,11 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-02-03
+
+### Added
+- リリーススキルに日本語CHANGELOG（CHANGELOG.ja.md）対応を追加
+
 ## [0.8.0] - 2025-01-31
 
 ### Added
