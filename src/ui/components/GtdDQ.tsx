@@ -6,9 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getLocale, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode, getFocusFilter, setFocusFilter } from '../../config.js';
 import { VERSION } from '../../version.js';
-import type { Task, Comment } from '../../db/schema.js';
+import type { Task, Comment, EffortSize } from '../../db/schema.js';
 import {
   useHistory,
   CreateTaskCommand,
@@ -19,6 +19,8 @@ import {
   CreateCommentCommand,
   DeleteCommentCommand,
   SetContextCommand,
+  SetFocusCommand,
+  SetEffortCommand,
 } from '../history/index.js';
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
@@ -33,7 +35,7 @@ import type { PomodoroType } from '../../pomodoro/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -271,6 +273,10 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
 
+  // Focus filter state
+  const [focusFilterState, setFocusFilterState] = useState(getFocusFilter());
+  const [effortSelectIndex, setEffortSelectIndex] = useState(0);
+
   // Pomodoro focus mode state
   const [focusMode, setFocusModeState] = useState(() => getPomodoroFocusMode());
   const toggleFocusMode = useCallback(() => {
@@ -301,6 +307,18 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
 
   const currentTab = TABS[currentTabIndex];
   const currentTasks = mode === 'project-detail' ? projectTasks : tasks[currentTab];
+
+  const EFFORT_OPTIONS: { value: EffortSize | null; label: string }[] = [
+    { value: 'small', label: i18n.tui.effort?.small || 'Small' },
+    { value: 'medium', label: i18n.tui.effort?.medium || 'Medium' },
+    { value: 'large', label: i18n.tui.effort?.large || 'Large' },
+    { value: null, label: i18n.tui.effort?.clear || 'Clear' },
+  ];
+
+  const getCurrentTask = (): Task | undefined => {
+    if (currentTasks.length === 0) return undefined;
+    return currentTasks[selectedTaskIndex];
+  };
 
   const loadTasks = useCallback(async () => {
     const db = getDb();
@@ -340,6 +358,10 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
         }
       }
 
+      if (focusFilterState) {
+        allTasks = allTasks.filter(t => t.isFocused);
+      }
+
       newTasks[status] = allTasks;
     }
 
@@ -365,7 +387,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
 
     setTasks(newTasks);
     setAvailableContexts(getContexts());
-  }, [contextFilter]);
+  }, [contextFilter, focusFilterState]);
 
   const loadProjectTasks = useCallback(async (projectId: string) => {
     const db = getDb();
@@ -593,6 +615,49 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     setMessage(description);
     await loadTasks();
   }, [i18n.tui.context, loadTasks, history]);
+
+  const toggleTaskFocus = async () => {
+    const task = getCurrentTask();
+    if (!task) return;
+    const newFocused = !task.isFocused;
+    const description = newFocused
+      ? fmt(i18n.tui.focus?.taskFocused || 'Focused: "{title}"', { title: task.title })
+      : fmt(i18n.tui.focus?.taskUnfocused || 'Unfocused: "{title}"', { title: task.title });
+    const command = new SetFocusCommand({
+      taskId: task.id,
+      fromFocused: task.isFocused,
+      toFocused: newFocused,
+      description,
+    });
+    await history.execute(command);
+    setMessage(description);
+    await loadTasks();
+  };
+
+  const toggleFocusFilter = () => {
+    const newValue = !focusFilterState;
+    setFocusFilterState(newValue);
+    setFocusFilter(newValue);
+    setMessage(newValue ? (i18n.tui.focus?.filterOn || 'Focus filter ON') : (i18n.tui.focus?.filterOff || 'Focus filter OFF'));
+  };
+
+  const setTaskEffort = async (effort: EffortSize | null) => {
+    const task = getCurrentTask();
+    if (!task) return;
+    const description = effort
+      ? fmt(i18n.tui.effort?.effortSet || 'Set effort {effort} for "{title}"', { effort: i18n.tui.effort?.[effort] || effort, title: task.title })
+      : fmt(i18n.tui.effort?.effortCleared || 'Cleared effort for "{title}"', { title: task.title });
+    const command = new SetEffortCommand({
+      taskId: task.id,
+      fromEffort: task.effort,
+      toEffort: effort,
+      description,
+    });
+    await history.execute(command);
+    setMessage(description);
+    setMode('normal');
+    await loadTasks();
+  };
 
   const handleInputSubmit = async (value: string) => {
     // Handle search mode submit
@@ -905,6 +970,27 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       return;
     }
 
+    // Handle set-effort mode
+    if (mode === 'set-effort') {
+      if (key.escape) {
+        setMode('normal');
+        return;
+      }
+      if (input === 'j' || key.downArrow) {
+        setEffortSelectIndex(prev => Math.min(prev + 1, EFFORT_OPTIONS.length - 1));
+        return;
+      }
+      if (input === 'k' || key.upArrow) {
+        setEffortSelectIndex(prev => Math.max(prev - 1, 0));
+        return;
+      }
+      if (key.return) {
+        setTaskEffort(EFFORT_OPTIONS[effortSelectIndex].value);
+        return;
+      }
+      return;
+    }
+
     // Handle select-project mode
     if (mode === 'select-project') {
       if (key.escape) {
@@ -1159,6 +1245,27 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
           setMode('set-context');
           return;
         }
+
+        // Toggle focus on task
+        if (input === 'g') {
+          toggleTaskFocus();
+          return;
+        }
+
+        // Toggle focus filter
+        if (input === 'G') {
+          toggleFocusFilter();
+          return;
+        }
+
+        // Set effort
+        if (input === 'E') {
+          if (getCurrentTask()) {
+            setEffortSelectIndex(0);
+            setMode('set-effort');
+          }
+          return;
+        }
       }
 
       // Undo
@@ -1312,6 +1419,9 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
               {' '}@{contextFilter === '' ? 'none' : contextFilter}
             </Text>
           )}
+          {focusFilterState && (
+            <Text color={theme.colors.accent}> {i18n.tui.focus?.focused || '★ Focused'}</Text>
+          )}
         </Box>
         <Box>
           <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
@@ -1375,6 +1485,25 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
             })}
           </Box>
         </Box>
+      ) : mode === 'set-effort' && getCurrentTask() ? (
+        <Box flexDirection="column">
+          <TitledBoxInline
+            title={i18n.tui.effort?.set || 'Set Effort'}
+            width={Math.min(40, terminalWidth - 4)}
+            minHeight={EFFORT_OPTIONS.length}
+            isActive={true}
+          >
+            {EFFORT_OPTIONS.map((option, index) => (
+              <Text
+                key={option.label}
+                color={index === effortSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                bold={index === effortSelectIndex}
+              >
+                {index === effortSelectIndex ? '▶ ' : '  '}{option.label}
+              </Text>
+            ))}
+          </TitledBoxInline>
+        </Box>
       ) : mode === 'select-project' && taskToLink ? (
         <Box flexDirection="column">
           <Text color={theme.colors.secondary} bold>
@@ -1422,6 +1551,18 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
               <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
               <Text color={theme.colors.accent}>
                 {selectedTask.context ? `@${selectedTask.context}` : (i18n.tui.context?.none || 'No context')}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.effort?.label || 'Effort'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.effort ? (i18n.tui.effort?.[selectedTask.effort as 'small' | 'medium' | 'large'] || selectedTask.effort) : '-'}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.focus?.label || 'Focus'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.isFocused ? '★' : '-'}
               </Text>
             </Box>
           </TitledBoxInline>
@@ -1503,6 +1644,8 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
                   const isSelected = (paneFocus === 'tasks' || mode === 'project-detail') && index === selectedTaskIndex;
                   const parentProject = getParentProject(task.parentId);
                   const progress = currentTab === 'projects' ? projectProgress[task.id] : undefined;
+                  const focusPrefix = task.isFocused ? '★ ' : '';
+                  const effortBadge = task.effort ? `[${({'small':'S','medium':'M','large':'L'} as Record<string,string>)[task.effort]}] ` : '';
 
                   // Calculate available width for title
                   const prefix = isSelected ? '▶ ' : '  ';
@@ -1512,7 +1655,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
                     parentProject ? ` [${parentProject.title}]` : '',
                     progress ? ` [${progress.completed}/${progress.total}]` : '',
                   ].join('');
-                  const availableWidth = rightPaneWidth - 6 - getDisplayWidth(prefix) - getDisplayWidth(suffix);
+                  const availableWidth = rightPaneWidth - 6 - getDisplayWidth(prefix) - getDisplayWidth(focusPrefix) - getDisplayWidth(effortBadge) - getDisplayWidth(suffix);
                   const displayTitle = truncateString(task.title, availableWidth);
 
                   return (
@@ -1521,7 +1664,7 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
                       color={isSelected ? theme.colors.textSelected : theme.colors.text}
                       bold={isSelected}
                     >
-                      {prefix}{displayTitle}
+                      {prefix}{focusPrefix}{effortBadge}{displayTitle}
                       {task.waitingFor && <Text color={theme.colors.muted}> ({task.waitingFor})</Text>}
                       {task.context && <Text color={theme.colors.muted}> @{task.context}</Text>}
                       {parentProject && <Text color={theme.colors.muted}> [{parentProject.title}]</Text>}

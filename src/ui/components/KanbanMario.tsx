@@ -6,9 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
-import { isTursoEnabled, getContexts, addContext, getContextFilter, setContextFilter as saveContextFilter } from '../../config.js';
+import { isTursoEnabled, getContexts, addContext, getContextFilter, setContextFilter as saveContextFilter, getFocusFilter, setFocusFilter } from '../../config.js';
 import { VERSION } from '../../version.js';
-import type { Task, Comment } from '../../db/schema.js';
+import type { Task, Comment, EffortSize } from '../../db/schema.js';
 import {
   useHistory,
   CreateTaskCommand,
@@ -16,6 +16,8 @@ import {
   CreateCommentCommand,
   DeleteCommentCommand,
   SetContextCommand,
+  SetFocusCommand,
+  SetEffortCommand,
 } from '../history/index.js';
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
@@ -27,7 +29,7 @@ import { CalendarEvents } from './CalendarEvents.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
-type Mode = 'normal' | 'add' | 'help' | 'calendar' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search';
+type Mode = 'normal' | 'add' | 'help' | 'calendar' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -69,6 +71,21 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Task[]>([]);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
+  const [focusFilter, setFocusFilterState] = useState(getFocusFilter());
+  const [effortSelectIndex, setEffortSelectIndex] = useState(0);
+
+  const EFFORT_OPTIONS: { value: EffortSize | null; label: string }[] = [
+    { value: 'small', label: i18n.tui.effort?.small || 'Small' },
+    { value: 'medium', label: i18n.tui.effort?.medium || 'Medium' },
+    { value: 'large', label: i18n.tui.effort?.large || 'Large' },
+    { value: null, label: i18n.tui.effort?.clear || 'Clear' },
+  ];
+
+  const EFFORT_LABELS: Record<EffortSize, string> = {
+    small: 'S',
+    medium: 'M',
+    large: 'L',
+  };
 
   const terminalWidth = stdout?.columns || 80;
   const leftPaneWidth = 20;
@@ -111,13 +128,18 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
         gte(schema.tasks.updatedAt, oneWeekAgo)
       ));
 
+    const filterByFocus = (taskList: Task[]): Task[] => {
+      if (!focusFilter) return taskList;
+      return taskList.filter(t => t.isFocused);
+    };
+
     setTasks({
-      todo: filterByContext(todoTasks),
-      doing: filterByContext(doingTasks),
-      done: filterByContext(doneTasks),
+      todo: filterByFocus(filterByContext(todoTasks)),
+      doing: filterByFocus(filterByContext(doingTasks)),
+      done: filterByFocus(filterByContext(doneTasks)),
     });
     setAvailableContexts(getContexts());
-  }, [contextFilter]);
+  }, [contextFilter, focusFilter]);
 
   const loadTaskComments = useCallback(async (taskId: string) => {
     const db = getDb();
@@ -182,6 +204,54 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
   }, [loadTasks]);
 
   const currentTasks = tasks[selectedCategory];
+
+  const getCurrentTask = (): Task | undefined => {
+    if (currentTasks.length === 0) return undefined;
+    return currentTasks[selectedTaskIndex];
+  };
+
+  const toggleTaskFocus = async () => {
+    const task = getCurrentTask();
+    if (!task) return;
+    const newFocused = !task.isFocused;
+    const description = newFocused
+      ? fmt(i18n.tui.focus?.taskFocused || 'Focused: "{title}"', { title: task.title })
+      : fmt(i18n.tui.focus?.taskUnfocused || 'Unfocused: "{title}"', { title: task.title });
+    const command = new SetFocusCommand({
+      taskId: task.id,
+      fromFocused: task.isFocused,
+      toFocused: newFocused,
+      description,
+    });
+    await history.execute(command);
+    setMessage(description);
+    await loadTasks();
+  };
+
+  const toggleFocusFilter = () => {
+    const newValue = !focusFilter;
+    setFocusFilterState(newValue);
+    setFocusFilter(newValue);
+    setMessage(newValue ? (i18n.tui.focus?.filterOn || 'Focus filter ON') : (i18n.tui.focus?.filterOff || 'Focus filter OFF'));
+  };
+
+  const setTaskEffort = async (effort: EffortSize | null) => {
+    const task = getCurrentTask();
+    if (!task) return;
+    const description = effort
+      ? fmt(i18n.tui.effort?.effortSet || 'Set effort {effort} for "{title}"', { effort: i18n.tui.effort?.[effort] || effort, title: task.title })
+      : fmt(i18n.tui.effort?.effortCleared || 'Cleared effort for "{title}"', { title: task.title });
+    const command = new SetEffortCommand({
+      taskId: task.id,
+      fromEffort: task.effort,
+      toEffort: effort,
+      description,
+    });
+    await history.execute(command);
+    setMessage(description);
+    setMode('normal');
+    await loadTasks();
+  };
 
   const getCategoryLabel = (cat: KanbanCategory): string => {
     return i18n.kanban[cat];
@@ -359,6 +429,27 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
       return;
     }
 
+    // Handle set-effort mode
+    if (mode === 'set-effort') {
+      if (key.escape) {
+        setMode('normal');
+        return;
+      }
+      if (input === 'j' || key.downArrow) {
+        setEffortSelectIndex(prev => Math.min(prev + 1, EFFORT_OPTIONS.length - 1));
+        return;
+      }
+      if (input === 'k' || key.upArrow) {
+        setEffortSelectIndex(prev => Math.max(prev - 1, 0));
+        return;
+      }
+      if (key.return) {
+        setTaskEffort(EFFORT_OPTIONS[effortSelectIndex].value);
+        return;
+      }
+      return;
+    }
+
     if (message) setMessage(null);
 
     // Quit
@@ -470,6 +561,27 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
         return;
       }
 
+      // Toggle focus
+      if (input === 'g') {
+        toggleTaskFocus();
+        return;
+      }
+
+      // Toggle focus filter
+      if (input === 'G') {
+        toggleFocusFilter();
+        return;
+      }
+
+      // Set effort
+      if (input === 'E') {
+        if (getCurrentTask()) {
+          setEffortSelectIndex(0);
+          setMode('set-effort');
+        }
+        return;
+      }
+
       // Undo
       if (input === 'u') {
         history.undo().then((didUndo) => {
@@ -531,6 +643,9 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
             <Text color={theme.colors.accent}>
               {' '}@{contextFilter === '' ? 'none' : contextFilter}
             </Text>
+          )}
+          {focusFilter && (
+            <Text color={theme.colors.accent}> {i18n.tui.focus?.focused || '★ Focused'}</Text>
           )}
         </Box>
         <Box>
@@ -599,13 +714,14 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
               ) : (
                 currentTasks.map((task, index) => {
                   const isSelected = paneFocus === 'tasks' && index === selectedTaskIndex;
+                  const shortId = task.id.slice(0, 4);
                   return (
                     <Text
                       key={task.id}
                       color={isSelected ? theme.colors.textSelected : theme.colors.text}
                       bold={isSelected}
                     >
-                      {isSelected ? '🍄 ' : '   '}{task.title}
+                      {isSelected ? '🍄 ' : '   '}{task.isFocused ? '★ ' : ''}{task.effort ? `[${EFFORT_LABELS[task.effort as EffortSize]}] ` : ''}[{shortId}] {task.title}
                       {task.context && <Text color={theme.colors.muted}> @{task.context}</Text>}
                     </Text>
                   );
@@ -646,6 +762,29 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
           query={searchQuery}
           viewMode="kanban"
         />
+      )}
+
+      {/* Set effort modal */}
+      {mode === 'set-effort' && (
+        <Box flexDirection="column" marginTop={1}>
+          <MarioBoxInline
+            title={i18n.tui.effort?.set || 'Set effort'}
+            width={30}
+            minHeight={EFFORT_OPTIONS.length + 2}
+            isActive={true}
+          >
+            {EFFORT_OPTIONS.map((option, index) => (
+              <Text
+                key={option.label}
+                color={index === effortSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                bold={index === effortSelectIndex}
+              >
+                {index === effortSelectIndex ? '🍄 ' : '   '}{option.label}
+              </Text>
+            ))}
+          </MarioBoxInline>
+          <Text color={theme.colors.textMuted}>{i18n.tui.effort?.setHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
       )}
 
       {/* Message */}

@@ -9,6 +9,8 @@ export const tasks = sqliteTable('tasks', {
   parentId: text('parent_id'),
   waitingFor: text('waiting_for'),
   context: text('context'),
+  isFocused: integer('is_focused', { mode: 'boolean' }).notNull().default(false),
+  effort: text('effort'),
   dueDate: integer('due_date', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -17,6 +19,7 @@ export const tasks = sqliteTable('tasks', {
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type TaskStatus = 'inbox' | 'next' | 'waiting' | 'someday' | 'done';
+export type EffortSize = 'small' | 'medium' | 'large';
 
 export const comments = sqliteTable('comments', {
   id: text('id').primaryKey(),

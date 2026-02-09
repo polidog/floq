@@ -1,8 +1,14 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { useTheme } from '../theme/index.js';
-import type { Task } from '../../db/schema.js';
+import type { Task, EffortSize } from '../../db/schema.js';
 import type { BorderStyleType } from '../theme/types.js';
+
+const EFFORT_LABELS: Record<EffortSize, string> = {
+  small: 'S',
+  medium: 'M',
+  large: 'L',
+};
 
 export type KanbanColumnType = 'todo' | 'doing' | 'done';
 
@@ -113,7 +119,7 @@ export function KanbanColumn({
                       bold={isSelected}
                     >
                       {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
-                      [{shortId}] {task.title}
+                      {task.isFocused ? '★ ' : ''}{task.effort ? `[${EFFORT_LABELS[task.effort as EffortSize]}] ` : ''}[{shortId}] {task.title}
                     </Text>
                   </Box>
                   <Text color={color}>{BORDER.vertical}</Text>
@@ -194,7 +200,7 @@ export function KanbanColumn({
                   bold={isSelected}
                 >
                   {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
-                  [{shortId}] {task.title}
+                  {task.isFocused ? '★ ' : ''}{task.effort ? `[${EFFORT_LABELS[task.effort as EffortSize]}] ` : ''}[{shortId}] {task.title}
                 </Text>
               </Box>
             );

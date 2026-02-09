@@ -22,7 +22,7 @@ import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
-import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode } from '../config.js';
+import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode, getFocusFilter, setFocusFilter } from '../config.js';
 import type { ThemeName, ViewMode, Locale } from '../config.js';
 import { KanbanBoard } from './components/KanbanBoard.js';
 import { KanbanDQ } from './components/KanbanDQ.js';
@@ -30,7 +30,7 @@ import { KanbanMario } from './components/KanbanMario.js';
 import { GtdDQ } from './components/GtdDQ.js';
 import { GtdMario } from './components/GtdMario.js';
 import { VERSION } from '../version.js';
-import type { Task, Comment } from '../db/schema.js';
+import type { Task, Comment, EffortSize } from '../db/schema.js';
 import type { BorderStyleType } from './theme/types.js';
 import {
   HistoryProvider,
@@ -43,13 +43,15 @@ import {
   CreateCommentCommand,
   DeleteCommentCommand,
   SetContextCommand,
+  SetFocusCommand,
+  SetEffortCommand,
 } from './history/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -198,8 +200,17 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     });
   }, []);
   const [availableContexts, setAvailableContexts] = useState<string[]>([]);
+  const [focusFilterState, setFocusFilterState] = useState(getFocusFilter());
+  const [effortSelectIndex, setEffortSelectIndex] = useState(0);
 
   const i18n = t();
+
+  const EFFORT_OPTIONS: { value: EffortSize | null; label: string }[] = [
+    { value: 'small', label: i18n.tui.effort?.small || 'Small' },
+    { value: 'medium', label: i18n.tui.effort?.medium || 'Medium' },
+    { value: 'large', label: i18n.tui.effort?.large || 'Large' },
+    { value: null, label: i18n.tui.effort?.clear || 'Clear' },
+  ];
 
   // Pomodoro timer
   const handlePomodoroPhaseComplete = useCallback((type: PomodoroType, completedCount: number) => {
@@ -256,6 +267,10 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         }
       }
 
+      if (focusFilterState) {
+        allTasks = allTasks.filter(t => t.isFocused);
+      }
+
       newTasks[status] = allTasks;
     }
 
@@ -283,7 +298,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
 
     setTasks(newTasks);
     setAvailableContexts(getContexts());
-  }, [contextFilter]);
+  }, [contextFilter, focusFilterState]);
 
   // Get parent project for a task
   const getParentProject = (parentId: string | null): Task | undefined => {
@@ -315,6 +330,11 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
 
   const currentTab = TABS[currentListIndex];
   const currentTasks = mode === 'project-detail' ? projectTasks : tasks[currentTab];
+
+  const getCurrentTask = (): Task | undefined => {
+    if (currentTasks.length === 0) return undefined;
+    return currentTasks[selectedTaskIndex];
+  };
 
   // Get all tasks for search (across all statuses)
   const getAllTasks = useCallback((): Task[] => {
@@ -564,6 +584,49 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     await loadTasks();
   }, [i18n.tui.context, loadTasks, history]);
 
+  const toggleTaskFocus = async () => {
+    const task = getCurrentTask();
+    if (!task) return;
+    const newFocused = !task.isFocused;
+    const description = newFocused
+      ? fmt(i18n.tui.focus?.taskFocused || 'Focused: "{title}"', { title: task.title })
+      : fmt(i18n.tui.focus?.taskUnfocused || 'Unfocused: "{title}"', { title: task.title });
+    const command = new SetFocusCommand({
+      taskId: task.id,
+      fromFocused: task.isFocused,
+      toFocused: newFocused,
+      description,
+    });
+    await history.execute(command);
+    setMessage(description);
+    await loadTasks();
+  };
+
+  const toggleFocusFilter = () => {
+    const newValue = !focusFilterState;
+    setFocusFilterState(newValue);
+    setFocusFilter(newValue);
+    setMessage(newValue ? (i18n.tui.focus?.filterOn || 'Focus filter ON') : (i18n.tui.focus?.filterOff || 'Focus filter OFF'));
+  };
+
+  const setTaskEffort = async (effort: EffortSize | null) => {
+    const task = getCurrentTask();
+    if (!task) return;
+    const description = effort
+      ? fmt(i18n.tui.effort?.effortSet || 'Set effort {effort} for "{title}"', { effort: i18n.tui.effort?.[effort] || effort, title: task.title })
+      : fmt(i18n.tui.effort?.effortCleared || 'Cleared effort for "{title}"', { title: task.title });
+    const command = new SetEffortCommand({
+      taskId: task.id,
+      fromEffort: task.effort,
+      toEffort: effort,
+      description,
+    });
+    await history.execute(command);
+    setMessage(description);
+    setMode('normal');
+    await loadTasks();
+  };
+
   const deleteTask = useCallback(async (task: Task) => {
     const command = new DeleteTaskCommand({
       task,
@@ -785,6 +848,27 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Handle set-effort mode
+    if (mode === 'set-effort') {
+      if (key.escape) {
+        setMode('normal');
+        return;
+      }
+      if (input === 'j' || key.downArrow) {
+        setEffortSelectIndex(prev => Math.min(prev + 1, EFFORT_OPTIONS.length - 1));
+        return;
+      }
+      if (input === 'k' || key.upArrow) {
+        setEffortSelectIndex(prev => Math.max(prev - 1, 0));
+        return;
+      }
+      if (key.return) {
+        setTaskEffort(EFFORT_OPTIONS[effortSelectIndex].value);
+        return;
+      }
+      return;
+    }
+
     // Handle set-context mode
     if (mode === 'set-context') {
       if (key.escape) {
@@ -964,6 +1048,22 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     if (input === 'c' && currentTasks.length > 0 && currentTab !== 'projects') {
       setContextSelectIndex(0);
       setMode('set-context');
+      return;
+    }
+
+    if (input === 'g') {
+      toggleTaskFocus();
+      return;
+    }
+    if (input === 'G') {
+      toggleFocusFilter();
+      return;
+    }
+    if (input === 'E') {
+      if (getCurrentTask()) {
+        setEffortSelectIndex(0);
+        setMode('set-effort');
+      }
       return;
     }
 
@@ -1358,6 +1458,9 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
               {' '}@{contextFilter === '' ? (i18n.tui.context?.none || 'none') : contextFilter}
             </Text>
           )}
+          {focusFilterState && (
+            <Text color={theme.colors.accent}> {i18n.tui.focus?.focused || '★ Focused'}</Text>
+          )}
         </Box>
         <Box>
           <CalendarEvents compact={true} showLabel={true} withSeparator={true} />
@@ -1450,6 +1553,18 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
               <Text color={theme.colors.secondary} bold>{i18n.tui.context?.label || 'Context'}: </Text>
               <Text color={theme.colors.accent}>
                 {selectedTask.context ? `@${selectedTask.context}` : (i18n.tui.context?.none || 'No context')}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.effort?.label || 'Effort'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.effort ? (i18n.tui.effort?.[selectedTask.effort as 'small' | 'medium' | 'large'] || selectedTask.effort) : '-'}
+              </Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.secondary} bold>{i18n.tui.focus?.label || 'Focus'}: </Text>
+              <Text color={theme.colors.accent}>
+                {selectedTask.isFocused ? '★' : '-'}
               </Text>
             </Box>
           </Box>
@@ -1699,6 +1814,25 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
             })}
           </Box>
           <Text color={theme.colors.textMuted}>{i18n.tui.context?.setContextHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+        </Box>
+      )}
+
+      {mode === 'set-effort' && (
+        <Box flexDirection="column" borderStyle={theme.borders.modal as BorderStyleType} borderColor={theme.colors.borderActive} paddingX={2} paddingY={1}>
+          <Text bold color={theme.colors.accent}>{i18n.tui.effort?.set || 'Set effort'}</Text>
+          <Text color={theme.colors.textMuted}>{i18n.tui.effort?.setHelp || 'j/k: select, Enter: confirm, Esc: cancel'}</Text>
+          <Box flexDirection="column" marginTop={1}>
+            {EFFORT_OPTIONS.map((option, index) => (
+              <Text
+                key={option.label}
+                color={index === effortSelectIndex ? theme.colors.textSelected : theme.colors.text}
+                bold={index === effortSelectIndex}
+              >
+                {index === effortSelectIndex ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
+                {option.label}
+              </Text>
+            ))}
+          </Box>
         </Box>
       )}
 

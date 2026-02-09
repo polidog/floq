@@ -94,17 +94,17 @@ export const en = {
     movedToWaiting: 'Moved "{title}" to Waiting (for {person})',
     waitingFor: 'Waiting for: ',
     refreshed: 'Refreshed',
-    footer: 'a=add d=done D=delete n=next s=someday w=waiting i=inbox p=project P=link c=context',
+    footer: 'a=add d=done D=delete n=next s=someday w=waiting i=inbox p=project P=link c=context g=focus G=filter E=effort',
     // DQ/Mario style footers
     dqFooter: {
-      tabs: 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter /=search',
-      tasks: 'j/k=select Enter=detail h/Esc=back d=done n=next s=someday w=wait i=inbox c=context p=project P=link D=delete u=undo /=search',
+      tabs: 'j/k=select l/Enter=tasks 1-6=tab a=add @=filter g=focus G=filter E=effort /=search',
+      tasks: 'j/k=select Enter=detail h/Esc=back d=done n=next s=someday w=wait i=inbox c=context g=focus E=effort p=project P=link D=delete u=undo /=search',
       projectDetail: 'j/k=select a=add d=done Esc/b=back /=search',
       taskDetail: 'j/k=select c/i=add comment P=link D=delete comment Esc/b=back',
     },
     kanbanFooter: {
-      category: 'j/k=select l/Enter=tasks a=add @=filter /=search',
-      tasks: 'j/k=select h/Esc=back d=done m=move a=add u=undo /=search',
+      category: 'j/k=select l/Enter=tasks a=add @=filter g=focus G=filter E=effort /=search',
+      tasks: 'j/k=select h/Esc=back d=done m=move a=add g=focus E=effort u=undo /=search',
     },
     noTasks: 'No tasks',
     // Tab labels
@@ -134,6 +134,9 @@ export const en = {
       comment: 'Comment',
       back: 'Back',
       delete: 'Delete',
+      focus: 'Focus',
+      focusFilter: 'Focus Filter',
+      effort: 'Effort',
       // Pomodoro keys
       pause: 'Pause',
       resume: 'Resume',
@@ -170,6 +173,9 @@ export const en = {
       searchTasks: 'Search tasks',
       filterByContext: 'Filter by context',
       setContext: 'Set context',
+      toggleFocus: 'Toggle focus',
+      toggleFocusFilter: 'Toggle focus filter',
+      setEffort: 'Set effort size',
       pomodoro: 'Pomodoro',
       startPomodoro: 'Start Pomodoro',
       pauseResume: 'Pause/Resume',
@@ -211,6 +217,9 @@ export const en = {
       moveRight: 'Move task to next column',
       moveLeft: 'Move task to previous column',
       searchTasks: 'Search tasks',
+      toggleFocus: 'Toggle focus',
+      toggleFocusFilter: 'Toggle focus filter',
+      setEffort: 'Set effort size',
       settings: 'Settings',
       changeTheme: 'Change theme',
       changeViewMode: 'Change view mode',
@@ -265,6 +274,27 @@ export const en = {
       addNew: '+ New context',
       newContext: 'New context: ',
       newContextPlaceholder: 'Enter context name...',
+    },
+    // Focus
+    focus: {
+      label: 'Focus',
+      focused: '★ Focused',
+      taskFocused: 'Focused: "{title}"',
+      taskUnfocused: 'Unfocused: "{title}"',
+      filterOn: 'Focus filter ON',
+      filterOff: 'Focus filter OFF',
+    },
+    // Effort
+    effort: {
+      label: 'Effort',
+      small: 'Small',
+      medium: 'Medium',
+      large: 'Large',
+      clear: 'Clear',
+      set: 'Set effort',
+      setHelp: 'j/k: select, Enter: confirm, Esc: cancel',
+      effortSet: 'Set effort {effort} for "{title}"',
+      effortCleared: 'Cleared effort for "{title}"',
     },
     // Pomodoro
     pomodoro: {
@@ -416,6 +446,9 @@ export type HelpTranslations = {
   searchTasks: string;
   filterByContext: string;
   setContext: string;
+  toggleFocus?: string;
+  toggleFocusFilter?: string;
+  setEffort?: string;
   pomodoro: string;
   startPomodoro: string;
   pauseResume: string;
@@ -457,6 +490,9 @@ export type KanbanHelpTranslations = {
   moveRight: string;
   moveLeft: string;
   searchTasks: string;
+  toggleFocus?: string;
+  toggleFocusFilter?: string;
+  setEffort?: string;
   settings: string;
   changeTheme: string;
   changeViewMode: string;
@@ -486,6 +522,9 @@ export type KeyBarTranslations = {
   comment: string;
   back: string;
   delete: string;
+  focus?: string;
+  focusFilter?: string;
+  effort?: string;
   // Pomodoro keys
   pause: string;
   resume: string;
@@ -516,6 +555,27 @@ export type ContextTranslations = {
   addNew: string;
   newContext: string;
   newContextPlaceholder: string;
+};
+
+export type FocusTranslations = {
+  label: string;
+  focused: string;
+  taskFocused: string;
+  taskUnfocused: string;
+  filterOn: string;
+  filterOff: string;
+};
+
+export type EffortTranslations = {
+  label: string;
+  small: string;
+  medium: string;
+  large: string;
+  clear: string;
+  set: string;
+  setHelp: string;
+  effortSet: string;
+  effortCleared: string;
 };
 
 export type PomodoroTranslations = {
@@ -622,6 +682,8 @@ export type TuiTranslations = {
   kanbanHelp: KanbanHelpTranslations;
   search: SearchTranslations;
   context: ContextTranslations;
+  focus?: FocusTranslations;
+  effort?: EffortTranslations;
   info: InfoTranslations;
   pomodoro?: PomodoroTranslations;
   calendar?: CalendarTranslations;

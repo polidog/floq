@@ -85,6 +85,7 @@ export interface Config {
   contexts?: string[]; // Available contexts for tasks
   splashDuration?: number; // Splash screen duration in ms (0=disable, -1=wait for key)
   contextFilter?: string | null; // Current context filter (null = all, '' = no context, string = specific context)
+  focusFilter?: boolean; // Focus filter ON/OFF (default: false)
   pomodoroFocusMode?: boolean; // Hide other tasks during pomodoro (default: false)
   dateFormat?: DateFormat; // Date format for clock display (default: 'MM/DD(ddd)')
   calendar?: CalendarConfig; // Google Calendar (iCal) config
@@ -254,6 +255,14 @@ export function getContextFilter(): string | null {
 
 export function setContextFilter(contextFilter: string | null): void {
   saveConfig({ contextFilter });
+}
+
+export function getFocusFilter(): boolean {
+  return loadConfig().focusFilter ?? false;
+}
+
+export function setFocusFilter(enabled: boolean): void {
+  saveConfig({ focusFilter: enabled });
 }
 
 export function getPomodoroFocusMode(): boolean {

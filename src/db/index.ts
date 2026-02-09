@@ -30,6 +30,8 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
     const tableInfo = tableInfoResult.rows as unknown as { name: string }[];
     const tableExists = tableInfo.length > 0;
     const hasContext = tableInfo.some(col => col.name === 'context');
+    const hasIsFocused = tableInfo.some(col => col.name === 'is_focused');
+    const hasEffort = tableInfo.some(col => col.name === 'effort');
 
     if (!tableExists) {
       // Fresh install: create new schema on remote
@@ -43,6 +45,8 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
           parent_id TEXT,
           waiting_for TEXT,
           context TEXT,
+          is_focused INTEGER NOT NULL DEFAULT 0,
+          effort TEXT,
           due_date INTEGER,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL
@@ -57,6 +61,15 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
       // Migration: add context column
       await remoteClient.execute("ALTER TABLE tasks ADD COLUMN context TEXT");
       await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_tasks_context ON tasks(context)");
+    }
+
+    // Migration: add is_focused column if missing
+    if (tableExists && !hasIsFocused) {
+      await remoteClient.execute("ALTER TABLE tasks ADD COLUMN is_focused INTEGER NOT NULL DEFAULT 0");
+    }
+    // Migration: add effort column if missing
+    if (tableExists && !hasEffort) {
+      await remoteClient.execute("ALTER TABLE tasks ADD COLUMN effort TEXT");
     }
 
     // Create comments table
@@ -97,6 +110,8 @@ async function initializeLocalSchema(): Promise<void> {
   const hasProjectId = tableInfo.some(col => col.name === 'project_id');
   const hasIsProject = tableInfo.some(col => col.name === 'is_project');
   const hasContext = tableInfo.some(col => col.name === 'context');
+  const hasIsFocused = tableInfo.some(col => col.name === 'is_focused');
+  const hasEffort = tableInfo.some(col => col.name === 'effort');
   const tableExists = tableInfo.length > 0;
 
   if (tableExists && hasProjectId && !hasIsProject) {
@@ -134,6 +149,8 @@ async function initializeLocalSchema(): Promise<void> {
         parent_id TEXT,
         waiting_for TEXT,
         context TEXT,
+        is_focused INTEGER NOT NULL DEFAULT 0,
+        effort TEXT,
         due_date INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
@@ -150,6 +167,16 @@ async function initializeLocalSchema(): Promise<void> {
   if (tableExists && !hasContext) {
     await client.execute("ALTER TABLE tasks ADD COLUMN context TEXT");
     await client.execute("CREATE INDEX IF NOT EXISTS idx_tasks_context ON tasks(context)");
+  }
+
+  // Migration: add is_focused column if missing
+  if (tableExists && !hasIsFocused) {
+    await client.execute("ALTER TABLE tasks ADD COLUMN is_focused INTEGER NOT NULL DEFAULT 0");
+  }
+
+  // Migration: add effort column if missing
+  if (tableExists && !hasEffort) {
+    await client.execute("ALTER TABLE tasks ADD COLUMN effort TEXT");
   }
 
   // Create comments table

@@ -6,3 +6,5 @@ export { ConvertToProjectCommand } from './ConvertToProjectCommand.js';
 export { CreateCommentCommand } from './CreateCommentCommand.js';
 export { DeleteCommentCommand } from './DeleteCommentCommand.js';
 export { SetContextCommand } from './SetContextCommand.js';
+export { SetFocusCommand } from './SetFocusCommand.js';
+export { SetEffortCommand } from './SetEffortCommand.js';

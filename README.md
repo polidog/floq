@@ -13,6 +13,8 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **Kanban Mode**: 3-column kanban board view (TODO, Doing, Done)
 - **Projects**: Organize tasks into projects with progress tracking
 - **Contexts**: Tag tasks with contexts (@work, @home, etc.) and filter by context. New tasks inherit the active context filter
+- **Focus Mode**: Mark tasks as "today's focus" (★) and filter to show only focused tasks
+- **Effort Size**: Tag tasks with effort size (S/M/L) to pick the right task for your available time
 - **Task Search**: Quick search across all tasks with `/`
 - **Comments**: Add notes and comments to tasks
 - **Cloud Sync**: Optional sync with [Turso](https://turso.tech/) using embedded replicas
@@ -64,6 +66,9 @@ floq
 | `P` | Link to project |
 | `c` | Set context |
 | `@` | Filter by context |
+| `g` | Toggle focus (★) on selected task |
+| `G` | Toggle focus filter (show only focused tasks) |
+| `E` | Set effort size (S/M/L) |
 | `Enter` | Open task detail / Open project |
 | `Esc/b` | Back |
 | `/` | Search tasks |
@@ -115,6 +120,9 @@ floq
 | `Backspace` | Move task left (←) |
 | `c` | Set context |
 | `@` | Filter by context |
+| `g` | Toggle focus (★) on selected task |
+| `G` | Toggle focus filter (show only focused tasks) |
+| `E` | Set effort size (S/M/L) |
 | `Enter` | Open task detail |
 | `/` | Search tasks |
 | `r` | Refresh |

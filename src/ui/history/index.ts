@@ -19,4 +19,6 @@ export {
   CreateCommentCommand,
   DeleteCommentCommand,
   SetContextCommand,
+  SetFocusCommand,
+  SetEffortCommand,
 } from './commands/index.js';

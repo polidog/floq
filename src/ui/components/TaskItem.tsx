@@ -3,7 +3,13 @@ import { Box, Text } from 'ink';
 import { t } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import { ProgressBar } from './ProgressBar.js';
-import type { Task } from '../../db/schema.js';
+import type { Task, EffortSize } from '../../db/schema.js';
+
+const EFFORT_LABELS: Record<EffortSize, string> = {
+  small: 'S',
+  medium: 'M',
+  large: 'L',
+};
 
 export interface ProjectProgress {
   completed: number;
@@ -26,7 +32,8 @@ export function TaskItem({ task, isSelected, projectName, progress }: TaskItemPr
     <Box>
       <Text color={isSelected ? theme.colors.textSelected : theme.colors.text} bold={isSelected}>
         {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
-        [{shortId}] {task.title}
+        {task.isFocused && <Text color={theme.colors.accent}>★ </Text>}
+        [{shortId}] {task.effort && <Text color={theme.colors.secondary}>[{EFFORT_LABELS[task.effort as EffortSize]}] </Text>}{task.title}
         {task.context && (
           <Text color={theme.colors.accent}> @{task.context}</Text>
         )}

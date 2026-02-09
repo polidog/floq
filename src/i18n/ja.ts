@@ -96,17 +96,17 @@ export const ja: Translations = {
     movedToWaiting: '「{title}」を連絡待ち({person})に移動しました',
     waitingFor: '待機相手: ',
     refreshed: '更新しました',
-    footer: 'a=追加 d=完了 D=削除 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ c=コンテキスト',
+    footer: 'a=追加 d=完了 D=削除 n=次 s=いつか w=待ち i=Inbox p=プロジェクト化 P=紐づけ c=コンテキスト g=集中 G=フィルター E=作業量',
     // DQ/Mario style footers
     dqFooter: {
-      tabs: 'j/k=選択 l/Enter=タスク 1-6=タブ a=追加 @=フィルター /=検索',
-      tasks: 'j/k=選択 Enter=詳細 h/Esc=戻る d=完了 n=次 s=いつか w=待ち i=inbox c=コンテキスト p=プロジェクト化 P=紐づけ D=削除 u=戻す /=検索',
+      tabs: 'j/k=選択 l/Enter=タスク 1-6=タブ a=追加 @=フィルター g=集中 G=フィルター E=作業量 /=検索',
+      tasks: 'j/k=選択 Enter=詳細 h/Esc=戻る d=完了 n=次 s=いつか w=待ち i=inbox c=コンテキスト g=集中 E=作業量 p=プロジェクト化 P=紐づけ D=削除 u=戻す /=検索',
       projectDetail: 'j/k=選択 a=追加 d=完了 Esc/b=戻る /=検索',
       taskDetail: 'j/k=選択 c/i=コメント追加 P=紐づけ D=コメント削除 Esc/b=戻る',
     },
     kanbanFooter: {
-      category: 'j/k=選択 l/Enter=タスク a=追加 @=フィルター /=検索',
-      tasks: 'j/k=選択 h/Esc=戻る d=完了 m=移動 a=追加 u=戻す /=検索',
+      category: 'j/k=選択 l/Enter=タスク a=追加 @=フィルター g=集中 G=フィルター E=作業量 /=検索',
+      tasks: 'j/k=選択 h/Esc=戻る d=完了 m=移動 a=追加 g=集中 E=作業量 u=戻す /=検索',
     },
     noTasks: 'タスクなし',
     // Tab labels
@@ -136,6 +136,9 @@ export const ja: Translations = {
       comment: 'コメント',
       back: '戻る',
       delete: '削除',
+      focus: '集中',
+      focusFilter: '集中フィルター',
+      effort: '作業量',
       // Pomodoro keys
       pause: '一時停止',
       resume: '再開',
@@ -172,6 +175,9 @@ export const ja: Translations = {
       searchTasks: 'タスク検索',
       filterByContext: 'コンテキストフィルター',
       setContext: 'コンテキスト設定',
+      toggleFocus: '集中モード切替',
+      toggleFocusFilter: '集中フィルター切替',
+      setEffort: '作業量設定',
       pomodoro: 'ポモドーロ',
       startPomodoro: 'ポモドーロ開始',
       pauseResume: '一時停止/再開',
@@ -213,6 +219,9 @@ export const ja: Translations = {
       moveRight: '次のカラムへ移動',
       moveLeft: '前のカラムへ戻す',
       searchTasks: 'タスク検索',
+      toggleFocus: '集中モード切替',
+      toggleFocusFilter: '集中フィルター切替',
+      setEffort: '作業量設定',
       settings: '設定',
       changeTheme: 'テーマ変更',
       changeViewMode: '表示モード変更',
@@ -267,6 +276,27 @@ export const ja: Translations = {
       addNew: '+ 新規コンテキスト',
       newContext: '新規コンテキスト: ',
       newContextPlaceholder: 'コンテキスト名を入力...',
+    },
+    // Focus
+    focus: {
+      label: '集中',
+      focused: '★ 集中',
+      taskFocused: '集中設定: 「{title}」',
+      taskUnfocused: '集中解除: 「{title}」',
+      filterOn: '集中フィルター ON',
+      filterOff: '集中フィルター OFF',
+    },
+    // Effort
+    effort: {
+      label: '作業量',
+      small: '小',
+      medium: '中',
+      large: '大',
+      clear: 'クリア',
+      set: '作業量設定',
+      setHelp: 'j/k: 選択, Enter: 確定, Esc: キャンセル',
+      effortSet: '「{title}」の作業量を{effort}に設定しました',
+      effortCleared: '「{title}」の作業量をクリアしました',
     },
     // Pomodoro
     pomodoro: {
