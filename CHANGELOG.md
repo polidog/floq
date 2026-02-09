@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-02-09
+
+### Added
+- Insights command (`floq insights`) showing weekly completion stats, daily breakdown, status/context/effort distributions, project progress, and average completion time
+- InsightsModal in TUI (press `I` to open) with scrollable view across all 6 UI variants
+- `--weeks` option for insights to customize analysis period
+- Focus Mode toggle (`g` key) and Focus Filter (`G` key) for task prioritization
+- Effort Size feature (`E` key) with Small/Medium/Large classification
+
 ## [1.3.3] - 2026-02-03
 
 ### Changed
