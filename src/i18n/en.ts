@@ -78,6 +78,27 @@ export const en = {
       notFound: 'Context @{context} not found.',
       noContexts: 'No contexts configured.',
     },
+    insights: {
+      title: 'Task Insights',
+      period: 'Period',
+      weeklyCompletion: 'Weekly Completion',
+      weekLabel: 'Week of {date}',
+      tasksCompleted: '{count} tasks completed',
+      dailyBreakdown: 'Daily Breakdown',
+      currentStatus: 'Current Status',
+      byContext: 'By Context',
+      byEffort: 'By Effort',
+      noContext: 'No context',
+      noEffort: 'No effort set',
+      projectProgress: 'Project Progress',
+      activeProjects: 'Active Projects',
+      tasksRemaining: '{count} tasks remaining',
+      averageCompletion: 'Average Completion Time',
+      daysAverage: '{days} days',
+      noData: 'No completed tasks in this period',
+      total: 'Total',
+      andMore: '  ... and {count} more',
+    },
   },
 
   // TUI
@@ -777,6 +798,7 @@ export type Translations = {
     project: Record<string, string>;
     comment: Record<string, string>;
     context: Record<string, string>;
+    insights?: Record<string, string>;
   };
   tui: TuiTranslations;
   splash?: SplashTranslations;

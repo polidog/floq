@@ -15,6 +15,7 @@ import {
 import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, enableTurso, clearTurso, syncCommand, resetDatabase, setSplashCommand, showSplash, showDateFormatCommand, setDateFormatCommand } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
 import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
+import { showInsights } from './commands/insights.js';
 import { runSetupWizard } from './commands/setup.js';
 import { addCalendar, removeCalendar, showCalendar, syncCalendar, enableCalendar, disableCalendar, configOAuthClient, loginCalendar, logoutCalendar, selectCalendar } from './commands/calendar.js';
 import { VERSION } from './version.js';
@@ -228,6 +229,16 @@ configCmd
       const enabled = getPomodoroFocusMode();
       console.log(`Pomodoro focus mode: ${enabled ? 'on' : 'off'}`);
     }
+  });
+
+// Insights command
+program
+  .command('insights')
+  .description('Show task completion insights and statistics')
+  .option('-w, --weeks <n>', 'Number of weeks to analyze (default: 2)', '2')
+  .action(async (options: { weeks?: string }) => {
+    const weeks = Math.max(1, parseInt(options.weeks ?? '2', 10) || 2);
+    await showInsights(weeks);
   });
 
 // Sync command
