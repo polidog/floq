@@ -59,6 +59,7 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
         { type: 'key', key: 'L', value: kHelp.changeLanguage },
         { type: 'header', value: kHelp.other },
         { type: 'key', key: '/', value: kHelp.searchTasks },
+        { type: 'key', key: 'I', value: help.showInsights || 'Show insights' },
         { type: 'key', key: '?', value: kHelp.showHelp },
         { type: 'key', key: 'q', value: kHelp.quit },
       ];
@@ -99,6 +100,7 @@ export function HelpModal({ onClose, isKanban = false }: HelpModalProps): React.
       { type: 'header', value: help.other },
       { type: 'key', key: '/', value: help.searchTasks },
       { type: 'key', key: 'C', value: help.showCalendar || 'Show calendar' },
+      { type: 'key', key: 'I', value: help.showInsights || 'Show insights' },
       { type: 'key', key: '?', value: help.showHelp },
       { type: 'key', key: 'q', value: help.quit },
     ];

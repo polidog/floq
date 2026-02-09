@@ -211,6 +211,7 @@ export const ja: Translations = {
       other: 'その他',
       showHelp: 'このヘルプを表示',
       showCalendar: 'カレンダーを表示',
+      showInsights: 'インサイトを表示',
       quit: '終了',
       undo: '元に戻す',
       redo: 'やり直し',

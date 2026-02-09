@@ -25,6 +25,7 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { InsightsModal } from './InsightsModal.js';
 import { CalendarModal } from './CalendarModal.js';
 import { Clock } from './Clock.js';
 import { CalendarEvents } from './CalendarEvents.js';
@@ -35,7 +36,7 @@ import type { PomodoroType } from '../../pomodoro/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'insights' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -725,8 +726,8 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
   };
 
   useInput((input, key) => {
-    // Handle help mode - let HelpModal handle its own input
-    if (mode === 'help') {
+    // Handle help/insights mode - let modals handle their own input
+    if (mode === 'help' || mode === 'insights') {
       return;
     }
 
@@ -1071,6 +1072,11 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
       return;
     }
 
+    if (input === 'I') {
+      setMode('insights');
+      return;
+    }
+
     if (input === 'C') {
       setMode('calendar');
       return;
@@ -1350,6 +1356,15 @@ export function GtdDQ({ onOpenSettings }: GtdDQProps): React.ReactElement {
     return (
       <Box flexDirection="column" padding={1}>
         <HelpModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
+  // Insights modal overlay
+  if (mode === 'insights') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <InsightsModal onClose={() => setMode('normal')} />
       </Box>
     );
   }

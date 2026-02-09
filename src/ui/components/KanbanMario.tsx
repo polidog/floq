@@ -22,6 +22,7 @@ import {
 import { SearchBar } from './SearchBar.js';
 import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
+import { InsightsModal } from './InsightsModal.js';
 import { CalendarModal } from './CalendarModal.js';
 import { MarioBoxInline } from './MarioBox.js';
 import { Clock } from './Clock.js';
@@ -29,7 +30,7 @@ import { CalendarEvents } from './CalendarEvents.js';
 
 type KanbanCategory = 'todo' | 'doing' | 'done';
 type PaneFocus = 'category' | 'tasks';
-type Mode = 'normal' | 'add' | 'help' | 'calendar' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
+type Mode = 'normal' | 'add' | 'help' | 'insights' | 'calendar' | 'task-detail' | 'add-comment' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -357,8 +358,8 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
   };
 
   useInput((input, key) => {
-    // Handle help mode - let HelpModal handle its own input
-    if (mode === 'help') {
+    // Handle help/insights mode - let modals handle their own input
+    if (mode === 'help' || mode === 'insights') {
       return;
     }
 
@@ -461,6 +462,12 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
     // Help
     if (input === '?') {
       setMode('help');
+      return;
+    }
+
+    // Insights
+    if (input === 'I') {
+      setMode('insights');
       return;
     }
 
@@ -611,6 +618,15 @@ export function KanbanMario({ onOpenSettings }: KanbanMarioProps): React.ReactEl
     return (
       <Box flexDirection="column" padding={1}>
         <HelpModal onClose={() => setMode('normal')} isKanban={true} />
+      </Box>
+    );
+  }
+
+  // Insights modal overlay
+  if (mode === 'insights') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <InsightsModal onClose={() => setMode('normal')} />
       </Box>
     );
   }

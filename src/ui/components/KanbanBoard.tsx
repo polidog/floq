@@ -5,6 +5,7 @@ import { eq, and, inArray, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { KanbanColumn, type KanbanColumnType } from './KanbanColumn.js';
 import { HelpModal } from './HelpModal.js';
+import { InsightsModal } from './InsightsModal.js';
 import { CalendarModal } from './CalendarModal.js';
 import { FunctionKeyBar } from './FunctionKeyBar.js';
 import { SearchBar } from './SearchBar.js';
@@ -32,7 +33,7 @@ import {
 
 const COLUMNS: KanbanColumnType[] = ['todo', 'doing', 'done'];
 
-type KanbanMode = 'normal' | 'add' | 'help' | 'calendar' | 'task-detail' | 'add-comment' | 'select-project' | 'search' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
+type KanbanMode = 'normal' | 'add' | 'help' | 'insights' | 'calendar' | 'task-detail' | 'add-comment' | 'select-project' | 'search' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -485,9 +486,8 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
   };
 
   useInput((input, key) => {
-    // Handle help mode - any key closes
-    if (mode === 'help') {
-      setMode('normal');
+    // Handle help/insights mode - let modals handle their own input
+    if (mode === 'help' || mode === 'insights') {
       return;
     }
 
@@ -703,6 +703,12 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     // Show help
     if (input === '?') {
       setMode('help');
+      return;
+    }
+
+    // Show insights
+    if (input === 'I') {
+      setMode('insights');
       return;
     }
 
@@ -924,6 +930,15 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
     return (
       <Box flexDirection="column" padding={1}>
         <HelpModal onClose={() => setMode('normal')} isKanban={true} />
+      </Box>
+    );
+  }
+
+  // Insights modal overlay
+  if (mode === 'insights') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <InsightsModal onClose={() => setMode('normal')} />
       </Box>
     );
   }

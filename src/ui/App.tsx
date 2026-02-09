@@ -5,6 +5,7 @@ import { eq, and, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { TaskItem, type ProjectProgress } from './components/TaskItem.js';
 import { HelpModal } from './components/HelpModal.js';
+import { InsightsModal } from './components/InsightsModal.js';
 import { CalendarModal } from './components/CalendarModal.js';
 import { FunctionKeyBar } from './components/FunctionKeyBar.js';
 import { SearchBar } from './components/SearchBar.js';
@@ -51,7 +52,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'insights' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -1022,6 +1023,12 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       return;
     }
 
+    // Show insights
+    if (input === 'I') {
+      setMode('insights');
+      return;
+    }
+
     // Show calendar
     if (input === 'C') {
       setMode('calendar');
@@ -1328,13 +1335,22 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       });
       return;
     }
-  }, { isActive: mode !== 'help' && mode !== 'calendar' });
+  }, { isActive: mode !== 'help' && mode !== 'insights' && mode !== 'calendar' });
 
   // Help modal overlay
   if (mode === 'help') {
     return (
       <Box flexDirection="column" padding={1}>
         <HelpModal onClose={() => setMode('normal')} />
+      </Box>
+    );
+  }
+
+  // Insights modal overlay
+  if (mode === 'insights') {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <InsightsModal onClose={() => setMode('normal')} />
       </Box>
     );
   }

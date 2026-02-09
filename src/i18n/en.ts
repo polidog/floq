@@ -209,6 +209,7 @@ export const en = {
       other: 'Other',
       showHelp: 'Show this help',
       showCalendar: 'Show calendar',
+      showInsights: 'Show insights',
       quit: 'Quit',
       undo: 'Undo',
       redo: 'Redo',
@@ -482,6 +483,7 @@ export type HelpTranslations = {
   other: string;
   showHelp: string;
   showCalendar?: string;
+  showInsights?: string;
   quit: string;
   undo: string;
   redo: string;
