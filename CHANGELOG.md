@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-02-13
+
+### Fixed
+- Fix project detail view not accessible in DQ and Mario themed UIs (Enter key handler was missing in project-detail mode, and back navigation from task-detail did not return to project-detail)
+
 ## [1.4.0] - 2026-02-09
 
 ### Added
