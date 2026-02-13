@@ -27,6 +27,7 @@ import { SearchResults } from './SearchResults.js';
 import { HelpModal } from './HelpModal.js';
 import { InsightsModal } from './InsightsModal.js';
 import { CalendarModal } from './CalendarModal.js';
+import { StatusBadge } from './StatusBadge.js';
 import { MarioBoxInline } from './MarioBox.js';
 import { Clock } from './Clock.js';
 import { CalendarEvents } from './CalendarEvents.js';
@@ -653,10 +654,19 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
 
     if (mode === 'task-detail') {
       if (key.escape || input === 'b' || input === 'h' || key.leftArrow) {
+        // If came from project-detail, go back to project-detail
+        if (selectedProject) {
+          setMode('project-detail');
+          const taskIndex = projectTasks.findIndex(t => t.id === selectedTask?.id);
+          if (taskIndex >= 0) {
+            setSelectedTaskIndex(taskIndex);
+          }
+        } else {
+          setMode('normal');
+        }
         setSelectedTask(null);
         setTaskComments([]);
         setSelectedCommentIndex(0);
-        setMode('normal');
         return;
       }
 
@@ -872,6 +882,15 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
         return;
       }
 
+      // Enter to view task details within project
+      if (key.return && projectTasks.length > 0) {
+        const task = projectTasks[selectedTaskIndex];
+        setSelectedTask(task);
+        loadTaskComments(task.id);
+        setMode('task-detail');
+        return;
+      }
+
       return;
     }
 
@@ -1017,7 +1036,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
           return;
         }
 
-        if (input === 'i' && currentTab !== 'inbox' && currentTab !== 'projects' && currentTab !== 'done') {
+        if (input === 'i' && currentTab !== 'inbox' && currentTab !== 'projects') {
           moveTaskToStatus(task, 'inbox').then(() => {
             if (selectedTaskIndex >= currentTasks.length - 1) {
               setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
@@ -1471,7 +1490,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
                       color={isSelected ? theme.colors.textSelected : theme.colors.text}
                       bold={isSelected}
                     >
-                      {prefix}{focusPrefix}{effortBadge}{displayTitle}
+                      {prefix}{mode === 'project-detail' && <><StatusBadge status={task.status} /> </>}{focusPrefix}{effortBadge}{displayTitle}
                       {task.waitingFor && <Text color={theme.colors.muted}> ({task.waitingFor})</Text>}
                       {task.context && <Text color={theme.colors.muted}> @{task.context}</Text>}
                       {parentProject && <Text color={theme.colors.muted}> [{parentProject.title}]</Text>}
