@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 import type { TaskStatus } from '../../../db/schema.js';
 
 interface ConvertToProjectParams {
@@ -45,5 +45,20 @@ export class ConvertToProjectCommand implements UndoableCommand {
         updatedAt: new Date(),
       })
       .where(eq(schema.tasks.id, this.taskId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'convert_to_project',
+      data: {
+        taskId: this.taskId,
+        originalStatus: this.originalStatus,
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): ConvertToProjectCommand {
+    return new ConvertToProjectCommand(json.data as unknown as ConvertToProjectParams);
   }
 }

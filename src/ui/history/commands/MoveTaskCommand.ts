@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 import type { TaskStatus } from '../../../db/schema.js';
 
 interface MoveTaskParams {
@@ -54,5 +54,23 @@ export class MoveTaskCommand implements UndoableCommand {
         updatedAt: new Date(),
       })
       .where(eq(schema.tasks.id, this.taskId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'move_task',
+      data: {
+        taskId: this.taskId,
+        fromStatus: this.fromStatus,
+        toStatus: this.toStatus,
+        fromWaitingFor: this.fromWaitingFor,
+        toWaitingFor: this.toWaitingFor,
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): MoveTaskCommand {
+    return new MoveTaskCommand(json.data as unknown as MoveTaskParams);
   }
 }

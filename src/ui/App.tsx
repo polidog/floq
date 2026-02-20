@@ -1289,7 +1289,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     }
 
     // Move to inbox
-    if (input === 'i' && currentTasks.length > 0 && currentTab !== 'inbox' && currentTab !== 'projects' && currentTab !== 'done') {
+    if (input === 'i' && currentTasks.length > 0 && currentTab !== 'inbox' && currentTab !== 'projects') {
       const task = currentTasks[selectedTaskIndex];
       moveTaskToStatus(task, 'inbox').then(() => {
         if (selectedTaskIndex >= currentTasks.length - 1) {
@@ -1675,6 +1675,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
                     isSelected={index === selectedTaskIndex}
                     projectName={parentProject?.title}
                     progress={progress}
+                    showStatus={mode === 'project-detail'}
                   />
                 );
               })
@@ -1704,6 +1705,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
                     isSelected={index === selectedTaskIndex}
                     projectName={parentProject?.title}
                     progress={progress}
+                    showStatus={mode === 'project-detail'}
                   />
                 );
               })

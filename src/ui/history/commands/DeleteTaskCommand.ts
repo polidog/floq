@@ -1,11 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 import type { Task, Comment } from '../../../db/schema.js';
 
 interface DeleteTaskParams {
   task: Task;
   description: string;
+  savedComments?: Comment[];
 }
 
 /**
@@ -19,6 +20,9 @@ export class DeleteTaskCommand implements UndoableCommand {
   constructor(params: DeleteTaskParams) {
     this.task = params.task;
     this.description = params.description;
+    if (params.savedComments) {
+      this.savedComments = params.savedComments;
+    }
   }
 
   async execute(): Promise<void> {
@@ -63,5 +67,42 @@ export class DeleteTaskCommand implements UndoableCommand {
         createdAt: comment.createdAt,
       });
     }
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'delete_task',
+      data: {
+        task: {
+          ...this.task,
+          dueDate: this.task.dueDate ? this.task.dueDate.toISOString() : null,
+          createdAt: this.task.createdAt.toISOString(),
+          updatedAt: this.task.updatedAt.toISOString(),
+        },
+        savedComments: this.savedComments.map(c => ({
+          ...c,
+          createdAt: c.createdAt.toISOString(),
+        })),
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): DeleteTaskCommand {
+    const taskData = json.data.task as Record<string, unknown>;
+    const commentsData = (json.data.savedComments as Record<string, unknown>[]) || [];
+    return new DeleteTaskCommand({
+      task: {
+        ...taskData,
+        dueDate: taskData.dueDate ? new Date(taskData.dueDate as string) : null,
+        createdAt: new Date(taskData.createdAt as string),
+        updatedAt: new Date(taskData.updatedAt as string),
+      } as Task,
+      savedComments: commentsData.map(c => ({
+        ...c,
+        createdAt: new Date(c.createdAt as string),
+      })) as Comment[],
+      description: json.data.description as string,
+    });
   }
 }

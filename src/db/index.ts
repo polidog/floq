@@ -96,6 +96,18 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
         updated_at INTEGER NOT NULL
       )
     `);
+
+    // Create operation_history table for crash-safe undo
+    await remoteClient.execute(`
+      CREATE TABLE IF NOT EXISTS operation_history (
+        id TEXT PRIMARY KEY,
+        command_type TEXT NOT NULL,
+        command_data TEXT NOT NULL,
+        executed_at INTEGER NOT NULL,
+        is_undone INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+    await remoteClient.execute("CREATE INDEX IF NOT EXISTS idx_operation_history_executed_at ON operation_history(executed_at)");
   } finally {
     remoteClient.close();
   }
@@ -203,6 +215,18 @@ async function initializeLocalSchema(): Promise<void> {
       updated_at INTEGER NOT NULL
     )
   `);
+
+  // Create operation_history table for crash-safe undo
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS operation_history (
+      id TEXT PRIMARY KEY,
+      command_type TEXT NOT NULL,
+      command_data TEXT NOT NULL,
+      executed_at INTEGER NOT NULL,
+      is_undone INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+  await client.execute("CREATE INDEX IF NOT EXISTS idx_operation_history_executed_at ON operation_history(executed_at)");
 }
 
 // DB 初期化

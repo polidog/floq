@@ -11,7 +11,7 @@ export async function moveTask(
   const db = getDb();
   const i18n = t();
 
-  const validStatuses: TaskStatus[] = ['inbox', 'next', 'waiting', 'someday'];
+  const validStatuses: TaskStatus[] = ['inbox', 'next', 'waiting', 'someday', 'done'];
   if (!validStatuses.includes(targetStatus as TaskStatus)) {
     console.error(fmt(i18n.commands.move.invalidStatus, { status: targetStatus }));
     console.error(fmt(i18n.commands.move.validStatuses, { statuses: validStatuses.join(', ') }));

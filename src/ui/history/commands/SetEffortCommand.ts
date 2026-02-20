@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 
 interface SetEffortParams {
   taskId: string;
@@ -45,5 +45,21 @@ export class SetEffortCommand implements UndoableCommand {
         updatedAt: new Date(),
       })
       .where(eq(schema.tasks.id, this.taskId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'set_effort',
+      data: {
+        taskId: this.taskId,
+        fromEffort: this.fromEffort,
+        toEffort: this.toEffort,
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): SetEffortCommand {
+    return new SetEffortCommand(json.data as unknown as SetEffortParams);
   }
 }

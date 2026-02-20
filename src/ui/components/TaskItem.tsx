@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { t } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import { ProgressBar } from './ProgressBar.js';
+import { StatusBadge } from './StatusBadge.js';
 import type { Task, EffortSize } from '../../db/schema.js';
 
 const EFFORT_LABELS: Record<EffortSize, string> = {
@@ -21,9 +22,10 @@ interface TaskItemProps {
   isSelected: boolean;
   projectName?: string;
   progress?: ProjectProgress;
+  showStatus?: boolean;
 }
 
-export function TaskItem({ task, isSelected, projectName, progress }: TaskItemProps): React.ReactElement {
+export function TaskItem({ task, isSelected, projectName, progress, showStatus }: TaskItemProps): React.ReactElement {
   const shortId = task.id.slice(0, 8);
   const i18n = t();
   const theme = useTheme();
@@ -33,7 +35,7 @@ export function TaskItem({ task, isSelected, projectName, progress }: TaskItemPr
       <Text color={isSelected ? theme.colors.textSelected : theme.colors.text} bold={isSelected}>
         {isSelected ? theme.style.selectedPrefix : theme.style.unselectedPrefix}
         {task.isFocused && <Text color={theme.colors.accent}>★ </Text>}
-        [{shortId}] {task.effort && <Text color={theme.colors.secondary}>[{EFFORT_LABELS[task.effort as EffortSize]}] </Text>}{task.title}
+        [{shortId}] {showStatus && <><StatusBadge status={task.status} /><Text> </Text></>}{task.effort && <Text color={theme.colors.secondary}>[{EFFORT_LABELS[task.effort as EffortSize]}] </Text>}{task.title}
         {task.context && (
           <Text color={theme.colors.accent}> @{task.context}</Text>
         )}

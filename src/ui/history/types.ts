@@ -1,4 +1,12 @@
 /**
+ * Serialized form of a command for DB persistence
+ */
+export interface SerializedCommand {
+  type: string;
+  data: Record<string, unknown>;
+}
+
+/**
  * Interface for undoable commands (Command Pattern)
  */
 export interface UndoableCommand {
@@ -10,6 +18,9 @@ export interface UndoableCommand {
 
   /** Undo the command (reverse the operation) */
   undo(): Promise<void>;
+
+  /** Serialize the command for DB persistence */
+  toJSON(): SerializedCommand;
 }
 
 /**

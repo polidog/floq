@@ -39,6 +39,15 @@ export function HistoryProvider({ children }: HistoryProviderProps): React.React
   const [state, setState] = useState<HistoryState>(manager.getState());
 
   useEffect(() => {
+    // Load persisted history from DB on mount
+    manager.init().then(() => {
+      setState(manager.getState());
+    }).catch(() => {
+      // Ignore init errors - in-memory still works
+    });
+  }, [manager]);
+
+  useEffect(() => {
     const unsubscribe = manager.subscribe(() => {
       setState(manager.getState());
     });

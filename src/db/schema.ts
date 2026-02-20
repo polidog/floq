@@ -46,3 +46,13 @@ export const pomodoroSessions = sqliteTable('pomodoro_sessions', {
 
 export type PomodoroSession = typeof pomodoroSessions.$inferSelect;
 export type NewPomodoroSession = typeof pomodoroSessions.$inferInsert;
+
+export const operationHistory = sqliteTable('operation_history', {
+  id: text('id').primaryKey(),
+  commandType: text('command_type').notNull(),
+  commandData: text('command_data').notNull(), // JSON serialized
+  executedAt: integer('executed_at', { mode: 'timestamp' }).notNull(),
+  isUndone: integer('is_undone', { mode: 'boolean' }).notNull().default(false),
+});
+
+export type OperationHistory = typeof operationHistory.$inferSelect;

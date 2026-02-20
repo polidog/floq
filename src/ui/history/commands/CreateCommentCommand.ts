@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 import type { NewComment } from '../../../db/schema.js';
 
 interface CreateCommentParams {
@@ -30,5 +30,29 @@ export class CreateCommentCommand implements UndoableCommand {
   async undo(): Promise<void> {
     const db = getDb();
     await db.delete(schema.comments).where(eq(schema.comments.id, this.createdCommentId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'create_comment',
+      data: {
+        comment: {
+          ...this.comment,
+          createdAt: this.comment.createdAt instanceof Date ? this.comment.createdAt.toISOString() : this.comment.createdAt,
+        },
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): CreateCommentCommand {
+    const commentData = json.data.comment as Record<string, unknown>;
+    return new CreateCommentCommand({
+      comment: {
+        ...commentData,
+        createdAt: new Date(commentData.createdAt as string),
+      } as NewComment,
+      description: json.data.description as string,
+    });
   }
 }

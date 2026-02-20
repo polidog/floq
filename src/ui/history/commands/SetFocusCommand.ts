@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 
 interface SetFocusParams {
   taskId: string;
@@ -45,5 +45,21 @@ export class SetFocusCommand implements UndoableCommand {
         updatedAt: new Date(),
       })
       .where(eq(schema.tasks.id, this.taskId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'set_focus',
+      data: {
+        taskId: this.taskId,
+        fromFocused: this.fromFocused,
+        toFocused: this.toFocused,
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): SetFocusCommand {
+    return new SetFocusCommand(json.data as unknown as SetFocusParams);
   }
 }

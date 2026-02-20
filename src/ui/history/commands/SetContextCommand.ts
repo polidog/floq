@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 
 interface SetContextParams {
   taskId: string;
@@ -45,5 +45,21 @@ export class SetContextCommand implements UndoableCommand {
         updatedAt: new Date(),
       })
       .where(eq(schema.tasks.id, this.taskId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'set_context',
+      data: {
+        taskId: this.taskId,
+        fromContext: this.fromContext,
+        toContext: this.toContext,
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): SetContextCommand {
+    return new SetContextCommand(json.data as unknown as SetContextParams);
   }
 }

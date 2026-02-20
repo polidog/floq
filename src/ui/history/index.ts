@@ -1,5 +1,5 @@
 // Types
-export type { UndoableCommand, HistoryState } from './types.js';
+export type { UndoableCommand, HistoryState, SerializedCommand } from './types.js';
 export { MAX_HISTORY_SIZE } from './types.js';
 
 // Manager
@@ -21,4 +21,5 @@ export {
   SetContextCommand,
   SetFocusCommand,
   SetEffortCommand,
+  deserializeCommand,
 } from './commands/index.js';

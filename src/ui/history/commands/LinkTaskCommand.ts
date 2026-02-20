@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '../../../db/index.js';
-import type { UndoableCommand } from '../types.js';
+import type { UndoableCommand, SerializedCommand } from '../types.js';
 
 interface LinkTaskParams {
   taskId: string;
@@ -45,5 +45,21 @@ export class LinkTaskCommand implements UndoableCommand {
         updatedAt: new Date(),
       })
       .where(eq(schema.tasks.id, this.taskId));
+  }
+
+  toJSON(): SerializedCommand {
+    return {
+      type: 'link_task',
+      data: {
+        taskId: this.taskId,
+        fromParentId: this.fromParentId,
+        toParentId: this.toParentId,
+        description: this.description,
+      },
+    };
+  }
+
+  static fromJSON(json: { data: Record<string, unknown> }): LinkTaskCommand {
+    return new LinkTaskCommand(json.data as unknown as LinkTaskParams);
   }
 }
