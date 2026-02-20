@@ -1,5 +1,9 @@
 # Floq
 
+[![npm version](https://img.shields.io/npm/v/floq.svg)](https://www.npmjs.com/package/floq)
+[![npm downloads](https://img.shields.io/npm/dm/floq.svg)](https://www.npmjs.com/package/floq)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 [日本語](./README.ja.md)
 
 A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes.
