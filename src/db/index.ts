@@ -32,6 +32,7 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
     const hasContext = tableInfo.some(col => col.name === 'context');
     const hasIsFocused = tableInfo.some(col => col.name === 'is_focused');
     const hasEffort = tableInfo.some(col => col.name === 'effort');
+    const hasCompletedAt = tableInfo.some(col => col.name === 'completed_at');
 
     if (!tableExists) {
       // Fresh install: create new schema on remote
@@ -48,6 +49,7 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
           is_focused INTEGER NOT NULL DEFAULT 0,
           effort TEXT,
           due_date INTEGER,
+          completed_at INTEGER,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL
         )
@@ -70,6 +72,11 @@ async function initializeRemoteSchema(tursoUrl: string, authToken: string): Prom
     // Migration: add effort column if missing
     if (tableExists && !hasEffort) {
       await remoteClient.execute("ALTER TABLE tasks ADD COLUMN effort TEXT");
+    }
+    // Migration: add completed_at column if missing
+    if (tableExists && !hasCompletedAt) {
+      await remoteClient.execute("ALTER TABLE tasks ADD COLUMN completed_at INTEGER");
+      await remoteClient.execute("UPDATE tasks SET completed_at = updated_at WHERE status = 'done'");
     }
 
     // Create comments table
@@ -124,6 +131,7 @@ async function initializeLocalSchema(): Promise<void> {
   const hasContext = tableInfo.some(col => col.name === 'context');
   const hasIsFocused = tableInfo.some(col => col.name === 'is_focused');
   const hasEffort = tableInfo.some(col => col.name === 'effort');
+  const hasCompletedAt = tableInfo.some(col => col.name === 'completed_at');
   const tableExists = tableInfo.length > 0;
 
   if (tableExists && hasProjectId && !hasIsProject) {
@@ -164,6 +172,7 @@ async function initializeLocalSchema(): Promise<void> {
         is_focused INTEGER NOT NULL DEFAULT 0,
         effort TEXT,
         due_date INTEGER,
+        completed_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
@@ -189,6 +198,12 @@ async function initializeLocalSchema(): Promise<void> {
   // Migration: add effort column if missing
   if (tableExists && !hasEffort) {
     await client.execute("ALTER TABLE tasks ADD COLUMN effort TEXT");
+  }
+
+  // Migration: add completed_at column if missing
+  if (tableExists && !hasCompletedAt) {
+    await client.execute("ALTER TABLE tasks ADD COLUMN completed_at INTEGER");
+    await client.execute("UPDATE tasks SET completed_at = updated_at WHERE status = 'done'");
   }
 
   // Create comments table

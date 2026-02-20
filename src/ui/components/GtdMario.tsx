@@ -358,6 +358,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
       toStatus: 'done',
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.completed, { title: task.title }),
     });
 
@@ -373,6 +374,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
       toStatus: status,
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[status] }),
     });
 
@@ -388,6 +390,7 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
       toStatus: 'waiting',
       fromWaitingFor: task.waitingFor,
       toWaitingFor: waitingFor.trim(),
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedToWaiting, { title: task.title, person: waitingFor.trim() }),
     });
 
@@ -1393,6 +1396,14 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
                 {selectedTask.isFocused ? '★' : '-'}
               </Text>
             </Box>
+            {selectedTask.status === 'done' && (
+              <Box>
+                <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailCompletedAt || 'Completed'}: </Text>
+                <Text color={theme.colors.accent}>
+                  {(selectedTask.completedAt ?? selectedTask.updatedAt).toLocaleString()}
+                </Text>
+              </Box>
+            )}
           </MarioBoxInline>
 
           <Box marginTop={1}>

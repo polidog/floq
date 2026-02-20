@@ -74,8 +74,8 @@ function groupByWeek(tasks: Task[], weeks: number): WeekStats[] {
     weekEnd.setDate(weekEnd.getDate() + 7);
 
     const weekTasks = tasks.filter(task => {
-      const updated = task.updatedAt;
-      return updated >= weekStart && updated < weekEnd;
+      const completionDate = task.completedAt ?? task.updatedAt;
+      return completionDate >= weekStart && completionDate < weekEnd;
     });
 
     result.push({
@@ -93,7 +93,7 @@ function groupByDayOfWeek(tasks: Task[]): Map<number, number> {
   for (let i = 0; i < 7; i++) days.set(i, 0);
 
   for (const task of tasks) {
-    const day = task.updatedAt.getDay();
+    const day = (task.completedAt ?? task.updatedAt).getDay();
     days.set(day, (days.get(day) || 0) + 1);
   }
 
@@ -124,9 +124,9 @@ function calculateAverageCompletionDays(tasks: Task[]): number | null {
 
   for (const task of tasks) {
     const created = task.createdAt.getTime();
-    const updated = task.updatedAt.getTime();
-    if (updated > created) {
-      totalMs += updated - created;
+    const completed = (task.completedAt ?? task.updatedAt).getTime();
+    if (completed > created) {
+      totalMs += completed - created;
       validCount++;
     }
   }
@@ -171,15 +171,17 @@ export async function showInsights(weeks: number): Promise<void> {
   const endDate = new Date(now);
   endDate.setHours(23, 59, 59, 999);
 
-  // Query all completed tasks in the period
-  const completedTasks = await db
+  // Query completed tasks (use completedAt with updatedAt fallback)
+  const completedTasks = (await db
     .select()
     .from(schema.tasks)
     .where(and(
       eq(schema.tasks.status, 'done'),
-      gte(schema.tasks.updatedAt, startDate),
       eq(schema.tasks.isProject, false),
-    ));
+    ))).filter(task => {
+      const completionDate = task.completedAt ?? task.updatedAt;
+      return completionDate >= startDate;
+    });
 
   // Header
   console.log();

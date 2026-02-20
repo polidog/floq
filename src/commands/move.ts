@@ -48,6 +48,7 @@ export async function moveTask(
     .set({
       status: targetStatus as TaskStatus,
       waitingFor: targetStatus === 'waiting' ? waitingFor : null,
+      completedAt: targetStatus === 'done' ? new Date() : null,
       updatedAt: new Date(),
     })
     .where(eq(schema.tasks.id, task.id));

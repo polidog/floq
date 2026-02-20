@@ -35,6 +35,7 @@ export async function markDone(taskId: string): Promise<void> {
   await db.update(schema.tasks)
     .set({
       status: 'done',
+      completedAt: new Date(),
       updatedAt: new Date(),
     })
     .where(eq(schema.tasks.id, task.id));

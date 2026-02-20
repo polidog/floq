@@ -518,6 +518,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       toStatus: 'done',
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.completed, { title: task.title }),
     });
 
@@ -533,6 +534,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       toStatus: status,
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[status] }),
     });
 
@@ -548,6 +550,7 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
       toStatus: 'waiting',
       fromWaitingFor: task.waitingFor,
       toWaitingFor: waitingFor.trim(),
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedToWaiting, { title: task.title, person: waitingFor.trim() }),
     });
 
@@ -1583,6 +1586,14 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
                 {selectedTask.isFocused ? '★' : '-'}
               </Text>
             </Box>
+            {selectedTask.status === 'done' && (
+              <Box>
+                <Text color={theme.colors.secondary} bold>{i18n.tui.taskDetailCompletedAt || 'Completed'}: </Text>
+                <Text color={theme.colors.accent}>
+                  {(selectedTask.completedAt ?? selectedTask.updatedAt).toLocaleString()}
+                </Text>
+              </Box>
+            )}
           </Box>
 
           {/* Comments section */}

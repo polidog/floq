@@ -54,6 +54,7 @@ export class DeleteTaskCommand implements UndoableCommand {
       parentId: this.task.parentId,
       waitingFor: this.task.waitingFor,
       dueDate: this.task.dueDate,
+      completedAt: this.task.completedAt,
       createdAt: this.task.createdAt,
       updatedAt: this.task.updatedAt,
     });
@@ -76,6 +77,7 @@ export class DeleteTaskCommand implements UndoableCommand {
         task: {
           ...this.task,
           dueDate: this.task.dueDate ? this.task.dueDate.toISOString() : null,
+          completedAt: this.task.completedAt ? this.task.completedAt.toISOString() : null,
           createdAt: this.task.createdAt.toISOString(),
           updatedAt: this.task.updatedAt.toISOString(),
         },
@@ -95,6 +97,7 @@ export class DeleteTaskCommand implements UndoableCommand {
       task: {
         ...taskData,
         dueDate: taskData.dueDate ? new Date(taskData.dueDate as string) : null,
+        completedAt: taskData.completedAt ? new Date(taskData.completedAt as string) : null,
         createdAt: new Date(taskData.createdAt as string),
         updatedAt: new Date(taskData.updatedAt as string),
       } as Task,

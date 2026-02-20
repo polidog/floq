@@ -414,6 +414,7 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
       toStatus: newStatus,
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[newStatus] }),
     });
 
@@ -429,6 +430,7 @@ export function KanbanDQ({ onOpenSettings }: KanbanDQProps): React.ReactElement 
       toStatus: 'done',
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.completed, { title: task.title }),
     });
 

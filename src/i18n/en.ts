@@ -260,6 +260,7 @@ export const en = {
     taskDetailTitle: 'Task Details',
     taskDetailFooter: 'j/k=select i=comment d=delete P=link b/Esc=back',
     taskDetailStatus: 'Status',
+    taskDetailCompletedAt: 'Completed',
     deleteConfirm: 'Delete "{title}"? (y/n)',
     deleted: 'Deleted: "{title}"',
     deleteCancelled: 'Delete cancelled',
@@ -719,6 +720,7 @@ export type TuiTranslations = {
   taskDetailTitle: string;
   taskDetailFooter: string;
   taskDetailStatus: string;
+  taskDetailCompletedAt?: string;
   deleteConfirm: string;
   deleted: string;
   deleteCancelled: string;

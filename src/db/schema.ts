@@ -12,6 +12,7 @@ export const tasks = sqliteTable('tasks', {
   isFocused: integer('is_focused', { mode: 'boolean' }).notNull().default(false),
   effort: text('effort'),
   dueDate: integer('due_date', { mode: 'timestamp' }),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });

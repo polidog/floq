@@ -262,6 +262,7 @@ export const ja: Translations = {
     taskDetailTitle: 'タスク詳細',
     taskDetailFooter: 'j/k=選択 i=コメント d=削除 P=紐づけ b/Esc=戻る',
     taskDetailStatus: 'ステータス',
+    taskDetailCompletedAt: '完了日',
     deleteConfirm: '「{title}」を削除しますか？ (y/n)',
     deleted: '削除しました: 「{title}」',
     deleteCancelled: '削除をキャンセルしました',

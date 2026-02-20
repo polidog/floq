@@ -369,6 +369,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       toStatus: newStatus,
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[newStatus] }),
     });
 
@@ -398,6 +399,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       toStatus: newStatus,
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.movedTo, { title: task.title, status: i18n.status[newStatus] }),
     });
 
@@ -413,6 +415,7 @@ export function KanbanBoard({ onSwitchToGtd, onOpenSettings }: KanbanBoardProps)
       toStatus: 'done',
       fromWaitingFor: task.waitingFor,
       toWaitingFor: null,
+      fromCompletedAt: task.completedAt,
       description: fmt(i18n.tui.completed, { title: task.title }),
     });
 

@@ -102,15 +102,17 @@ export function InsightsModal({ onClose }: InsightsModalProps): React.ReactEleme
       const startDate = getWeekStart(now);
       startDate.setDate(startDate.getDate() - (weeks - 1) * 7);
 
-      // Query completed tasks
-      const completedTasks = await db
+      // Query completed tasks (use completedAt with updatedAt fallback)
+      const completedTasks = (await db
         .select()
         .from(schema.tasks)
         .where(and(
           eq(schema.tasks.status, 'done'),
-          gte(schema.tasks.updatedAt, startDate),
           eq(schema.tasks.isProject, false),
-        ));
+        ))).filter(task => {
+          const completionDate = task.completedAt ?? task.updatedAt;
+          return completionDate >= startDate;
+        });
 
       // Period header
       lines.push({ type: 'text', value: `${l.period}: ${startDate.toLocaleDateString()} ~ ${now.toLocaleDateString()}` });
@@ -130,7 +132,10 @@ export function InsightsModal({ onClose }: InsightsModalProps): React.ReactEleme
         ws.setDate(ws.getDate() - i * 7);
         const we = new Date(ws);
         we.setDate(we.getDate() + 7);
-        const weekTasks = completedTasks.filter(t => t.updatedAt >= ws && t.updatedAt < we);
+        const weekTasks = completedTasks.filter(t => {
+          const d = t.completedAt ?? t.updatedAt;
+          return d >= ws && d < we;
+        });
         const weekLabel = fmt(l.weekLabel, { date: ws.toLocaleDateString() });
         const countLabel = fmt(l.tasksCompleted, { count: weekTasks.length });
         lines.push({ type: 'text', value: `${weekLabel}: ${countLabel}` });
@@ -149,7 +154,7 @@ export function InsightsModal({ onClose }: InsightsModalProps): React.ReactEleme
       lines.push({ type: 'header', value: l.dailyBreakdown });
       const dayCounts = new Array(7).fill(0);
       for (const task of completedTasks) {
-        dayCounts[task.updatedAt.getDay()]++;
+        dayCounts[(task.completedAt ?? task.updatedAt).getDay()]++;
       }
       const maxDaily = Math.max(...dayCounts);
       const dayNames = isJa
@@ -249,7 +254,7 @@ export function InsightsModal({ onClose }: InsightsModalProps): React.ReactEleme
       let totalMs = 0;
       let validCount = 0;
       for (const task of completedTasks) {
-        const diff = task.updatedAt.getTime() - task.createdAt.getTime();
+        const diff = (task.completedAt ?? task.updatedAt).getTime() - task.createdAt.getTime();
         if (diff > 0) { totalMs += diff; validCount++; }
       }
       if (validCount > 0) {
