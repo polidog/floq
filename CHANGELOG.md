@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-02-20
+
+### Added
+- `completedAt` field to accurately track when tasks are completed, preventing Insights stats from shifting when editing done tasks
+- Completion date display in task detail view for done tasks (all 3 UI variants)
+- Undo/redo history persistence to SQLite for crash-safe operation
+
 ## [1.4.1] - 2026-02-13
 
 ### Fixed
