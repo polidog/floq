@@ -396,4 +396,13 @@ calendarCmd
     await selectCalendar();
   });
 
+// MCP server command
+program
+  .command('mcp')
+  .description('Start MCP server for LLM integration')
+  .action(async () => {
+    const { startMcpServer } = await import('./mcp/server.js');
+    await startMcpServer();
+  });
+
 export { program };
