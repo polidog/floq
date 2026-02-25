@@ -216,6 +216,24 @@ configCmd
   });
 
 configCmd
+  .command('insights-weeks [weeks]')
+  .description('Set number of weeks for insights (default: 2)')
+  .action(async (weeks?: string) => {
+    const { getInsightsWeeks, setInsightsWeeks } = await import('./config.js');
+    if (weeks !== undefined) {
+      const n = parseInt(weeks, 10);
+      if (isNaN(n) || n < 1) {
+        console.error('Weeks must be a positive integer');
+        process.exit(1);
+      }
+      setInsightsWeeks(n);
+      console.log(`Insights weeks set to ${n}`);
+    } else {
+      console.log(`Insights weeks: ${getInsightsWeeks()}`);
+    }
+  });
+
+configCmd
   .command('pomodoro')
   .description('Configure pomodoro settings')
   .option('--focus <on|off>', 'Enable/disable focus mode (hide other tasks during pomodoro)')
@@ -235,9 +253,13 @@ configCmd
 program
   .command('insights')
   .description('Show task completion insights and statistics')
-  .option('-w, --weeks <n>', 'Number of weeks to analyze (default: 2)', '2')
+  .option('-w, --weeks <n>', 'Number of weeks to analyze (uses config default)')
   .action(async (options: { weeks?: string }) => {
-    const weeks = Math.max(1, parseInt(options.weeks ?? '2', 10) || 2);
+    const { getInsightsWeeks } = await import('./config.js');
+    const defaultWeeks = getInsightsWeeks();
+    const weeks = options.weeks
+      ? Math.max(1, parseInt(options.weeks, 10) || defaultWeeks)
+      : defaultWeeks;
     await showInsights(weeks);
   });
 

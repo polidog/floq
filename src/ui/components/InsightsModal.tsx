@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { eq, and, gte } from 'drizzle-orm';
 import { getDb, schema } from '../../db/index.js';
 import { t, fmt } from '../../i18n/index.js';
+import { getInsightsWeeks } from '../../config.js';
 import { useTheme } from '../theme/index.js';
 import type { BorderStyleType } from '../theme/types.js';
 import type { Task } from '../../db/schema.js';
@@ -95,7 +96,7 @@ export function InsightsModal({ onClose }: InsightsModalProps): React.ReactEleme
   useEffect(() => {
     const loadInsights = async () => {
       const db = getDb();
-      const weeks = 2;
+      const weeks = getInsightsWeeks();
       const lines: ContentLine[] = [];
 
       const now = new Date();

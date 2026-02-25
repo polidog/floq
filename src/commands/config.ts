@@ -3,7 +3,7 @@ import React from 'react';
 import { createInterface } from 'readline';
 import { unlinkSync, existsSync, readdirSync } from 'fs';
 import { dirname, basename, join } from 'path';
-import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, getDateFormat, setDateFormat, getCalendarConfig, isCalendarEnabled, type Locale, type ThemeName, type ViewMode, type DateFormat } from '../config.js';
+import { loadConfig, saveConfig, getDbPath, getViewMode, setViewMode, isTursoEnabled, getTursoConfig, setTursoConfig, setTursoEnabled, getSplashDuration, setSplashDuration, getDateFormat, setDateFormat, getCalendarConfig, isCalendarEnabled, getInsightsWeeks, type Locale, type ThemeName, type ViewMode, type DateFormat } from '../config.js';
 import { CONFIG_FILE } from '../paths.js';
 import { ThemeSelector } from '../ui/ThemeSelector.js';
 import { ModeSelector } from '../ui/ModeSelector.js';
@@ -28,6 +28,7 @@ export async function showConfig(): Promise<void> {
   console.log(`View Mode: ${config.viewMode || 'gtd'}`);
   console.log(`Date Format: ${dateFormat}`);
   console.log(`Splash: ${splashDuration === 0 ? 'disabled' : splashDuration === -1 ? 'wait for key' : `${splashDuration}ms`}`);
+  console.log(`Insights Weeks: ${getInsightsWeeks()}`);
   console.log(`Turso: ${isTursoEnabled() ? 'enabled' : 'disabled'}`);
 
   if (config.db_path) {

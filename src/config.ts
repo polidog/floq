@@ -89,6 +89,7 @@ export interface Config {
   pomodoroFocusMode?: boolean; // Hide other tasks during pomodoro (default: false)
   dateFormat?: DateFormat; // Date format for clock display (default: 'MM/DD(ddd)')
   calendar?: CalendarConfig; // Google Calendar (iCal) config
+  insightsWeeks?: number; // Number of weeks for insights (default: 2)
 }
 
 const DEFAULT_CONTEXTS = ['work', 'home'];
@@ -349,4 +350,18 @@ export function getCalendarType(): 'ical' | 'oauth' | undefined {
   const calendar = getCalendarConfig();
   if (!calendar) return undefined;
   return calendar.type || (calendar.url ? 'ical' : undefined);
+}
+
+const DEFAULT_INSIGHTS_WEEKS = 2;
+
+export function getInsightsWeeks(): number {
+  const weeks = loadConfig().insightsWeeks;
+  if (weeks === undefined || weeks < 1) {
+    return DEFAULT_INSIGHTS_WEEKS;
+  }
+  return weeks;
+}
+
+export function setInsightsWeeks(weeks: number): void {
+  saveConfig({ insightsWeeks: Math.max(1, weeks) });
 }
