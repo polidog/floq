@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-25
+
+### Added
+- MCP（Model Context Protocol）サーバーを追加し、LLM連携に対応（`floq mcp`）
+- インサイトの表示週数を設定ファイルで変更可能に（`floq config insights-weeks <n>`、デフォルト: 2）
+- READMEにnpmバージョン、ダウンロード数、ライセンスバッジを追加
+
 ## [1.5.0] - 2026-02-20
 
 ### Added

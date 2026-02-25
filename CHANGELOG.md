@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-25
+
+### Added
+- MCP (Model Context Protocol) server for LLM integration (`floq mcp`)
+- Configurable insights weeks via `floq config insights-weeks <n>` (default: 2)
+- npm version, downloads, and license badges to README
+
 ## [1.5.0] - 2026-02-20
 
 ### Added
