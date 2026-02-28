@@ -157,6 +157,25 @@ export async function selectMode(): Promise<void> {
   });
 }
 
+export async function showTursoQr(): Promise<void> {
+  const turso = getTursoConfig();
+  if (!turso || !turso.url || !turso.authToken) {
+    console.error('Turso is not configured.');
+    console.error('Use "floq config turso --url <url> --token <token>" to configure first.');
+    process.exit(1);
+  }
+
+  const qrcode = await import('qrcode');
+  const data = JSON.stringify({ url: turso.url, authToken: turso.authToken });
+  const qr = await qrcode.default.toString(data, { type: 'terminal', small: true });
+
+  console.log('');
+  console.log('Turso Configuration QR Code:');
+  console.log('');
+  console.log(qr);
+  console.log('⚠️  This QR code contains your auth token. Do not share publicly.');
+}
+
 export async function setTurso(url: string, token: string): Promise<void> {
   setTursoConfig({ url, authToken: token, enabled: true });
   console.log('Turso sync enabled');

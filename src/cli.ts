@@ -12,7 +12,7 @@ import {
   showProject,
   completeProject,
 } from './commands/project.js';
-import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, enableTurso, clearTurso, syncCommand, resetDatabase, setSplashCommand, showSplash, showDateFormatCommand, setDateFormatCommand } from './commands/config.js';
+import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, enableTurso, clearTurso, showTursoQr, syncCommand, resetDatabase, setSplashCommand, showSplash, showDateFormatCommand, setDateFormatCommand } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
 import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
 import { showInsights } from './commands/insights.js';
@@ -175,8 +175,11 @@ configCmd
   .option('--disable', 'Temporarily disable Turso sync (preserves config)')
   .option('--enable', 'Re-enable Turso sync')
   .option('--clear', 'Remove Turso configuration completely')
-  .action(async (options: { url?: string; token?: string; disable?: boolean; enable?: boolean; clear?: boolean }) => {
-    if (options.clear) {
+  .option('--qr', 'Display Turso config as QR code')
+  .action(async (options: { url?: string; token?: string; disable?: boolean; enable?: boolean; clear?: boolean; qr?: boolean }) => {
+    if (options.qr) {
+      await showTursoQr();
+    } else if (options.clear) {
       await clearTurso();
     } else if (options.disable) {
       await disableTurso();
