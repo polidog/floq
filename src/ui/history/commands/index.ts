@@ -1,5 +1,6 @@
 export { CreateTaskCommand } from './CreateTaskCommand.js';
 export { DeleteTaskCommand } from './DeleteTaskCommand.js';
+export { DeleteProjectCommand } from './DeleteProjectCommand.js';
 export { MoveTaskCommand } from './MoveTaskCommand.js';
 export { LinkTaskCommand } from './LinkTaskCommand.js';
 export { ConvertToProjectCommand } from './ConvertToProjectCommand.js';

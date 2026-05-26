@@ -11,6 +11,7 @@ import {
   listProjectsCommand,
   showProject,
   completeProject,
+  deleteProjectCommand,
 } from './commands/project.js';
 import { showConfig, setLanguage, setDbPath, resetDbPath, setTheme, selectTheme, showViewMode, setViewModeCommand, selectMode, setTurso, disableTurso, enableTurso, clearTurso, showTursoQr, syncCommand, resetDatabase, setSplashCommand, showSplash, showDateFormatCommand, setDateFormatCommand } from './commands/config.js';
 import { addComment, listComments } from './commands/comment.js';
@@ -113,6 +114,17 @@ projectCmd
   .description('Mark a project as completed')
   .action(async (id: string) => {
     await completeProject(id);
+  });
+
+projectCmd
+  .command('delete <id>')
+  .alias('rm')
+  .description('Delete a project (prompts how to handle its tasks)')
+  .option('--with-tasks', 'Delete the project together with all its tasks')
+  .option('--keep-tasks', 'Delete the project but move its tasks to Inbox')
+  .option('-f, --force', 'Skip confirmation prompts')
+  .action(async (id: string, options: { withTasks?: boolean; keepTasks?: boolean; force?: boolean }) => {
+    await deleteProjectCommand(id, options);
   });
 
 // Config commands

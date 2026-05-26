@@ -4,6 +4,7 @@ import TextInput from 'ink-text-input';
 import { eq, and, gte } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getDb, schema } from '../../db/index.js';
+import type { ProjectDeleteMode } from '../../db/projectDelete.js';
 import { t, fmt } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import { isTursoEnabled, getContexts, addContext, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode, getFocusFilter, setFocusFilter } from '../../config.js';
@@ -13,6 +14,7 @@ import {
   useHistory,
   CreateTaskCommand,
   DeleteTaskCommand,
+  DeleteProjectCommand,
   MoveTaskCommand,
   LinkTaskCommand,
   ConvertToProjectCommand,
@@ -38,7 +40,7 @@ import type { PomodoroType } from '../../pomodoro/index.js';
 
 type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 type PaneFocus = 'tabs' | 'tasks';
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'insights' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'insights' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'confirm-delete' | 'confirm-delete-project' | 'context-filter' | 'set-context' | 'add-context' | 'search' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -120,6 +122,8 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
   const [taskToWaiting, setTaskToWaiting] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Task | null>(null);
+  const [projectChildCount, setProjectChildCount] = useState(0);
   const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>({});
   // Context filter state - load from config for persistence across sessions/terminals
   const [contextFilter, setContextFilterState] = useState<string | null>(() => getContextFilter());
@@ -421,6 +425,21 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
     setMessage(fmt(i18n.tui.deleted || 'Deleted: "{title}"', { title: task.title }));
     await loadTasks();
   }, [i18n.tui.deleted, loadTasks, history]);
+
+  const deleteProjectAction = useCallback(async (project: Task, mode: ProjectDeleteMode, childCount: number) => {
+    const message = mode === 'cascade'
+      ? (childCount > 0
+          ? fmt(i18n.tui.deletedProjectWithTasks || 'Deleted project "{title}" and {count} task(s)', { title: project.title, count: childCount })
+          : fmt(i18n.tui.deletedProject || 'Deleted project: "{title}"', { title: project.title }))
+      : (childCount > 0
+          ? fmt(i18n.tui.projectTasksToInbox || 'Deleted project "{title}", moved {count} task(s) to Inbox', { title: project.title, count: childCount })
+          : fmt(i18n.tui.deletedProject || 'Deleted project: "{title}"', { title: project.title }));
+
+    const command = new DeleteProjectCommand({ project, mode, description: message });
+    await history.execute(command);
+    setMessage(message);
+    await loadTasks();
+  }, [i18n.tui.deletedProject, i18n.tui.deletedProjectWithTasks, i18n.tui.projectTasksToInbox, loadTasks, history]);
 
   const linkTaskToProject = useCallback(async (task: Task, project: Task) => {
     const command = new LinkTaskCommand({
@@ -749,6 +768,50 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
       return;
     }
 
+    if (mode === 'confirm-delete-project' && projectToDelete) {
+      const cancel = () => {
+        setMessage(i18n.tui.deleteCancelled || 'Delete cancelled');
+        setProjectToDelete(null);
+        setMode('normal');
+      };
+      const runDelete = (deleteMode: ProjectDeleteMode) => {
+        const project = projectToDelete;
+        const count = projectChildCount;
+        deleteProjectAction(project, deleteMode, count).then(() => {
+          if (selectedTaskIndex >= currentTasks.length - 1) {
+            setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+          }
+        });
+        setProjectToDelete(null);
+        setMode('normal');
+      };
+
+      if (projectChildCount > 0) {
+        if (input === 't' || input === 'T') {
+          runDelete('cascade');
+          return;
+        }
+        if (input === 'i' || input === 'I') {
+          runDelete('keep');
+          return;
+        }
+        if (input === 'n' || input === 'N' || key.escape) {
+          cancel();
+          return;
+        }
+      } else {
+        if (input === 'y' || input === 'Y') {
+          runDelete('cascade');
+          return;
+        }
+        if (input === 'n' || input === 'N' || key.escape) {
+          cancel();
+          return;
+        }
+      }
+      return;
+    }
+
     if (mode === 'context-filter') {
       if (key.escape) {
         setContextSelectIndex(0);
@@ -1064,6 +1127,21 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
           return;
         }
 
+        // Delete project (on projects tab)
+        if (input === 'D' && currentTab === 'projects') {
+          const project = task;
+          const db = getDb();
+          db.select()
+            .from(schema.tasks)
+            .where(eq(schema.tasks.parentId, project.id))
+            .then((children) => {
+              setProjectChildCount(children.length);
+              setProjectToDelete(project);
+              setMode('confirm-delete-project');
+            });
+          return;
+        }
+
         if (input === 'D' && currentTab !== 'projects') {
           setTaskToDelete(task);
           setMode('confirm-delete');
@@ -1357,6 +1435,14 @@ export function GtdMario({ onOpenSettings }: GtdMarioProps): React.ReactElement 
         <Box flexDirection="column">
           <Text color={theme.colors.accent} bold>
             {fmt(i18n.tui.deleteConfirm || 'Delete "{title}"? (y/n)', { title: taskToDelete.title })}
+          </Text>
+        </Box>
+      ) : mode === 'confirm-delete-project' && projectToDelete ? (
+        <Box flexDirection="column">
+          <Text color={theme.colors.accent} bold>
+            {projectChildCount > 0
+              ? fmt(i18n.tui.deleteProjectChildren || 'Project "{title}" has {count} task(s). t=delete all  i=keep tasks (→Inbox)  n=cancel', { title: projectToDelete.title, count: projectChildCount })
+              : fmt(i18n.tui.deleteProjectConfirm || 'Delete project "{title}"? (y/n)', { title: projectToDelete.title })}
           </Text>
         </Box>
       ) : (mode === 'task-detail' || mode === 'add-comment') && selectedTask ? (
