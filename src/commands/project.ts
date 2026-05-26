@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
+import { createInterface } from 'readline';
 import { eq, like, and } from 'drizzle-orm';
 import { getDb, schema } from '../db/index.js';
+import { deleteProject, type ProjectDeleteMode } from '../db/projectDelete.js';
 import { t, fmt } from '../i18n/index.js';
 
 interface AddProjectOptions {
@@ -180,4 +182,111 @@ export async function completeProject(projectId: string): Promise<void> {
     .where(eq(schema.tasks.id, project.id));
 
   console.log(fmt(i18n.commands.project.completed, { name: project.title }));
+}
+
+function ask(rl: ReturnType<typeof createInterface>, question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      resolve(answer.trim().toLowerCase());
+    });
+  });
+}
+
+interface DeleteProjectOptions {
+  withTasks?: boolean;
+  keepTasks?: boolean;
+  force?: boolean;
+}
+
+export async function deleteProjectCommand(
+  projectId: string,
+  options: DeleteProjectOptions
+): Promise<void> {
+  const db = getDb();
+  const i18n = t();
+
+  // Find project by ID prefix, then by exact name.
+  let projects = await db
+    .select()
+    .from(schema.tasks)
+    .where(and(eq(schema.tasks.isProject, true), like(schema.tasks.id, `${projectId}%`)));
+
+  if (projects.length === 0) {
+    projects = await db
+      .select()
+      .from(schema.tasks)
+      .where(and(eq(schema.tasks.isProject, true), eq(schema.tasks.title, projectId)));
+  }
+
+  if (projects.length === 0) {
+    console.error(fmt(i18n.commands.project.notFound, { id: projectId }));
+    process.exit(1);
+  }
+
+  if (projects.length > 1) {
+    console.error(fmt(i18n.commands.project.multipleMatch, { id: projectId }));
+    for (const p of projects) {
+      console.error(`  [${p.id.slice(0, 8)}] ${p.title}`);
+    }
+    process.exit(1);
+  }
+
+  const project = projects[0];
+  const children = await db
+    .select()
+    .from(schema.tasks)
+    .where(eq(schema.tasks.parentId, project.id));
+  const childCount = children.length;
+
+  // Decide how to handle child tasks. When neither flag is given and the
+  // project has tasks, the choice is resolved interactively below.
+  let mode: ProjectDeleteMode | null =
+    options.withTasks ? 'cascade' :
+    options.keepTasks ? 'keep' :
+    childCount === 0 ? 'cascade' :
+    null;
+
+  if (!options.force) {
+    // A single prompt keeps this reliable for piped/non-TTY input.
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    try {
+      if (mode !== null) {
+        const answer = await ask(rl, `${fmt(i18n.commands.project.deletePrompt, { name: project.title })} (y/N): `);
+        if (answer !== 'y' && answer !== 'yes') {
+          console.log(i18n.commands.project.deleteCancelled);
+          return;
+        }
+      } else {
+        const answer = await ask(rl, `${fmt(i18n.commands.project.deleteChildrenPrompt, { name: project.title, count: childCount })}: `);
+        if (answer === 'a' || answer === 'all') {
+          mode = 'cascade';
+        } else if (answer === 'k' || answer === 'keep') {
+          mode = 'keep';
+        } else {
+          console.log(i18n.commands.project.deleteCancelled);
+          return;
+        }
+      }
+    } finally {
+      rl.close();
+    }
+  } else if (mode === null) {
+    // Forced with no explicit choice: keep tasks to avoid silent data loss.
+    mode = 'keep';
+  }
+
+  await deleteProject(project, mode);
+
+  if (mode === 'cascade') {
+    if (childCount > 0) {
+      console.log(fmt(i18n.commands.project.deletedWithTasks, { name: project.title, count: childCount }));
+    } else {
+      console.log(fmt(i18n.commands.project.deleted, { name: project.title }));
+    }
+  } else {
+    console.log(fmt(i18n.commands.project.deleted, { name: project.title }));
+    if (childCount > 0) {
+      console.log(fmt(i18n.commands.project.tasksMovedToInbox, { count: childCount }));
+    }
+  }
 }

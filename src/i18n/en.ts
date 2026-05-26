@@ -58,6 +58,12 @@ export const en = {
       notFound: 'Project not found: {id}',
       multipleMatch: 'Multiple projects match "{id}". Please be more specific.',
       completed: 'Completed project: "{name}"',
+      deleted: 'Deleted project: "{name}"',
+      deletedWithTasks: 'Deleted project "{name}" and {count} task(s)',
+      tasksMovedToInbox: 'Moved {count} task(s) to Inbox',
+      deletePrompt: 'Delete project "{name}"?',
+      deleteChildrenPrompt: 'Project "{name}" has {count} task(s). a=delete all  k=keep tasks (→Inbox)  n=cancel',
+      deleteCancelled: 'Cancelled.',
       noProjects: 'No projects',
       description: 'Description: {description}',
       statusLabel: 'Status: {status}',
@@ -264,6 +270,11 @@ export const en = {
     deleteConfirm: 'Delete "{title}"? (y/n)',
     deleted: 'Deleted: "{title}"',
     deleteCancelled: 'Delete cancelled',
+    deleteProjectConfirm: 'Delete project "{title}"? (y/n)',
+    deleteProjectChildren: 'Project "{title}" has {count} task(s). t=delete all  i=keep tasks (→Inbox)  n=cancel',
+    deletedProject: 'Deleted project: "{title}"',
+    deletedProjectWithTasks: 'Deleted project "{title}" and {count} task(s)',
+    projectTasksToInbox: 'Deleted project "{title}", moved {count} task(s) to Inbox',
     // Undo/Redo
     undone: 'Undone: {action}',
     redone: 'Redone: {action}',
@@ -724,6 +735,11 @@ export type TuiTranslations = {
   deleteConfirm: string;
   deleted: string;
   deleteCancelled: string;
+  deleteProjectConfirm?: string;
+  deleteProjectChildren?: string;
+  deletedProject?: string;
+  deletedProjectWithTasks?: string;
+  projectTasksToInbox?: string;
   undone: string;
   redone: string;
   nothingToUndo: string;

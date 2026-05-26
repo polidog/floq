@@ -21,6 +21,7 @@ import { ThemeSelector } from './ThemeSelector.js';
 import { ModeSelector } from './ModeSelector.js';
 import { LanguageSelector } from './LanguageSelector.js';
 import { getDb, schema } from '../db/index.js';
+import type { ProjectDeleteMode } from '../db/projectDelete.js';
 import { t, fmt } from '../i18n/index.js';
 import { ThemeProvider, useTheme, getTheme } from './theme/index.js';
 import { getThemeName, getViewMode, setThemeName, setViewMode, setLocale, isTursoEnabled, getContexts, addContext, getSplashDuration, getContextFilter, setContextFilter as saveContextFilter, getPomodoroFocusMode, setPomodoroFocusMode, getFocusFilter, setFocusFilter } from '../config.js';
@@ -38,6 +39,7 @@ import {
   useHistory,
   CreateTaskCommand,
   DeleteTaskCommand,
+  DeleteProjectCommand,
   MoveTaskCommand,
   LinkTaskCommand,
   ConvertToProjectCommand,
@@ -52,7 +54,7 @@ type TabType = 'inbox' | 'next' | 'waiting' | 'someday' | 'projects' | 'done';
 const TABS: TabType[] = ['inbox', 'next', 'waiting', 'someday', 'projects', 'done'];
 
 type TasksByTab = Record<TabType, Task[]>;
-type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'insights' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
+type Mode = 'normal' | 'add' | 'add-to-project' | 'help' | 'insights' | 'calendar' | 'project-detail' | 'select-project' | 'task-detail' | 'add-comment' | 'move-to-waiting' | 'search' | 'confirm-delete' | 'confirm-delete-project' | 'context-filter' | 'set-context' | 'add-context' | 'set-effort';
 
 type SettingsMode = 'none' | 'theme-select' | 'mode-select' | 'lang-select';
 
@@ -179,6 +181,8 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
   const [selectedCommentIndex, setSelectedCommentIndex] = useState(0);
   const [taskToWaiting, setTaskToWaiting] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Task | null>(null);
+  const [projectChildCount, setProjectChildCount] = useState(0);
   const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>({});
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -642,6 +646,21 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
     await loadTasks();
   }, [i18n.tui.deleted, loadTasks, history]);
 
+  const deleteProjectAction = useCallback(async (project: Task, mode: ProjectDeleteMode, childCount: number) => {
+    const message = mode === 'cascade'
+      ? (childCount > 0
+          ? fmt(i18n.tui.deletedProjectWithTasks || 'Deleted project "{title}" and {count} task(s)', { title: project.title, count: childCount })
+          : fmt(i18n.tui.deletedProject || 'Deleted project: "{title}"', { title: project.title }))
+      : (childCount > 0
+          ? fmt(i18n.tui.projectTasksToInbox || 'Deleted project "{title}", moved {count} task(s) to Inbox', { title: project.title, count: childCount })
+          : fmt(i18n.tui.deletedProject || 'Deleted project: "{title}"', { title: project.title }));
+
+    const command = new DeleteProjectCommand({ project, mode, description: message });
+    await history.execute(command);
+    setMessage(message);
+    await loadTasks();
+  }, [i18n.tui.deletedProject, i18n.tui.deletedProjectWithTasks, i18n.tui.projectTasksToInbox, loadTasks, history]);
+
   const getTabLabel = (tab: TabType): string => {
     switch (tab) {
       case 'inbox':
@@ -703,6 +722,52 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         setTaskToDelete(null);
         setMode('normal');
         return;
+      }
+      // Ignore other keys in confirm mode
+      return;
+    }
+
+    // Handle confirm-delete-project mode
+    if (mode === 'confirm-delete-project' && projectToDelete) {
+      const cancel = () => {
+        setMessage(i18n.tui.deleteCancelled || 'Delete cancelled');
+        setProjectToDelete(null);
+        setMode('normal');
+      };
+      const runDelete = (deleteMode: ProjectDeleteMode) => {
+        const project = projectToDelete;
+        const count = projectChildCount;
+        deleteProjectAction(project, deleteMode, count).then(() => {
+          if (selectedTaskIndex >= currentTasks.length - 1) {
+            setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
+          }
+        });
+        setProjectToDelete(null);
+        setMode('normal');
+      };
+
+      if (projectChildCount > 0) {
+        if (input === 't' || input === 'T') {
+          runDelete('cascade');
+          return;
+        }
+        if (input === 'i' || input === 'I') {
+          runDelete('keep');
+          return;
+        }
+        if (input === 'n' || input === 'N' || key.escape) {
+          cancel();
+          return;
+        }
+      } else {
+        if (input === 'y' || input === 'Y') {
+          runDelete('cascade');
+          return;
+        }
+        if (input === 'n' || input === 'N' || key.escape) {
+          cancel();
+          return;
+        }
       }
       // Ignore other keys in confirm mode
       return;
@@ -1250,6 +1315,21 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
           setSelectedTaskIndex(Math.max(0, selectedTaskIndex - 1));
         }
       });
+      return;
+    }
+
+    // Delete project (D key on projects tab - with confirmation)
+    if (input === 'D' && currentTasks.length > 0 && currentTab === 'projects') {
+      const project = currentTasks[selectedTaskIndex];
+      const db = getDb();
+      db.select()
+        .from(schema.tasks)
+        .where(eq(schema.tasks.parentId, project.id))
+        .then((children) => {
+          setProjectChildCount(children.length);
+          setProjectToDelete(project);
+          setMode('confirm-delete-project');
+        });
       return;
     }
 
@@ -1895,6 +1975,17 @@ function AppContent({ onOpenSettings }: AppContentProps): React.ReactElement {
         <Box marginTop={1}>
           <Text color={theme.colors.accent} bold>
             {fmt(i18n.tui.deleteConfirm || 'Delete "{title}"? (y/n)', { title: taskToDelete.title })}
+          </Text>
+        </Box>
+      )}
+
+      {/* Project delete confirmation */}
+      {mode === 'confirm-delete-project' && projectToDelete && (
+        <Box marginTop={1}>
+          <Text color={theme.colors.accent} bold>
+            {projectChildCount > 0
+              ? fmt(i18n.tui.deleteProjectChildren || 'Project "{title}" has {count} task(s). t=delete all  i=keep tasks (→Inbox)  n=cancel', { title: projectToDelete.title, count: projectChildCount })
+              : fmt(i18n.tui.deleteProjectConfirm || 'Delete project "{title}"? (y/n)', { title: projectToDelete.title })}
           </Text>
         </Box>
       )}

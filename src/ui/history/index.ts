@@ -13,6 +13,7 @@ export { useHistory } from './useHistory.js';
 export {
   CreateTaskCommand,
   DeleteTaskCommand,
+  DeleteProjectCommand,
   MoveTaskCommand,
   LinkTaskCommand,
   ConvertToProjectCommand,

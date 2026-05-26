@@ -95,7 +95,7 @@ floq add "Task title"       # Add task
 floq list [status]          # List tasks
 floq move <id> <status>     # Move task
 floq done <id>              # Complete task
-floq project add/list/show  # Project management
+floq project add/list/show/delete  # Project management
 floq config theme/mode/lang # Configuration
 floq sync                   # Manual Turso sync
 ```

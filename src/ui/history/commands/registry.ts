@@ -1,6 +1,7 @@
 import type { UndoableCommand } from '../types.js';
 import { CreateTaskCommand } from './CreateTaskCommand.js';
 import { DeleteTaskCommand } from './DeleteTaskCommand.js';
+import { DeleteProjectCommand } from './DeleteProjectCommand.js';
 import { MoveTaskCommand } from './MoveTaskCommand.js';
 import { LinkTaskCommand } from './LinkTaskCommand.js';
 import { ConvertToProjectCommand } from './ConvertToProjectCommand.js';
@@ -15,6 +16,7 @@ type CommandDeserializer = (data: Record<string, unknown>) => UndoableCommand;
 const registry: Record<string, CommandDeserializer> = {
   'create_task': (data) => CreateTaskCommand.fromJSON({ data }),
   'delete_task': (data) => DeleteTaskCommand.fromJSON({ data }),
+  'delete_project': (data) => DeleteProjectCommand.fromJSON({ data }),
   'move_task': (data) => MoveTaskCommand.fromJSON({ data }),
   'link_task': (data) => LinkTaskCommand.fromJSON({ data }),
   'convert_to_project': (data) => ConvertToProjectCommand.fromJSON({ data }),
