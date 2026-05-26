@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-05-26
+
+### Added
+- Project deletion in both CLI and TUI (`floq project delete <id>`, alias `rm`). When a project has tasks, choose to delete them too (cascade) or move them back to Inbox. CLI supports `--with-tasks` / `--keep-tasks` / `--force`; in the TUI press `D` on the Projects tab. Fully undoable in the TUI.
+
+### Changed
+- Update dependencies (uuid, qs) and fix security vulnerabilities
+
 ## [1.7.0] - 2026-02-28
 
 ### Added

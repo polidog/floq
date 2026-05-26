@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-05-26
+
+### Added
+- プロジェクトの削除機能をCLI・TUI両方に追加（`floq project delete <id>`、エイリアス `rm`）。配下にタスクがある場合は、一緒に削除するか、Inboxへ退避するかを選択可能。CLIは `--with-tasks` / `--keep-tasks` / `--force` に対応し、TUIではProjectsタブで `D` キーで削除（Undo対応）
+
+### Changed
+- 依存パッケージ（uuid, qs）を更新し、セキュリティ脆弱性を修正
+
 ## [1.7.0] - 2026-02-28
 
 ### Added
