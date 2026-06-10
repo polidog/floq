@@ -274,7 +274,7 @@ floq config turso --disable
 
 ## Google Calendar Integration
 
-Floq can display your Google Calendar events in the TUI. Two methods are available:
+Floq can display your Google Calendar events in the TUI. Multiple calendars can be registered (iCal and OAuth sources can be mixed), and events from all enabled calendars are merged. Two methods are available:
 
 ### Option 1: iCal URL (Simple, No Authentication)
 
@@ -284,7 +284,9 @@ Use Google Calendar's secret iCal URL for read-only access without OAuth setup.
 # Get your iCal URL from Google Calendar:
 # Settings > (Your Calendar) > Integrate calendar > "Secret address in iCal format"
 
-floq calendar add "https://calendar.google.com/calendar/ical/..." -n "My Calendar"
+floq calendar add "https://calendar.google.com/calendar/ical/..." -n "Work"
+floq calendar add "https://calendar.google.com/calendar/ical/..." -n "Personal"
+floq calendar list
 floq calendar show
 ```
 
@@ -326,10 +328,10 @@ floq calendar login
 # → Opens browser for authentication
 # → Enter the displayed code when prompted
 
-# Select a calendar
+# Select calendars to register (multiple selections supported)
 floq calendar select
 # → Shows list of your calendars
-# → Enter the number to select
+# → Enter numbers, comma-separated (e.g. 1,3)
 
 # View configuration and today's events
 floq calendar show
@@ -345,20 +347,33 @@ floq calendar logout
 
 ```bash
 # iCal mode
-floq calendar add <url> [-n name]   # Add iCal URL
-floq calendar remove                 # Remove calendar
+floq calendar add <url> [-n name]   # Add an iCal calendar (repeatable)
 
 # OAuth mode
 floq calendar config --client-id <id> --client-secret <secret>
 floq calendar login                  # Google OAuth login
 floq calendar logout                 # Clear OAuth tokens
-floq calendar select                 # Select calendar (interactive)
+floq calendar select                 # Register Google calendars (interactive, multiple)
 
 # Common commands
+floq calendar list                   # List registered calendars
+floq calendar remove <id|num|name>   # Remove a calendar
+floq calendar remove --all           # Remove all calendar configuration
 floq calendar show                   # Show config and today's events
 floq calendar sync                   # Refresh cache
-floq calendar enable                 # Enable display
-floq calendar disable                # Disable display
+floq calendar enable [id]            # Enable display (all, or one calendar)
+floq calendar disable [id]           # Disable display (all, or one calendar)
+```
+
+### Schedule Command
+
+View merged events from all registered calendars:
+
+```bash
+floq schedule              # Today's events
+floq schedule tomorrow     # Tomorrow's events
+floq schedule week         # Next 7 days
+floq schedule --days 3     # Next N days
 ```
 
 ## Themes

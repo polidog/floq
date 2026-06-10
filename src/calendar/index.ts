@@ -1,5 +1,5 @@
 import ICAL from 'ical.js';
-import { getCalendarConfig, isCalendarEnabled, getCalendarType, getCalendarOAuthConfig } from '../config.js';
+import { getCalendarConfig, isCalendarEnabled, isCalendarSourceUsable, type CalendarSource } from '../config.js';
 import { getValidAccessToken } from './oauth.js';
 import { listEvents as listGoogleEvents } from './google-api.js';
 
@@ -10,6 +10,8 @@ export interface CalendarEvent {
   end: Date;
   allDay: boolean;
   location?: string;
+  calendarName?: string; // Name of the source calendar
+  sourceId?: string;     // ID of the source calendar
 }
 
 // In-memory cache with 5-minute TTL
@@ -117,32 +119,6 @@ function normalizeUrl(url: string): string {
 }
 
 /**
- * Fetch calendar events via OAuth (Google Calendar API)
- */
-async function fetchEventsViaOAuth(): Promise<CalendarEvent[]> {
-  const oauthConfig = getCalendarOAuthConfig();
-  if (!oauthConfig) {
-    return [];
-  }
-
-  const accessToken = await getValidAccessToken();
-  if (!accessToken) {
-    return [];
-  }
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0); // Last day of next month
-
-  try {
-    return await listGoogleEvents(accessToken, oauthConfig.calendarId, startOfMonth, endOfNextMonth);
-  } catch (error) {
-    console.error('Failed to fetch Google Calendar events:', error);
-    return [];
-  }
-}
-
-/**
  * Fetch calendar events via iCal URL
  */
 async function fetchEventsViaIcal(url: string): Promise<CalendarEvent[]> {
@@ -163,27 +139,73 @@ async function fetchEventsViaIcal(url: string): Promise<CalendarEvent[]> {
 }
 
 /**
- * Fetch calendar events from the configured source (iCal URL or OAuth)
+ * Fetch events for a single calendar source
+ */
+async function fetchEventsForSource(
+  source: CalendarSource,
+  accessToken: string | null
+): Promise<CalendarEvent[]> {
+  let events: CalendarEvent[];
+
+  if (source.type === 'oauth') {
+    if (!accessToken || !source.calendarId) {
+      return [];
+    }
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0); // Last day of next month
+    events = await listGoogleEvents(accessToken, source.calendarId, startOfMonth, endOfNextMonth);
+  } else {
+    if (!source.url) {
+      return [];
+    }
+    events = await fetchEventsViaIcal(source.url);
+  }
+
+  return events.map(event => ({
+    ...event,
+    calendarName: source.name,
+    sourceId: source.id,
+  }));
+}
+
+/**
+ * Fetch and merge calendar events from all enabled calendar sources.
+ * When a URL is passed explicitly, fetch only that iCal URL (validation use; cache is not updated).
  */
 export async function fetchCalendarEvents(url?: string): Promise<CalendarEvent[]> {
-  try {
-    let events: CalendarEvent[];
-    const calendarType = getCalendarType();
+  if (url) {
+    return fetchEventsViaIcal(url);
+  }
 
-    if (url) {
-      // Explicit URL provided, use iCal mode
-      events = await fetchEventsViaIcal(url);
-    } else if (calendarType === 'oauth') {
-      // OAuth mode
-      events = await fetchEventsViaOAuth();
-    } else {
-      // iCal mode
-      const targetUrl = getCalendarConfig()?.url;
-      if (!targetUrl) {
-        return [];
-      }
-      events = await fetchEventsViaIcal(targetUrl);
+  try {
+    const config = getCalendarConfig();
+    const sources = (config?.calendars || []).filter(
+      s => s.enabled !== false && isCalendarSourceUsable(s, config)
+    );
+
+    if (sources.length === 0) {
+      return [];
     }
+
+    // Resolve the access token once if any oauth source is present
+    const needsOAuth = sources.some(s => s.type === 'oauth');
+    const accessToken = needsOAuth ? await getValidAccessToken() : null;
+
+    const results = await Promise.allSettled(
+      sources.map(source => fetchEventsForSource(source, accessToken))
+    );
+
+    const events: CalendarEvent[] = [];
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        events.push(...result.value);
+      } else {
+        console.error(`Failed to fetch calendar "${sources[index].name}":`, result.reason);
+      }
+    });
+
+    events.sort((a, b) => a.start.getTime() - b.start.getTime());
 
     // Update cache
     eventsCache = {

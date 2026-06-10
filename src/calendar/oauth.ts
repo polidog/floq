@@ -1,7 +1,7 @@
 import {
   getGoogleOAuthClient,
-  getCalendarOAuthConfig,
-  setCalendarOAuthConfig,
+  getCalendarOAuthTokens,
+  setCalendarOAuthTokens,
   type CalendarOAuthTokens,
 } from '../config.js';
 
@@ -176,21 +176,16 @@ export function isTokenExpired(tokens: CalendarOAuthTokens): boolean {
  * Get a valid access token, refreshing if necessary
  */
 export async function getValidAccessToken(): Promise<string | null> {
-  const oauthConfig = getCalendarOAuthConfig();
-  if (!oauthConfig) {
+  let tokens = getCalendarOAuthTokens();
+  if (!tokens) {
     return null;
   }
-
-  let tokens = oauthConfig.tokens;
 
   if (isTokenExpired(tokens)) {
     try {
       tokens = await refreshAccessToken(tokens.refreshToken);
       // Update stored tokens
-      setCalendarOAuthConfig({
-        ...oauthConfig,
-        tokens,
-      });
+      setCalendarOAuthTokens(tokens);
     } catch (error) {
       console.error('Failed to refresh access token:', error);
       return null;
@@ -204,5 +199,5 @@ export async function getValidAccessToken(): Promise<string | null> {
  * Clear OAuth tokens (logout)
  */
 export function clearOAuthTokens(): void {
-  setCalendarOAuthConfig(undefined);
+  setCalendarOAuthTokens(undefined);
 }

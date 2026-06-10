@@ -1,22 +1,58 @@
 import {
   getCalendarConfig,
   setCalendarConfig,
+  getCalendarSources,
+  addCalendarSource,
+  removeCalendarSource,
+  updateCalendarSource,
   isCalendarEnabled,
+  isCalendarSourceUsable,
   setCalendarEnabled,
   getGoogleOAuthClient,
   setGoogleOAuthClient,
-  setCalendarOAuthConfig,
-  getCalendarOAuthConfig,
-  getCalendarType,
+  getCalendarOAuthTokens,
+  setCalendarOAuthTokens,
+  type CalendarSource,
 } from '../config.js';
-import { fetchCalendarEvents, getTodayEvents, clearCalendarCache, formatEventTime, type CalendarEvent } from '../calendar/index.js';
+import { fetchCalendarEvents, getTodayEvents, clearCalendarCache, formatEventTime } from '../calendar/index.js';
 import { getLocale } from '../config.js';
-import { startOAuthFlow, pollForTokens, clearOAuthTokens } from '../calendar/oauth.js';
-import { listCalendars, type GoogleCalendar } from '../calendar/google-api.js';
+import { startOAuthFlow, pollForTokens, clearOAuthTokens, getValidAccessToken } from '../calendar/oauth.js';
+import { listCalendars } from '../calendar/google-api.js';
 import * as readline from 'readline';
 
 /**
- * Add or update calendar URL (iCal mode)
+ * Resolve a calendar source by id, 1-based index, or name
+ */
+function resolveSource(idOrIndex: string): CalendarSource | undefined {
+  const sources = getCalendarSources();
+
+  // Exact id match
+  const byId = sources.find(s => s.id === idOrIndex);
+  if (byId) return byId;
+
+  // 1-based index
+  const index = parseInt(idOrIndex, 10);
+  if (!isNaN(index) && index >= 1 && index <= sources.length) {
+    return sources[index - 1];
+  }
+
+  // Name match
+  return sources.find(s => s.name === idOrIndex);
+}
+
+function printSourceList(sources: CalendarSource[]): void {
+  sources.forEach((source, index) => {
+    const status = source.enabled !== false ? 'enabled' : 'disabled';
+    const detail = source.type === 'ical'
+      ? (source.url && source.url.length > 50 ? source.url.substring(0, 50) + '...' : source.url)
+      : source.calendarId;
+    console.log(`  ${index + 1}. [${source.id}] ${source.name} (${source.type}, ${status})`);
+    console.log(`       ${detail}`);
+  });
+}
+
+/**
+ * Add a new iCal calendar (multiple calendars can be registered)
  */
 export async function addCalendar(url: string, options: { name?: string }): Promise<void> {
   // Validate URL
@@ -25,57 +61,124 @@ export async function addCalendar(url: string, options: { name?: string }): Prom
     process.exit(1);
   }
 
-  setCalendarConfig({
-    url,
-    name: options.name,
+  const existing = getCalendarSources().find(s => s.url === url);
+  if (existing) {
+    console.error(`Error: This URL is already registered as "${existing.name}" [${existing.id}].`);
+    process.exit(1);
+  }
+
+  // Default name from URL hostname when not provided
+  let name = options.name;
+  if (!name) {
+    try {
+      name = new URL(url.replace('webcal://', 'https://')).hostname;
+    } catch {
+      name = `Calendar ${getCalendarSources().length + 1}`;
+    }
+  }
+
+  const source = addCalendarSource({
+    name,
     type: 'ical',
+    url,
     enabled: true,
   });
 
   console.log('Calendar added successfully!');
+  console.log(`  ID: ${source.id}`);
+  console.log(`  Name: ${source.name}`);
   console.log(`  URL: ${url}`);
-  if (options.name) {
-    console.log(`  Name: ${options.name}`);
-  }
 
   // Try to fetch events to validate the URL
   console.log('\nFetching events...');
   try {
     const events = await fetchCalendarEvents(url);
     console.log(`Found ${events.length} events.`);
-  } catch (error) {
+  } catch {
     console.log('Warning: Could not fetch events. Please check the URL.');
+  }
+
+  if (getCalendarConfig()?.enabled === false) {
+    console.log('Note: calendar display is currently disabled. Run "floq calendar enable" to show events.');
   }
 }
 
 /**
- * Remove calendar configuration
+ * List registered calendars
  */
-export async function removeCalendar(): Promise<void> {
-  const config = getCalendarConfig();
+export async function listCalendarSourcesCommand(): Promise<void> {
+  const sources = getCalendarSources();
 
-  if (!config) {
-    console.log('No calendar configured.');
+  if (sources.length === 0) {
+    console.log('No calendars registered.');
+    console.log('Use "floq calendar add <url>" or "floq calendar select" to add one.');
     return;
   }
 
-  setCalendarConfig(undefined);
+  console.log(`Registered calendars (${sources.length})`);
+  console.log('-'.repeat(40));
+  printSourceList(sources);
+}
+
+/**
+ * Remove a calendar (by id/index/name), or all calendar configuration with --all
+ */
+export async function removeCalendar(idOrIndex?: string, options: { all?: boolean } = {}): Promise<void> {
+  const sources = getCalendarSources();
+
+  if (options.all) {
+    if (sources.length === 0 && !getCalendarConfig()) {
+      console.log('No calendar configured.');
+      return;
+    }
+    setCalendarConfig(undefined);
+    clearCalendarCache();
+    console.log('All calendar configuration removed.');
+    return;
+  }
+
+  if (sources.length === 0) {
+    console.log('No calendars registered.');
+    return;
+  }
+
+  let target: CalendarSource | undefined;
+  if (idOrIndex) {
+    target = resolveSource(idOrIndex);
+    if (!target) {
+      console.error(`Error: Calendar "${idOrIndex}" not found.`);
+      console.log('');
+      printSourceList(sources);
+      process.exit(1);
+    }
+  } else if (sources.length === 1) {
+    target = sources[0];
+  } else {
+    console.log('Multiple calendars are registered. Specify which one to remove:');
+    console.log('');
+    printSourceList(sources);
+    console.log('');
+    console.log('Usage: floq calendar remove <id|number|name>');
+    console.log('       floq calendar remove --all   (remove everything)');
+    return;
+  }
+
+  removeCalendarSource(target.id);
   clearCalendarCache();
-  console.log('Calendar removed.');
+  console.log(`Calendar "${target.name}" [${target.id}] removed.`);
 }
 
 /**
  * Show calendar configuration and today's events
  */
 export async function showCalendar(): Promise<void> {
-  const config = getCalendarConfig();
+  const sources = getCalendarSources();
   const locale = getLocale();
-  const calendarType = getCalendarType();
 
   console.log('Calendar Configuration');
   console.log('-'.repeat(40));
 
-  if (!config || (!config.url && !config.oauth)) {
+  if (sources.length === 0) {
     console.log('No calendar configured.');
     console.log('');
     console.log('Option 1: iCal URL (no authentication required)');
@@ -88,19 +191,9 @@ export async function showCalendar(): Promise<void> {
     return;
   }
 
-  console.log(`Type: ${calendarType || 'unknown'}`);
-
-  if (calendarType === 'oauth' && config.oauth) {
-    console.log(`Calendar: ${config.oauth.calendarName}`);
-    console.log(`Calendar ID: ${config.oauth.calendarId}`);
-  } else if (config.url) {
-    console.log(`URL: ${config.url}`);
-    if (config.name) {
-      console.log(`Name: ${config.name}`);
-    }
-  }
-
-  console.log(`Status: ${config.enabled !== false ? 'enabled' : 'disabled'}`);
+  printSourceList(sources);
+  console.log('');
+  console.log(`Display: ${getCalendarConfig()?.enabled !== false ? 'enabled' : 'disabled'}`);
 
   console.log('');
   console.log("Today's Events");
@@ -116,12 +209,14 @@ export async function showCalendar(): Promise<void> {
     return;
   }
 
+  const showCalendarName = sources.length > 1;
   for (const event of todayEvents) {
     const timeStr = event.allDay
       ? (locale === 'ja' ? '終日' : 'All day')
       : `${formatEventTime(event.start)} - ${formatEventTime(event.end)}`;
 
-    console.log(`  ${timeStr}  ${event.title}`);
+    const calLabel = showCalendarName && event.calendarName ? ` [${event.calendarName}]` : '';
+    console.log(`  ${timeStr}  ${event.title}${calLabel}`);
     if (event.location) {
       console.log(`    📍 ${event.location}`);
     }
@@ -132,19 +227,19 @@ export async function showCalendar(): Promise<void> {
  * Sync/refresh calendar cache
  */
 export async function syncCalendar(): Promise<void> {
-  const config = getCalendarConfig();
+  const sources = getCalendarSources();
 
-  if (!config) {
+  if (sources.length === 0) {
     console.log('No calendar configured.');
     return;
   }
 
-  console.log('Syncing calendar...');
+  console.log('Syncing calendars...');
   clearCalendarCache();
 
   try {
     const events = await fetchCalendarEvents();
-    console.log(`Synced ${events.length} events.`);
+    console.log(`Synced ${events.length} events from ${sources.filter(s => s.enabled !== false).length} calendar(s).`);
 
     const todayEvents = getTodayEvents();
     console.log(`${todayEvents.length} events today.`);
@@ -155,34 +250,42 @@ export async function syncCalendar(): Promise<void> {
 }
 
 /**
- * Enable calendar display
+ * Toggle calendar display (overall, or a specific calendar by id)
  */
-export async function enableCalendar(): Promise<void> {
-  const config = getCalendarConfig();
+async function setCalendarDisplay(enabled: boolean, idOrIndex?: string): Promise<void> {
+  const sources = getCalendarSources();
+  const label = enabled ? 'enabled' : 'disabled';
 
-  if (!config) {
+  if (sources.length === 0) {
     console.log('No calendar configured.');
-    console.log('Use "floq calendar add <url>" to add a calendar first.');
+    if (enabled) {
+      console.log('Use "floq calendar add <url>" to add a calendar first.');
+    }
     return;
   }
 
-  setCalendarEnabled(true);
-  console.log('Calendar display enabled.');
+  if (idOrIndex) {
+    const target = resolveSource(idOrIndex);
+    if (!target) {
+      console.error(`Error: Calendar "${idOrIndex}" not found.`);
+      process.exit(1);
+    }
+    updateCalendarSource(target.id, { enabled });
+    clearCalendarCache();
+    console.log(`Calendar "${target.name}" ${label}.`);
+    return;
+  }
+
+  setCalendarEnabled(enabled);
+  console.log(`Calendar display ${label}.`);
 }
 
-/**
- * Disable calendar display
- */
-export async function disableCalendar(): Promise<void> {
-  const config = getCalendarConfig();
+export async function enableCalendar(idOrIndex?: string): Promise<void> {
+  await setCalendarDisplay(true, idOrIndex);
+}
 
-  if (!config) {
-    console.log('No calendar configured.');
-    return;
-  }
-
-  setCalendarEnabled(false);
-  console.log('Calendar display disabled.');
+export async function disableCalendar(idOrIndex?: string): Promise<void> {
+  await setCalendarDisplay(false, idOrIndex);
 }
 
 /**
@@ -194,7 +297,7 @@ export async function configOAuthClient(clientId: string, clientSecret: string):
   console.log('');
   console.log('Next steps:');
   console.log('  1. Run "floq calendar login" to authenticate');
-  console.log('  2. Run "floq calendar select" to choose a calendar');
+  console.log('  2. Run "floq calendar select" to choose calendars');
 }
 
 /**
@@ -251,23 +354,12 @@ export async function loginCalendar(): Promise<void> {
     console.log('Waiting for authorization...');
 
     const tokens = await pollForTokens(deviceCode, interval);
-
-    // Save tokens temporarily (calendar selection happens next)
-    const config = getCalendarConfig() || {};
-    setCalendarConfig({
-      ...config,
-      type: 'oauth',
-      oauth: {
-        tokens,
-        calendarId: '',
-        calendarName: '',
-      },
-    });
+    setCalendarOAuthTokens(tokens);
 
     console.log('');
     console.log('Login successful!');
     console.log('');
-    console.log('Now run "floq calendar select" to choose a calendar.');
+    console.log('Now run "floq calendar select" to choose calendars.');
   } catch (error) {
     console.error('Login failed:', error instanceof Error ? error.message : error);
     process.exit(1);
@@ -278,29 +370,33 @@ export async function loginCalendar(): Promise<void> {
  * Logout from OAuth (clear tokens)
  */
 export async function logoutCalendar(): Promise<void> {
-  const oauthConfig = getCalendarOAuthConfig();
+  const tokens = getCalendarOAuthTokens();
 
-  if (!oauthConfig) {
+  if (!tokens) {
     console.log('Not logged in.');
     return;
   }
 
   clearOAuthTokens();
   console.log('Logged out successfully.');
+
+  const oauthSources = getCalendarSources().filter(s => s.type === 'oauth');
+  if (oauthSources.length > 0) {
+    console.log(`Note: ${oauthSources.length} Google calendar(s) remain registered but need login to fetch events.`);
+  }
 }
 
 /**
- * Select a calendar from the user's calendars
+ * Select Google calendars to register (multiple selections supported)
  */
 export async function selectCalendar(): Promise<void> {
-  const oauthConfig = getCalendarOAuthConfig();
+  const tokens = getCalendarOAuthTokens();
 
-  if (!oauthConfig) {
+  if (!tokens) {
     console.log('Not logged in. Run "floq calendar login" first.');
     return;
   }
 
-  const { getValidAccessToken } = await import('../calendar/oauth.js');
   const accessToken = await getValidAccessToken();
 
   if (!accessToken) {
@@ -319,46 +415,71 @@ export async function selectCalendar(): Promise<void> {
       return;
     }
 
+    const registeredIds = new Set(
+      getCalendarSources()
+        .filter(s => s.type === 'oauth')
+        .map(s => s.calendarId)
+    );
+
     console.log('Available calendars:');
     console.log('');
 
     calendars.forEach((cal, index) => {
       const primary = cal.primary ? ' (primary)' : '';
-      console.log(`  ${index + 1}. ${cal.summary}${primary}`);
+      const registered = registeredIds.has(cal.id) ? ' [registered]' : '';
+      console.log(`  ${index + 1}. ${cal.summary}${primary}${registered}`);
     });
 
     console.log('');
 
-    // Interactive selection
+    // Interactive selection (comma-separated numbers for multiple calendars)
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
     const answer = await new Promise<string>((resolve) => {
-      rl.question('Select calendar (number): ', resolve);
+      rl.question('Select calendars (numbers, comma-separated): ', resolve);
     });
     rl.close();
 
-    const selection = parseInt(answer, 10);
-    if (isNaN(selection) || selection < 1 || selection > calendars.length) {
+    const selections = answer
+      .split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(n => !isNaN(n) && n >= 1 && n <= calendars.length);
+
+    if (selections.length === 0) {
       console.log('Invalid selection.');
       return;
     }
 
-    const selectedCalendar = calendars[selection - 1];
-
-    // Update config with selected calendar
-    setCalendarOAuthConfig({
-      tokens: oauthConfig.tokens,
-      calendarId: selectedCalendar.id,
-      calendarName: selectedCalendar.summary,
-    });
-
     console.log('');
-    console.log(`Calendar "${selectedCalendar.summary}" selected!`);
+
+    for (const selection of [...new Set(selections)]) {
+      const selectedCalendar = calendars[selection - 1];
+
+      if (registeredIds.has(selectedCalendar.id)) {
+        console.log(`Calendar "${selectedCalendar.summary}" is already registered. Skipped.`);
+        continue;
+      }
+
+      const source = addCalendarSource({
+        name: selectedCalendar.summary,
+        type: 'oauth',
+        calendarId: selectedCalendar.id,
+        enabled: true,
+      });
+      registeredIds.add(selectedCalendar.id);
+      console.log(`Calendar "${selectedCalendar.summary}" added! [${source.id}]`);
+    }
+
+    clearCalendarCache();
     console.log('');
-    console.log('Calendar integration is now active. Run "floq calendar show" to see events.');
+    if (getCalendarConfig()?.enabled === false) {
+      console.log('Note: calendar display is currently disabled. Run "floq calendar enable" to show events.');
+    } else {
+      console.log('Calendar integration is now active. Run "floq schedule" to see events.');
+    }
   } catch (error) {
     console.error('Failed to list calendars:', error instanceof Error ? error.message : error);
     process.exit(1);
