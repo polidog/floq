@@ -41,19 +41,11 @@ export async function showConfig(): Promise<void> {
 
   // Calendar configuration
   const calendarConfig = getCalendarConfig();
-  console.log(`Calendar: ${isCalendarEnabled() ? 'enabled' : calendarConfig ? 'disabled' : 'not configured'}`);
-  if (calendarConfig) {
-    const calendarType = calendarConfig.type || (calendarConfig.url ? 'ical' : 'unknown');
-    console.log(`  Type: ${calendarType}`);
-    if (calendarConfig.name) {
-      console.log(`  Name: ${calendarConfig.name}`);
-    }
-    if (calendarConfig.url) {
-      console.log(`  URL: ${calendarConfig.url.substring(0, 50)}...`);
-    }
-    if (calendarConfig.oauth) {
-      console.log(`  Calendar: ${calendarConfig.oauth.calendarName}`);
-    }
+  const calendarSources = calendarConfig?.calendars || [];
+  console.log(`Calendar: ${isCalendarEnabled() ? 'enabled' : calendarSources.length > 0 ? 'disabled' : 'not configured'}`);
+  for (const source of calendarSources) {
+    const status = source.enabled !== false ? '' : ' (disabled)';
+    console.log(`  - ${source.name} [${source.type}]${status}`);
   }
 }
 

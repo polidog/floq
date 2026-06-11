@@ -18,7 +18,8 @@ import { addComment, listComments } from './commands/comment.js';
 import { listContexts, addContextCommand, removeContextCommand } from './commands/context.js';
 import { showInsights } from './commands/insights.js';
 import { runSetupWizard } from './commands/setup.js';
-import { addCalendar, removeCalendar, showCalendar, syncCalendar, enableCalendar, disableCalendar, configOAuthClient, loginCalendar, logoutCalendar, selectCalendar } from './commands/calendar.js';
+import { addCalendar, removeCalendar, showCalendar, syncCalendar, enableCalendar, disableCalendar, configOAuthClient, loginCalendar, logoutCalendar, selectCalendar, listCalendarSourcesCommand } from './commands/calendar.js';
+import { showSchedule } from './commands/schedule.js';
 import { VERSION } from './version.js';
 
 const program = new Command();
@@ -345,6 +346,15 @@ program
     await runSetupWizard();
   });
 
+// Schedule command
+program
+  .command('schedule [period]')
+  .description('Show schedule from registered calendars (today, tomorrow, week)')
+  .option('-d, --days <n>', 'Number of days to show')
+  .action(async (period: string | undefined, options: { days?: string }) => {
+    await showSchedule(period, options);
+  });
+
 // Calendar commands
 const calendarCmd = program
   .command('calendar')
@@ -352,17 +362,27 @@ const calendarCmd = program
 
 calendarCmd
   .command('add <url>')
-  .description('Add or update calendar URL')
+  .description('Add a calendar by iCal URL (multiple calendars supported)')
   .option('-n, --name <name>', 'Display name for the calendar')
   .action(async (url: string, options: { name?: string }) => {
     await addCalendar(url, options);
   });
 
 calendarCmd
-  .command('remove')
-  .description('Remove calendar configuration')
+  .command('list')
+  .alias('ls')
+  .description('List registered calendars')
   .action(async () => {
-    await removeCalendar();
+    await listCalendarSourcesCommand();
+  });
+
+calendarCmd
+  .command('remove [id]')
+  .alias('rm')
+  .description('Remove a calendar by id/number/name')
+  .option('--all', 'Remove all calendar configuration')
+  .action(async (id: string | undefined, options: { all?: boolean }) => {
+    await removeCalendar(id, options);
   });
 
 calendarCmd
@@ -380,17 +400,17 @@ calendarCmd
   });
 
 calendarCmd
-  .command('enable')
-  .description('Enable calendar display')
-  .action(async () => {
-    await enableCalendar();
+  .command('enable [id]')
+  .description('Enable calendar display (all, or a specific calendar by id)')
+  .action(async (id?: string) => {
+    await enableCalendar(id);
   });
 
 calendarCmd
-  .command('disable')
-  .description('Disable calendar display')
-  .action(async () => {
-    await disableCalendar();
+  .command('disable [id]')
+  .description('Disable calendar display (all, or a specific calendar by id)')
+  .action(async (id?: string) => {
+    await disableCalendar(id);
   });
 
 // OAuth commands
@@ -428,7 +448,7 @@ calendarCmd
 
 calendarCmd
   .command('select')
-  .description('Select a calendar to display')
+  .description('Select Google calendars to register (multiple supported)')
   .action(async () => {
     await selectCalendar();
   });

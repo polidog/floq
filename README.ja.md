@@ -274,7 +274,7 @@ floq config turso --disable
 
 ## Googleカレンダー連携
 
-FloqはGoogleカレンダーの予定をTUIに表示できます。2つの方法があります:
+FloqはGoogleカレンダーの予定をTUIに表示できます。複数のカレンダーを登録でき（iCalとOAuthの混在も可能）、有効なカレンダーすべての予定がマージして表示されます。2つの方法があります:
 
 ### 方法1: iCal URL（シンプル、認証不要）
 
@@ -284,7 +284,9 @@ GoogleカレンダーのシークレットiCal URLを使用して、OAuth設定�
 # GoogleカレンダーからiCal URLを取得:
 # 設定 > (カレンダー名) > カレンダーの統合 > "iCal形式の非公開URL"
 
-floq calendar add "https://calendar.google.com/calendar/ical/..." -n "マイカレンダー"
+floq calendar add "https://calendar.google.com/calendar/ical/..." -n "仕事"
+floq calendar add "https://calendar.google.com/calendar/ical/..." -n "プライベート"
+floq calendar list
 floq calendar show
 ```
 
@@ -326,10 +328,10 @@ floq calendar login
 # → ブラウザが開いて認証画面へ
 # → 表示されたコードを入力
 
-# カレンダーを選択
+# 登録するカレンダーを選択（複数選択可）
 floq calendar select
 # → カレンダー一覧が表示される
-# → 番号を入力して選択
+# → 番号をカンマ区切りで入力（例: 1,3）
 
 # 設定と今日の予定を表示
 floq calendar show
@@ -345,20 +347,33 @@ floq calendar logout
 
 ```bash
 # iCalモード
-floq calendar add <url> [-n name]   # iCal URLを追加
-floq calendar remove                 # カレンダーを削除
+floq calendar add <url> [-n name]   # iCalカレンダーを追加（複数登録可）
 
 # OAuthモード
 floq calendar config --client-id <id> --client-secret <secret>
 floq calendar login                  # Google OAuthログイン
 floq calendar logout                 # OAuthトークンをクリア
-floq calendar select                 # カレンダー選択（対話式）
+floq calendar select                 # Googleカレンダーを登録（対話式・複数可）
 
 # 共通コマンド
+floq calendar list                   # 登録済みカレンダー一覧
+floq calendar remove <id|番号|名前>  # カレンダーを削除
+floq calendar remove --all           # カレンダー設定をすべて削除
 floq calendar show                   # 設定と今日の予定を表示
 floq calendar sync                   # キャッシュを更新
-floq calendar enable                 # 表示を有効化
-floq calendar disable                # 表示を無効化
+floq calendar enable [id]            # 表示を有効化（全体または個別）
+floq calendar disable [id]           # 表示を無効化（全体または個別）
+```
+
+### スケジュールコマンド
+
+登録したすべてのカレンダーの予定をまとめて確認できます:
+
+```bash
+floq schedule              # 今日の予定
+floq schedule tomorrow     # 明日の予定
+floq schedule week         # 今後7日間
+floq schedule --days 3     # 今後N日間
 ```
 
 ## テーマ

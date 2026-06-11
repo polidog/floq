@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs';
 import { dirname, join, isAbsolute } from 'path';
+import { randomUUID } from 'crypto';
 import { CONFIG_FILE, DATA_DIR } from './paths.js';
 import type { ThemeName } from './ui/theme/types.js';
 
@@ -60,16 +61,27 @@ export interface CalendarOAuthConfig {
   calendarName: string;
 }
 
-export interface CalendarConfig {
-  // iCal mode
-  url?: string;        // iCal URL (webcal:// or https://)
-  name?: string;       // Display name
-  enabled?: boolean;   // Display ON/OFF
+// A single registered calendar (multiple can be registered)
+export interface CalendarSource {
+  id: string;            // Unique identifier
+  name: string;          // Display name
+  type: 'ical' | 'oauth';
+  url?: string;          // iCal URL (webcal:// or https://) — ical mode
+  calendarId?: string;   // Google Calendar ID — oauth mode
+  enabled?: boolean;     // Per-calendar ON/OFF (default: true)
+}
 
-  // OAuth mode
-  type?: 'ical' | 'oauth';
+export interface CalendarConfig {
+  enabled?: boolean;               // Overall display ON/OFF
+  calendars?: CalendarSource[];    // Registered calendars
   googleOAuth?: GoogleOAuthClient; // OAuth client credentials
-  oauth?: CalendarOAuthConfig;     // OAuth tokens and selected calendar
+  oauthTokens?: CalendarOAuthTokens; // Account-level OAuth tokens (shared by oauth calendars)
+
+  // Legacy single-calendar fields (auto-migrated to `calendars`)
+  url?: string;
+  name?: string;
+  type?: 'ical' | 'oauth';
+  oauth?: CalendarOAuthConfig;
 }
 
 // Date format options for clock display
@@ -282,29 +294,121 @@ export function setDateFormat(format: DateFormat): void {
   saveConfig({ dateFormat: format });
 }
 
+function generateCalendarId(): string {
+  return randomUUID().slice(0, 8);
+}
+
+// Migrate legacy single-calendar config to the multi-calendar format
+function migrateCalendarConfig(calendar: CalendarConfig): CalendarConfig | null {
+  const hasLegacyFields =
+    calendar.url !== undefined ||
+    calendar.name !== undefined ||
+    calendar.type !== undefined ||
+    calendar.oauth !== undefined;
+
+  if (!hasLegacyFields) return null;
+
+  const calendars: CalendarSource[] = [...(calendar.calendars || [])];
+  let oauthTokens = calendar.oauthTokens;
+
+  if (calendar.url && !calendars.some(c => c.url === calendar.url)) {
+    calendars.push({
+      id: generateCalendarId(),
+      name: calendar.name || 'Calendar',
+      type: 'ical',
+      url: calendar.url,
+    });
+  }
+
+  if (calendar.oauth) {
+    oauthTokens = oauthTokens || calendar.oauth.tokens;
+    if (calendar.oauth.calendarId && !calendars.some(c => c.calendarId === calendar.oauth?.calendarId)) {
+      calendars.push({
+        id: generateCalendarId(),
+        name: calendar.oauth.calendarName || 'Google Calendar',
+        type: 'oauth',
+        calendarId: calendar.oauth.calendarId,
+      });
+    }
+  }
+
+  return {
+    enabled: calendar.enabled,
+    calendars,
+    googleOAuth: calendar.googleOAuth,
+    oauthTokens,
+  };
+}
+
 export function getCalendarConfig(): CalendarConfig | undefined {
-  return loadConfig().calendar;
+  const calendar = loadConfig().calendar;
+  if (!calendar) return undefined;
+
+  const migrated = migrateCalendarConfig(calendar);
+  if (migrated) {
+    saveConfig({ calendar: migrated });
+    return migrated;
+  }
+  return calendar;
 }
 
 export function setCalendarConfig(config: CalendarConfig | undefined): void {
   saveConfig({ calendar: config });
 }
 
+export function getCalendarSources(): CalendarSource[] {
+  return getCalendarConfig()?.calendars || [];
+}
+
+export function addCalendarSource(source: Omit<CalendarSource, 'id'>): CalendarSource {
+  const calendar = getCalendarConfig() || {};
+  const newSource: CalendarSource = { id: generateCalendarId(), ...source };
+  setCalendarConfig({
+    ...calendar,
+    calendars: [...(calendar.calendars || []), newSource],
+    enabled: calendar.enabled === false ? calendar.enabled : true,
+  });
+  return newSource;
+}
+
+export function removeCalendarSource(id: string): boolean {
+  const calendar = getCalendarConfig();
+  if (!calendar) return false;
+  const calendars = calendar.calendars || [];
+  const newCalendars = calendars.filter(c => c.id !== id);
+  if (newCalendars.length === calendars.length) return false;
+  setCalendarConfig({ ...calendar, calendars: newCalendars });
+  return true;
+}
+
+export function updateCalendarSource(id: string, updates: Partial<Omit<CalendarSource, 'id'>>): boolean {
+  const calendar = getCalendarConfig();
+  if (!calendar) return false;
+  const calendars = calendar.calendars || [];
+  const index = calendars.findIndex(c => c.id === id);
+  if (index === -1) return false;
+  const newCalendars = [...calendars];
+  newCalendars[index] = { ...newCalendars[index], ...updates };
+  setCalendarConfig({ ...calendar, calendars: newCalendars });
+  return true;
+}
+
+// True when a calendar source has everything it needs to fetch events
+export function isCalendarSourceUsable(source: CalendarSource, config?: CalendarConfig): boolean {
+  const calendar = config ?? getCalendarConfig();
+  if (source.type === 'ical') {
+    return !!source.url;
+  }
+  return !!source.calendarId && !!calendar?.oauthTokens;
+}
+
 export function isCalendarEnabled(): boolean {
   const calendar = getCalendarConfig();
   if (!calendar || calendar.enabled === false) return false;
 
-  // OAuth mode
-  if (calendar.type === 'oauth' && calendar.oauth) {
-    return true;
-  }
-
-  // iCal mode
-  if (calendar.url && calendar.url !== '') {
-    return true;
-  }
-
-  return false;
+  return (calendar.calendars || []).some(
+    c => c.enabled !== false && isCalendarSourceUsable(c, calendar)
+  );
 }
 
 export function setCalendarEnabled(enabled: boolean): void {
@@ -331,25 +435,18 @@ export function setGoogleOAuthClient(client: GoogleOAuthClient): void {
   setCalendarConfig({ ...calendar, googleOAuth: client });
 }
 
-export function getCalendarOAuthConfig(): CalendarOAuthConfig | undefined {
-  return getCalendarConfig()?.oauth;
+export function getCalendarOAuthTokens(): CalendarOAuthTokens | undefined {
+  return getCalendarConfig()?.oauthTokens;
 }
 
-export function setCalendarOAuthConfig(oauth: CalendarOAuthConfig | undefined): void {
+export function setCalendarOAuthTokens(tokens: CalendarOAuthTokens | undefined): void {
   const calendar = getCalendarConfig() || {};
-  if (oauth) {
-    setCalendarConfig({ ...calendar, type: 'oauth', oauth, enabled: true });
+  if (tokens) {
+    setCalendarConfig({ ...calendar, oauthTokens: tokens });
   } else {
-    // Clear OAuth config
-    const { oauth: _removed, ...rest } = calendar;
+    const { oauthTokens: _removed, ...rest } = calendar;
     setCalendarConfig(rest);
   }
-}
-
-export function getCalendarType(): 'ical' | 'oauth' | undefined {
-  const calendar = getCalendarConfig();
-  if (!calendar) return undefined;
-  return calendar.type || (calendar.url ? 'ical' : undefined);
 }
 
 const DEFAULT_INSIGHTS_WEEKS = 2;

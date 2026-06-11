@@ -3,7 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { t } from '../../i18n/index.js';
 import { useTheme } from '../theme/index.js';
 import type { BorderStyleType } from '../theme/types.js';
-import { isCalendarEnabled, getCalendarConfig, getCalendarType } from '../../config.js';
+import { isCalendarEnabled, getCalendarSources } from '../../config.js';
 import {
   getCalendarEvents,
   getEventsForDate,
@@ -35,8 +35,7 @@ export function CalendarModal({ onClose }: CalendarModalProps): React.ReactEleme
   const [mode, setMode] = useState<Mode>('calendar');
 
   const calendarEnabled = isCalendarEnabled();
-  const config = getCalendarConfig();
-  const calendarType = getCalendarType();
+  const calendarSources = getCalendarSources().filter(s => s.enabled !== false);
 
   const isJapanese = i18n.tui.calendar?.yesterday === '昨日';
   const weekdays = isJapanese ? WEEKDAYS_JA : WEEKDAYS_EN;
@@ -246,10 +245,12 @@ export function CalendarModal({ onClose }: CalendarModalProps): React.ReactEleme
   const formatTitle = (title: string) =>
     theme.style.headerUppercase ? title.toUpperCase() : title;
 
-  // Get calendar name for header
-  const calendarName = calendarType === 'oauth' && config?.oauth
-    ? config.oauth.calendarName
-    : config?.name || 'Calendar';
+  // Get calendar name for header (single calendar shows its name, multiple show a count)
+  const calendarName = calendarSources.length === 1
+    ? calendarSources[0].name
+    : calendarSources.length > 1
+      ? `Calendar (${calendarSources.length})`
+      : 'Calendar';
 
   // Format month header
   const monthNames = isJapanese
