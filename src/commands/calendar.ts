@@ -271,6 +271,12 @@ async function setCalendarDisplay(enabled: boolean, idOrIndex?: string): Promise
       process.exit(1);
     }
     updateCalendarSource(target.id, { enabled });
+    // Enabling a specific calendar implies the user wants events shown —
+    // also lift a global disable so the change is actually visible
+    if (enabled && getCalendarConfig()?.enabled === false) {
+      setCalendarEnabled(true);
+      console.log('Calendar display was disabled — re-enabled.');
+    }
     clearCalendarCache();
     console.log(`Calendar "${target.name}" ${label}.`);
     return;
