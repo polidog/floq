@@ -7,6 +7,18 @@
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-06-11
+
+### Added
+- 複数カレンダーの登録に対応（iCal URLとGoogle OAuthカレンダーの混在可）。全カレンダーの予定をマージして表示。新コマンド: `floq calendar list`、`floq calendar remove <id|番号|名前>`、`floq calendar remove --all`、個別の `floq calendar enable/disable [id]`。`floq calendar select` はカンマ区切りで複数のGoogleカレンダーを一括登録可能に
+- `floq schedule` コマンドを追加し、CLIからスケジュールを確認可能に（`floq schedule`＝今日、`tomorrow`＝明日、`week`＝今後7日間、`--days <n>`＝任意日数）。日付ごとにグループ表示し、カレンダー名ラベル付き
+
+### Changed
+- `floq calendar add` を追記式に変更（既存設定を上書きせず新しいカレンダーを追加）。旧形式の単一カレンダー設定は自動マイグレーション
+
+### Fixed
+- 全体表示が無効のまま `floq calendar enable <id>` を実行した際、全体の無効状態も解除して予定が実際に表示されるように修正
+
 ## [1.8.0] - 2026-05-26
 
 ### Added

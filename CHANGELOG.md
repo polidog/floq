@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-06-11
+
+### Added
+- Multiple calendar registration: register any number of calendars (iCal URLs and Google OAuth calendars can be mixed) and view merged events from all of them. New commands: `floq calendar list`, `floq calendar remove <id|number|name>`, `floq calendar remove --all`, per-calendar `floq calendar enable/disable [id]`. `floq calendar select` now registers multiple Google calendars at once (comma-separated)
+- `floq schedule` command to view your schedule from the CLI: `floq schedule` (today), `floq schedule tomorrow`, `floq schedule week`, or `floq schedule --days <n>`. Events are grouped by date with calendar name labels
+
+### Changed
+- `floq calendar add` is now additive (registers a new calendar instead of replacing the existing one). Legacy single-calendar configuration is migrated automatically
+
+### Fixed
+- `floq calendar enable <id>` now also lifts a global display disable so enabled events are actually shown
+
 ## [1.8.0] - 2026-05-26
 
 ### Added
