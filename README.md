@@ -29,6 +29,10 @@ A terminal-based GTD (Getting Things Done) task manager with MS-DOS style themes
 - **Vim-style Navigation**: Use hjkl or arrow keys
 - **Setup Wizard**: First-run wizard for easy configuration
 
+## Requirements
+
+- Node.js 20 or later (tested on Node.js 20 / 22 / 24 / 26)
+
 ## Installation
 
 ```bash
