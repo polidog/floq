@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-08-28
+
+### Changed
+- Node.js 26 に対応。Node.js 26 で `ERR_DLOPEN_FAILED` となっていた未使用のネイティブ依存 `better-sqlite3` を削除（DBアクセスは既に `@libsql/client` 経由のため影響なし）
+- `engines.node: ">=20.0.0"` を明示し、Node.js 20 / 22 / 24 / 26 でビルドとスモークテストを行うCIワークフローを追加
+- 依存パッケージ（hono）を更新し、セキュリティ脆弱性を修正
+
 ## [1.9.0] - 2026-06-11
 
 ### Added

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-08-28
+
+### Changed
+- Support Node.js 26. Removed the unused `better-sqlite3` native dependency, which failed to load on Node.js 26 with `ERR_DLOPEN_FAILED`; database access already goes through `@libsql/client`
+- Declare `engines.node: ">=20.0.0"` and add a CI workflow that builds and smoke-tests on Node.js 20 / 22 / 24 / 26
+- Update dependencies (hono) and fix security vulnerabilities
+
 ## [1.9.0] - 2026-06-11
 
 ### Added
